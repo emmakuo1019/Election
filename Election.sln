@@ -87,9 +87,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Multiplayer.Center.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.InputSystem.ForUI", "Unity.InputSystem.ForUI.csproj", "{de16a7c8-96da-0079-180a-9a6491e05172}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Navigation", "Unity.AI.Navigation.csproj", "{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{9c76e3b7-5270-f0b9-9c14-5306b7b541db}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Navigation", "Unity.AI.Navigation.csproj", "{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Collections.CodeGen", "Unity.Collections.CodeGen.csproj", "{49e68f7a-b39e-a463-5979-d36543c18583}"
 EndProject
@@ -278,10 +278,10 @@ Global
 		{b65f812e-aa7c-75bf-790b-2a9ba6bcf8bb}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{de16a7c8-96da-0079-180a-9a6491e05172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{de16a7c8-96da-0079-180a-9a6491e05172}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9c76e3b7-5270-f0b9-9c14-5306b7b541db}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9c76e3b7-5270-f0b9-9c14-5306b7b541db}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{aa7df9cb-0b6e-d9b5-2307-af03bc84456d}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49e68f7a-b39e-a463-5979-d36543c18583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{49e68f7a-b39e-a463-5979-d36543c18583}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{c442adc9-04b5-513f-467a-cf4a3ddac6ca}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
