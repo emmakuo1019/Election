@@ -23,13 +23,13 @@ public class VoterLogic : MonoBehaviour
     //立場值改變時發出
     public event Action<int> OnPositionChanged;
 
-    //選民被成功轉化時發出，帶入轉化台詞
-    public event Action<string> OnConverted;
-
     private VoterData    data;
     private NavMeshAgent agent;
+    private Animator     anim;
     private bool         isKnockedBack;
     private bool         IsOnNavMesh => agent.isOnNavMesh;
+    private bool         isFrozenByHitStop;
+    private bool         agentWasStoppedBeforeFreeze;
 
     void Awake()
     {
@@ -38,11 +38,24 @@ public class VoterLogic : MonoBehaviour
         agent.speed         = moveSpeed;
         agent.angularSpeed  = 0f;
         agent.updateRotation = false;
+        anim = GetComponentInChildren<Animator>();
     }
 
     void Start()
     {
         StartCoroutine(WanderRoutine());
+    }
+
+    private void OnEnable()
+    {
+        if (HitStopManager.Instance != null)
+            HitStopManager.Instance.OnHitStopChanged += OnHitStopChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (HitStopManager.Instance != null)
+            HitStopManager.Instance.OnHitStopChanged -= OnHitStopChanged;
     }
 
     /// <summary>
@@ -61,7 +74,7 @@ public class VoterLogic : MonoBehaviour
             VoterConfig.MAX_POS);
 
         OnPositionChanged?.Invoke(data.currentPosition);
-        GetComponentInChildren<Animator>()?.SetTrigger(HashHit);
+        anim?.SetTrigger(HashHit);
 
 
         if (!isKnockedBack && attackerPosition != default)
@@ -82,6 +95,9 @@ public class VoterLogic : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(Random.Range(wanderIntervalMin, wanderIntervalMax));
+
+            // Hit Stop 時暫停思考/行走更新（避免凍結期間還在換目標）
+            while (isFrozenByHitStop) yield return null;
 
             if (!isKnockedBack && !data.isConverted && IsOnNavMesh)
             {
@@ -122,6 +138,11 @@ public class VoterLogic : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < knockbackDuration)
         {
+            if (isFrozenByHitStop)
+            {
+                yield return null;
+                continue;
+            }
             elapsed += Time.deltaTime;
             float eased = 1f - Mathf.Pow(1f - elapsed / knockbackDuration, 3f);
             agent.Warp(Vector3.Lerp(startPos, targetPos, eased));
@@ -138,7 +159,27 @@ public class VoterLogic : MonoBehaviour
     {
         data.isConverted = true;
         if (IsOnNavMesh) agent.isStopped = true;
-        OnConverted?.Invoke("這個法案有道理！");
         // LevelManager.Instance.AddVotes(data.IsDieHard ? 10 : 1);
+    }
+
+    private void OnHitStopChanged(bool frozen)
+    {
+        isFrozenByHitStop = frozen;
+
+        if (agent == null) return;
+
+        if (frozen)
+        {
+            agentWasStoppedBeforeFreeze = agent.isStopped;
+            if (IsOnNavMesh) agent.isStopped = true;
+            if (anim != null) anim.speed = 0f;
+        }
+        else
+        {
+            // 若轉化或擊退狀態仍在，維持原本該停止的條件
+            bool shouldStayStopped = data != null && (data.isConverted || isKnockedBack || agentWasStoppedBeforeFreeze);
+            if (IsOnNavMesh) agent.isStopped = shouldStayStopped;
+            if (anim != null) anim.speed = 1f;
+        }
     }
 }

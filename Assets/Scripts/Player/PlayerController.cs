@@ -32,17 +32,30 @@ public class PlayerController : MonoBehaviour
     private CharacterController charCon;
     private Vector3 movement;
     private bool    canDash = true;
+    private bool    isFrozenByHitStop;
 
     private void Awake()
     {
         charCon = GetComponent<CharacterController>();
     }
 
-    private void OnEnable() => dashAction.action.performed += OnDashInput;
-    private void OnDisable() => dashAction.action.performed -= OnDashInput;
+    private void OnEnable()
+    {
+        dashAction.action.performed += OnDashInput;
+        if (HitStopManager.Instance != null)
+            HitStopManager.Instance.OnHitStopChanged += OnHitStopChanged;
+    }
+
+    private void OnDisable()
+    {
+        dashAction.action.performed -= OnDashInput;
+        if (HitStopManager.Instance != null)
+            HitStopManager.Instance.OnHitStopChanged -= OnHitStopChanged;
+    }
 
     private void Update()
     {
+        if (isFrozenByHitStop) return;
         if (IsDashing) return;
         HandleMovement();
     }
@@ -53,7 +66,7 @@ public class PlayerController : MonoBehaviour
         movement = new Vector3(moveInput.x, 0f, moveInput.y);
 
         bool isMoving = movement.sqrMagnitude > 0.01f;
-        characterAnimator?.SetBool(HashIsMoving, isMoving);
+        //characterAnimator?.SetBool(HashIsMoving, isMoving);
 
         if (isMoving)
         {
@@ -62,14 +75,6 @@ public class PlayerController : MonoBehaviour
             {
                 LastMoveDirection = newDir;
                 OnDirectionChanged?.Invoke(LastMoveDirection);
-
-                // Sprite 翻轉（左右）
-                if (characterAnimator != null && Mathf.Abs(newDir.x) > 0.1f)
-                {
-                    Vector3 s = characterAnimator.transform.localScale;
-                    s.x = Mathf.Abs(s.x) * Mathf.Sign(newDir.x);
-                    characterAnimator.transform.localScale = s;
-                }
             }
         }
 
@@ -87,12 +92,17 @@ public class PlayerController : MonoBehaviour
 
         IsDashing = true;
         canDash   = false;
-        characterAnimator?.SetTrigger(HashDash);
+        //characterAnimator?.SetTrigger(HashDash);
 
         Vector3 dashDir   = movement.normalized;
         float   startTime = Time.time;
         while (Time.time < startTime + dashDuration)
         {
+            if (isFrozenByHitStop)
+            {
+                yield return null;
+                continue;
+            }
             charCon.Move(dashDir * dashSpeed * Time.deltaTime);
             yield return null;
         }
@@ -100,5 +110,12 @@ public class PlayerController : MonoBehaviour
         IsDashing = false;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
+    }
+
+    private void OnHitStopChanged(bool frozen)
+    {
+        isFrozenByHitStop = frozen;
+        if (frozen)
+            characterAnimator?.SetBool(HashIsMoving, false);
     }
 }

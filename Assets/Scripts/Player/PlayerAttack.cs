@@ -16,10 +16,7 @@ public class PlayerAttack : MonoBehaviour
     public float attackAngle    = 60.0f;
     public int   attackInfluence = 1;
     public int   fundingCost    = 10;
-
-    [Header("攻擊對話框特效")]
-    public GameObject attackBubblePrefab;
-    public float      bubbleDisplayDuration = 1.0f;
+    
 
     [Header("範圍指示器")]
     public AttackRangeIndicator rangeIndicator;
@@ -28,6 +25,9 @@ public class PlayerAttack : MonoBehaviour
     public event Action OnAttackPerformed;
     private static readonly int HashAttack = Animator.StringToHash("attack");
 
+    [Header("Hit Stop（命中時）")]
+    public bool enableHitStop = true;
+    public float hitStopDuration = 0.05f;
 
     void Awake()
     {
@@ -83,8 +83,7 @@ public class PlayerAttack : MonoBehaviour
             ?.GetComponent<PlayerController>()
             .characterAnimator
             ?.SetTrigger(HashAttack);
-
-        ShowAttackBubble();
+        
         rangeIndicator?.Show();
 
         Vector3 attackDir = playerController != null
@@ -111,40 +110,15 @@ public class PlayerAttack : MonoBehaviour
 
         // 有命中才震動，強調打擊感
         if (hitAny)
+        {
             CameraShake.Instance?.Shake(0.12f, 0.18f);
+            if (enableHitStop && HitStopManager.Instance != null)
+                HitStopManager.Instance.Trigger(hitStopDuration);
+        }
 
         if (!hitAny) Debug.Log("演說範圍內沒有選民。");
     }
-
-
-    private void ShowAttackBubble()
-    {
-        if (attackBubblePrefab == null) return;
-
-        if (activeBubble != null)
-        {
-            StopAllCoroutines();
-            Destroy(activeBubble);
-        }
-
-        activeBubble = Instantiate(
-            attackBubblePrefab,
-            transform.position + Vector3.up * 2f,
-            Quaternion.identity,
-            transform);
-
-        StartCoroutine(HideBubbleAfterDelay());
-    }
-
-    private IEnumerator HideBubbleAfterDelay()
-    {
-        yield return new WaitForSeconds(bubbleDisplayDuration);
-        if (activeBubble != null)
-        {
-            Destroy(activeBubble);
-            activeBubble = null;
-        }
-    }
+    
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

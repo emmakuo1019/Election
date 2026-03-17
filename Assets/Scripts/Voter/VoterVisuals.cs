@@ -1,19 +1,16 @@
-// /Assets/Scripts/NPCScripts/VoterVisuals.cs
 using System.Collections;
 using UnityEngine;
 using TMPro;
 
-/// <summary>
 /// 負責選民的所有視覺表現，透過訂閱 VoterLogic 的 event 驅動，
 /// 與邏輯層完全解耦。
-/// </summary>
+
 public class VoterVisuals : MonoBehaviour
 {
     [Header("泡泡元件")]
     public SpriteRenderer bubbleOutline;
-    public SpriteRenderer bubbleBackground;
-    public TextMeshPro    bubbleText;
-    public GameObject     speechBubble;
+    //public TextMeshPro    bubbleText;
+    //public GameObject     speechBubble;
 
     [Header("色彩設定")]
     public Color neutralColor  = Color.black;
@@ -37,18 +34,16 @@ public class VoterVisuals : MonoBehaviour
     void OnEnable()
     {
         logic.OnPositionChanged += UpdateBubbleVisual;
-        logic.OnConverted       += ShowConversionDialogue;
+        //logic.OnConverted       += ShowConversionDialogue;
     }
 
     void OnDisable()
     {
         logic.OnPositionChanged -= UpdateBubbleVisual;
-        logic.OnConverted       -= ShowConversionDialogue;
+        //logic.OnConverted       -= ShowConversionDialogue;
     }
-
-    /// <summary>
-    /// 依據立場值緩慢插值更新外框顏色。由 OnPositionChanged event 驅動。
-    /// </summary>
+    
+    // 依據立場值緩慢插值更新外框顏色。由 OnPositionChanged event 驅動。
     private void UpdateBubbleVisual(int position)
     {
         Color targetColor;
@@ -85,13 +80,9 @@ public class VoterVisuals : MonoBehaviour
         bubbleOutline.color = targetColor;
         colorCoroutine = null;
     }
-
-    /// <summary>
+    
     /// 顯示轉化台詞。由 OnConverted event 驅動。
-    /// </summary>
-    private void ShowConversionDialogue(string content)
-    {
-        speechBubble.SetActive(true);
-        bubbleText.text = content;
-    }
+    //private void ShowConversionDialogue(string content)
+    //{speechBubble.SetActive(true);
+        //bubbleText.text = content;}
 }

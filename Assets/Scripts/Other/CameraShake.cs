@@ -1,13 +1,11 @@
-// /Assets/Scripts/Player/CameraShake.cs
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
 /// 畫面震動，掛在 Main Camera 上。
 /// 因 Camera 是 Player 子物件，震動用 localPosition offset 實作，
 /// 不影響跟隨邏輯。
 /// 呼叫：CameraShake.Instance.Shake();
-/// </summary>
+ 
 public class CameraShake : MonoBehaviour
 {
     public static CameraShake Instance { get; private set; }

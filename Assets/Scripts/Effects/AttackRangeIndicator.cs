@@ -8,6 +8,11 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class AttackRangeIndicator : MonoBehaviour
 {
+    [Header("資料來源（可選）")]
+    public bool usePlayerAttackValues = true;
+    public PlayerAttack playerAttackSource;
+    public bool autoSyncEachFrame = true;
+
     [Header("形狀")]
     public float range = 3f;
     [Range(0f, 360f)]
@@ -27,6 +32,8 @@ public class AttackRangeIndicator : MonoBehaviour
 
     private LineRenderer lineRenderer;
     private Coroutine flashCoroutine;
+    private float lastSyncedRange = float.NaN;
+    private float lastSyncedAngle = float.NaN;
 
     void Awake()
     {
@@ -36,7 +43,22 @@ public class AttackRangeIndicator : MonoBehaviour
         lineRenderer.endWidth = lineWidth;
         if (lineMaterial != null)
             lineRenderer.material = lineMaterial;        ApplyColor(idleColor);
+        
+        TryBindPlayerAttack();
+        SyncFromPlayerAttack(force: true);
         RedrawShape();
+    }
+
+    private void OnEnable()
+    {
+        TryBindPlayerAttack();
+        SyncFromPlayerAttack(force: true);
+    }
+
+    private void LateUpdate()
+    {
+        if (!autoSyncEachFrame) return;
+        SyncFromPlayerAttack(force: false);
     }
 
     /// <summary>
@@ -97,6 +119,33 @@ public class AttackRangeIndicator : MonoBehaviour
             DrawFullCircle();
         else
             DrawSector();
+    }
+
+    private void TryBindPlayerAttack()
+    {
+        if (!usePlayerAttackValues) return;
+        if (playerAttackSource != null) return;
+        playerAttackSource = GetComponentInParent<PlayerAttack>();
+    }
+
+    private void SyncFromPlayerAttack(bool force)
+    {
+        if (!usePlayerAttackValues) return;
+        if (playerAttackSource == null) return;
+
+        float srcRange = playerAttackSource.attackRange;
+        float srcAngle = playerAttackSource.attackAngle;
+
+        if (!force &&
+            Mathf.Approximately(srcRange, lastSyncedRange) &&
+            Mathf.Approximately(srcAngle, lastSyncedAngle))
+        {
+            return;
+        }
+
+        lastSyncedRange = srcRange;
+        lastSyncedAngle = srcAngle;
+        SetShape(srcRange, srcAngle);
     }
 
     private void DrawFullCircle()
