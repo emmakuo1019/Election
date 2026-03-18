@@ -1,33 +1,33 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerAttack : MonoBehaviour
+public class PlayerAttack : MonoBehaviour, IAttackSource
 {
     private PlayerController playerController;
-    
-    [Header("Input System")]
+
+    [Header("Input")]
     public InputActionReference attackAction;
 
+    [Header("攻擊設定")]
+    public float attackRange = 3f;
+    public float attackAngle = 60f;
+    public int attackInfluence = 1;
 
-    [Header("演說設定")]
-    public float attackRange    = 3.0f;
-    public float attackAngle    = 60.0f;
-    public int   attackInfluence = 1;
-    public int   fundingCost    = 10;
-    
+    [Header("顯示")]
+    public AttackRangeMesh attackRangeMesh;
 
-    [Header("範圍指示器")]
-    public AttackRangeIndicator rangeIndicator;
-
-    private GameObject activeBubble;
+    public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
+
     private static readonly int HashAttack = Animator.StringToHash("attack");
 
-    [Header("Hit Stop（命中時）")]
+    [Header("HitStop")]
     public bool enableHitStop = true;
     public float hitStopDuration = 0.05f;
+
+    [Header("Layer")]
+    public LayerMask voterLayer;
 
     void Awake()
     {
@@ -41,6 +41,9 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackAction != null)
             attackAction.action.performed += OnAttackInput;
+
+        // 初始化推送
+        OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
     }
 
     void OnDisable()
@@ -57,87 +60,69 @@ public class PlayerAttack : MonoBehaviour
         PerformSpeech();
     }
 
-
     void Start()
     {
-        if (rangeIndicator != null)
-        {
-            rangeIndicator.SetShape(attackRange, attackAngle);
-            rangeIndicator.ShowIdle();
-        }
+        if (attackRangeMesh != null)
+            attackRangeMesh.ShowIdle();
     }
 
     private void OnDirectionChanged(Vector3 dir)
     {
-        if (rangeIndicator != null)
-            rangeIndicator.transform.rotation = Quaternion.LookRotation(dir);
+        if (attackRangeMesh != null)
+            attackRangeMesh.transform.rotation = Quaternion.LookRotation(dir);
     }
-    
-    /// 發動演說攻擊
+
+    public float AttackRange => attackRange;
+    public float AttackAngle => attackAngle;
+
+    public void UpdateAttackShape(float range, float angle)
+    {
+        attackRange = range;
+        attackAngle = angle;
+        OnAttackShapeChanged?.Invoke(range, angle);
+    }
+
     public void PerformSpeech()
     {
         OnAttackPerformed?.Invoke();
 
-        // 取 PlayerController 上的 Animator 觸發攻擊動畫
-        playerController
-            ?.GetComponent<PlayerController>()
-            .characterAnimator
-            ?.SetTrigger(HashAttack);
-        
-        rangeIndicator?.Show();
+        playerController?.characterAnimator?.SetTrigger(HashAttack);
+
+        attackRangeMesh?.Show();
 
         Vector3 attackDir = playerController != null
             ? playerController.LastMoveDirection
             : transform.forward;
 
         bool hitAny = false;
-        Collider[] hitColliders = Physics.OverlapSphere(
-            transform.position, attackRange,
-            Physics.AllLayers, QueryTriggerInteraction.Collide);
 
-        foreach (var hit in hitColliders)
+        Collider[] hits = Physics.OverlapSphere(
+            transform.position,
+            attackRange,
+            voterLayer
+        );
+
+        foreach (var hit in hits)
         {
-            if (hit.TryGetComponent<VoterLogic>(out var voterLogic))
+            if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
-                Vector3 dirToVoter = (hit.transform.position - transform.position).normalized;
-                if (Vector3.Angle(attackDir, dirToVoter) < attackAngle / 2f)
+                Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
+
+                if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
                 {
-                    voterLogic.OnInfluence(attackInfluence, isSkill: false, transform.position);
+                    voter.OnInfluence(attackInfluence, false, transform.position);
                     hitAny = true;
                 }
             }
         }
 
-        // 有命中才震動，強調打擊感
         if (hitAny)
         {
             CameraShake.Instance?.Shake(0.12f, 0.18f);
+
             if (enableHitStop && HitStopManager.Instance != null)
                 HitStopManager.Instance.Trigger(hitStopDuration);
         }
-
-        if (!hitAny) Debug.Log("演說範圍內沒有選民。");
+        
     }
-    
-
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        Vector3 dir = (playerController != null && Application.isPlaying)
-            ? playerController.LastMoveDirection
-            : transform.forward;
-
-        float halfAngle  = attackAngle / 2f;
-        Vector3 leftDir  = Quaternion.Euler(0f, -halfAngle, 0f) * dir;
-        Vector3 rightDir = Quaternion.Euler(0f,  halfAngle, 0f) * dir;
-
-        UnityEditor.Handles.color = new Color(1f, 0.5f, 0f, 0.15f);
-        UnityEditor.Handles.DrawSolidArc(transform.position, Vector3.up, leftDir, attackAngle, attackRange);
-        UnityEditor.Handles.color = new Color(1f, 0.5f, 0f, 0.9f);
-        UnityEditor.Handles.DrawWireArc(transform.position, Vector3.up, leftDir, attackAngle, attackRange);
-        Gizmos.color = new Color(1f, 0.5f, 0f, 0.9f);
-        Gizmos.DrawRay(transform.position, leftDir  * attackRange);
-        Gizmos.DrawRay(transform.position, rightDir * attackRange);
-    }
-#endif
 }

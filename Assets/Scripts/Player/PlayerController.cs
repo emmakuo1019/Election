@@ -66,7 +66,7 @@ public class PlayerController : MonoBehaviour
         movement = new Vector3(moveInput.x, 0f, moveInput.y);
 
         bool isMoving = movement.sqrMagnitude > 0.01f;
-        //characterAnimator?.SetBool(HashIsMoving, isMoving);
+        characterAnimator?.SetBool(HashIsMoving, isMoving);
 
         if (isMoving)
         {
@@ -92,7 +92,7 @@ public class PlayerController : MonoBehaviour
 
         IsDashing = true;
         canDash   = false;
-        //characterAnimator?.SetTrigger(HashDash);
+        characterAnimator?.SetTrigger(HashDash);
 
         Vector3 dashDir   = movement.normalized;
         float   startTime = Time.time;
