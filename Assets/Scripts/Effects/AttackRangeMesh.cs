@@ -40,7 +40,7 @@ public class AttackRangeMesh : MonoBehaviour
 
     private void BindSource()
     {
-        attackSource = attackSourceBehaviour as IAttackSource;
+        attackSource = GetComponentInParent<IAttackSource>();
 
         if (attackSource == null)
         {

@@ -1,4 +1,5 @@
 using System;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,6 +17,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
+    private CinemachineImpulseSource impulseSource;
+
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
@@ -32,6 +35,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     void Awake()
     {
         playerController = GetComponent<PlayerController>();
+        impulseSource = GetComponent<CinemachineImpulseSource>();
     }
 
     void OnEnable()
@@ -118,7 +122,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
         if (hitAny)
         {
-            CameraShake.Instance?.Shake(0.12f, 0.18f);
+            impulseSource?.GenerateImpulse();
 
             if (enableHitStop && HitStopManager.Instance != null)
                 HitStopManager.Instance.Trigger(hitStopDuration);
