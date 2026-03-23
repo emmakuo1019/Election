@@ -556,7 +556,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 1310451d342194b5dbcb791f547eb4c7, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: b298be89b24b74d7fab61c9335740692, type: 2}
   m_BuildHeightMesh: 0
 --- !u!4 &1163203712
 Transform:
@@ -1129,6 +1129,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6733743352581481250, guid: 674e01088c8b74177a963af098f37808, type: 3}
+      propertyPath: m_Size.x
+      value: 20.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 6733743352581481250, guid: 674e01088c8b74177a963af098f37808, type: 3}
+      propertyPath: m_Size.y
+      value: 20.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 6733743352581481250, guid: 674e01088c8b74177a963af098f37808, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: bccb87320ad9a475d80fae855879eeed, type: 3}
+    - target: {fileID: 6733743352581481250, guid: 674e01088c8b74177a963af098f37808, type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1181,6 +1197,22 @@ PrefabInstance:
     - target: {fileID: 791982393808381288, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2547561403663121926, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_Size.x
+      value: 20.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 2547561403663121926, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_Size.y
+      value: 20.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 2547561403663121926, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: bccb87320ad9a475d80fae855879eeed, type: 3}
+    - target: {fileID: 2547561403663121926, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5403555500550337343, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_Name
