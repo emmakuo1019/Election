@@ -8,37 +8,35 @@ using Random = UnityEngine.Random;
 public class VoterLogic : MonoBehaviour
 {
     [Header("隨機移動")]
-    public float wanderRadius      = 6f;
+    public float wanderRadius = 6f;
     public float wanderIntervalMin = 2f;
     public float wanderIntervalMax = 5f;
-    public float moveSpeed         = 1.2f;
+    public float moveSpeed = 1.2f;
 
     [Header("擊退設定")]
     public float knockbackDistance = 1.2f;
     public float knockbackDuration = 0.25f;
+
     private static readonly int HashHit = Animator.StringToHash("hit");
 
-
-    // --- Events ---
-    //立場值改變時發出
     public event Action<int> OnPositionChanged;
 
-    private VoterData    data;
+    private VoterData data;
     private NavMeshAgent agent;
-    private Animator     anim;
-    private bool         isKnockedBack;
-    private bool         IsOnNavMesh => agent.isOnNavMesh;
-    private bool         isFrozenByHitStop;
-    private bool         agentWasStoppedBeforeFreeze;
+    private Animator anim;
+
+    private bool isKnockedBack;
+    private bool isFrozenByHitStop;
 
     void Awake()
     {
-        data  = GetComponent<VoterData>();
+        data = GetComponent<VoterData>();
         agent = GetComponent<NavMeshAgent>();
-        agent.speed         = moveSpeed;
-        agent.angularSpeed  = 0f;
-        agent.updateRotation = false;
         anim = GetComponentInChildren<Animator>();
+
+        agent.speed = moveSpeed;
+        agent.angularSpeed = 0f;
+        agent.updateRotation = false;
     }
 
     void Start()
@@ -46,24 +44,9 @@ public class VoterLogic : MonoBehaviour
         StartCoroutine(WanderRoutine());
     }
 
-    private void OnEnable()
-    {
-        if (HitStopManager.Instance != null)
-            HitStopManager.Instance.OnHitStopChanged += OnHitStopChanged;
-    }
-
-    private void OnDisable()
-    {
-        if (HitStopManager.Instance != null)
-            HitStopManager.Instance.OnHitStopChanged -= OnHitStopChanged;
-    }
-
-    /// <summary>
-    /// 施加影響力，並根據攻擊者位置觸發擊退效果。
-    /// </summary>
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default)
     {
-        if (data.isConverted) return;
+        // ❌ 刪掉 isConverted 鎖死
         if (data.Tag == VoterTag.HatePolitics && !isSkill) return;
 
         int finalAmount = (data.Tag == VoterTag.DontKnow) ? amount * 2 : amount;
@@ -73,9 +56,11 @@ public class VoterLogic : MonoBehaviour
             VoterConfig.MIN_POS,
             VoterConfig.MAX_POS);
 
+        // ⭐ 更新陣營狀態（可逆）
+        UpdateConversionState();
+
         OnPositionChanged?.Invoke(data.currentPosition);
         anim?.SetTrigger(HashHit);
-
 
         if (!isKnockedBack && attackerPosition != default)
         {
@@ -83,12 +68,22 @@ public class VoterLogic : MonoBehaviour
             dir.y = 0f;
             StartCoroutine(KnockbackRoutine(dir));
         }
-
-        if (data.currentPosition <= VoterConfig.MIN_POS)
-            ExecuteConversion();
     }
 
-    // --- 隨機遊蕩 ---
+    private void UpdateConversionState()
+    {
+        if (Mathf.Abs(data.currentPosition) >= VoterConfig.MAX_POS)
+        {
+            data.isConverted = true;
+            data.convertedSide = data.currentPosition > 0 ? 1 : -1;
+        }
+        else
+        {
+            // ⭐ 離開極值 → 取消轉化
+            data.isConverted = false;
+            data.convertedSide = 0;
+        }
+    }
 
     private IEnumerator WanderRoutine()
     {
@@ -96,10 +91,7 @@ public class VoterLogic : MonoBehaviour
         {
             yield return new WaitForSeconds(Random.Range(wanderIntervalMin, wanderIntervalMax));
 
-            // Hit Stop 時暫停思考/行走更新（避免凍結期間還在換目標）
-            while (isFrozenByHitStop) yield return null;
-
-            if (!isKnockedBack && !data.isConverted && IsOnNavMesh)
+            if (!isKnockedBack && !data.isConverted && agent.isOnNavMesh)
             {
                 Vector3 dest = SampleRandomNavMeshPoint();
                 if (dest != Vector3.zero)
@@ -120,66 +112,28 @@ public class VoterLogic : MonoBehaviour
             : Vector3.zero;
     }
 
-    // --- 擊退 ---
-
     private IEnumerator KnockbackRoutine(Vector3 direction)
     {
         isKnockedBack = true;
-        if (IsOnNavMesh) agent.isStopped = true;
+        if (agent.isOnNavMesh) agent.isStopped = true;
 
-        Vector3 startPos  = transform.position;
+        Vector3 startPos = transform.position;
         Vector3 targetPos = startPos + direction * knockbackDistance;
 
-        if (!NavMesh.SamplePosition(targetPos, out NavMeshHit hit, knockbackDistance, NavMesh.AllAreas))
-            targetPos = startPos;
-        else
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, knockbackDistance, NavMesh.AllAreas))
             targetPos = hit.position;
 
         float elapsed = 0f;
+
         while (elapsed < knockbackDuration)
         {
-            if (isFrozenByHitStop)
-            {
-                yield return null;
-                continue;
-            }
             elapsed += Time.deltaTime;
-            float eased = 1f - Mathf.Pow(1f - elapsed / knockbackDuration, 3f);
-            agent.Warp(Vector3.Lerp(startPos, targetPos, eased));
+            float t = elapsed / knockbackDuration;
+            agent.Warp(Vector3.Lerp(startPos, targetPos, t));
             yield return null;
         }
 
-        if (IsOnNavMesh) agent.isStopped = false;
+        if (agent.isOnNavMesh) agent.isStopped = false;
         isKnockedBack = false;
-    }
-
-    // --- 轉化 ---
-
-    private void ExecuteConversion()
-    {
-        data.isConverted = true;
-        if (IsOnNavMesh) agent.isStopped = true;
-        // LevelManager.Instance.AddVotes(data.IsDieHard ? 10 : 1);
-    }
-
-    private void OnHitStopChanged(bool frozen)
-    {
-        isFrozenByHitStop = frozen;
-
-        if (agent == null) return;
-
-        if (frozen)
-        {
-            agentWasStoppedBeforeFreeze = agent.isStopped;
-            if (IsOnNavMesh) agent.isStopped = true;
-            if (anim != null) anim.speed = 0f;
-        }
-        else
-        {
-            // 若轉化或擊退狀態仍在，維持原本該停止的條件
-            bool shouldStayStopped = data != null && (data.isConverted || isKnockedBack || agentWasStoppedBeforeFreeze);
-            if (IsOnNavMesh) agent.isStopped = shouldStayStopped;
-            if (anim != null) anim.speed = 1f;
-        }
     }
 }

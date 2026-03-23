@@ -42,15 +42,11 @@ public class PlayerController : MonoBehaviour
     private void OnEnable()
     {
         dashAction.action.performed += OnDashInput;
-        if (HitStopManager.Instance != null)
-            HitStopManager.Instance.OnHitStopChanged += OnHitStopChanged;
     }
 
     private void OnDisable()
     {
         dashAction.action.performed -= OnDashInput;
-        if (HitStopManager.Instance != null)
-            HitStopManager.Instance.OnHitStopChanged -= OnHitStopChanged;
     }
 
     private void Update()

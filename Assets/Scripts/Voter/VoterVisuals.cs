@@ -2,20 +2,15 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 
-/// 負責選民的所有視覺表現，透過訂閱 VoterLogic 的 event 驅動，
-/// 與邏輯層完全解耦。
-
 public class VoterVisuals : MonoBehaviour
 {
     [Header("泡泡元件")]
     public SpriteRenderer bubbleOutline;
-    //public TextMeshPro    bubbleText;
-    //public GameObject     speechBubble;
 
     [Header("色彩設定")]
-    public Color neutralColor  = Color.black;
-    public Color playerColor   = new Color(0.2f, 0.4f, 1f);
-    public Color opponentColor = new Color(0.1f, 0.8f, 0.2f);
+    public Color neutralColor;
+    public Color playerColor;
+    public Color opponentColor;
 
     [Header("顏色過渡")]
     public float colorTransitionDuration = 0.8f;
@@ -34,13 +29,11 @@ public class VoterVisuals : MonoBehaviour
     void OnEnable()
     {
         logic.OnPositionChanged += UpdateBubbleVisual;
-        //logic.OnConverted       += ShowConversionDialogue;
     }
 
     void OnDisable()
     {
         logic.OnPositionChanged -= UpdateBubbleVisual;
-        //logic.OnConverted       -= ShowConversionDialogue;
     }
     
     // 依據立場值緩慢插值更新外框顏色。由 OnPositionChanged event 驅動。
@@ -53,7 +46,10 @@ public class VoterVisuals : MonoBehaviour
         }
         else
         {
-            float intensity = Mathf.Abs(position) / 5f;
+            float maxAbsPosition = Mathf.Max(Mathf.Abs(VoterConfig.MIN_POS), Mathf.Abs(VoterConfig.MAX_POS));
+            float intensity = maxAbsPosition > 0f
+                ? Mathf.Clamp01(Mathf.Abs(position) / maxAbsPosition)
+                : 0f;
             Color sideColor = (position < 0) ? playerColor : opponentColor;
             targetColor = Color.Lerp(neutralColor, sideColor, intensity);
         }
@@ -81,8 +77,4 @@ public class VoterVisuals : MonoBehaviour
         colorCoroutine = null;
     }
     
-    /// 顯示轉化台詞。由 OnConverted event 驅動。
-    //private void ShowConversionDialogue(string content)
-    //{speechBubble.SetActive(true);
-        //bubbleText.text = content;}
 }

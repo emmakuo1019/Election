@@ -25,10 +25,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private static readonly int HashAttack = Animator.StringToHash("attack");
 
-    [Header("HitStop")]
-    public bool enableHitStop = true;
-    public float hitStopDuration = 0.05f;
-
     [Header("Layer")]
     public LayerMask voterLayer;
 
@@ -123,9 +119,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (hitAny)
         {
             impulseSource?.GenerateImpulse();
-
-            if (enableHitStop && HitStopManager.Instance != null)
-                HitStopManager.Instance.Trigger(hitStopDuration);
         }
         
     }
