@@ -16,7 +16,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
-
+    private Animator characterAnimator;
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
@@ -25,13 +25,25 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     [Header("Layer")]
     public LayerMask voterLayer;
-    
-    private Animator characterAnimator;
 
     void Awake()
     {
-        
         impulseSource = GetComponent<CinemachineImpulseSource>();
+        characterAnimator = GetComponent<Animator>();
+    }
+
+    void OnEnable()
+    {
+        if (attackAction != null)
+            attackAction.action.performed += OnAttackInput;
+
+        OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
+    }
+
+    void OnDisable()
+    {
+        if (attackAction != null)
+            attackAction.action.performed -= OnAttackInput;
     }
 
     private void OnAttackInput(InputAction.CallbackContext context)
@@ -58,8 +70,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public void PerformSpeech()
     {
         OnAttackPerformed?.Invoke();
+
+        characterAnimator?.SetTrigger(HashAttack);
         attackRangeMesh?.Show();
 
+        Vector3 attackDir = transform.forward;
         bool hitAny = false;
 
         Collider[] hits = Physics.OverlapSphere(
@@ -73,10 +88,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
-                
+
+                if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
+                {
                     voter.OnInfluence(attackInfluence, false, transform.position);
                     hitAny = true;
-                
+                }
             }
         }
 
@@ -84,6 +101,5 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         {
             impulseSource?.GenerateImpulse();
         }
-        
     }
 }

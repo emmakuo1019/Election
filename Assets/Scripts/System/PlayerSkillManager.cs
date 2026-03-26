@@ -63,12 +63,26 @@ public class PlayerSkillManager : MonoBehaviour
     public void UseSpeech()
     {
         if (!speechUnlocked) return;
-        speechAttack?.PerformSpeech();
+        
+        if (speechAttack == null)
+        {
+            Debug.LogWarning("PlayerSkillManager: speechAttack 未設定");
+            return;
+        }
+        
+        speechAttack.PerformSpeech();
     }
 
     public void UseParty()
     {
         if (!partyUnlocked) return;
-        partySkillAttack?.PerformPartySkill();
+        
+        if (partySkillAttack == null)
+        {
+            Debug.LogWarning("PlayerSkillManager: partySkillAttack 未設定");
+            return;
+        }
+        
+        partySkillAttack.PerformPartySkill();
     }
 }

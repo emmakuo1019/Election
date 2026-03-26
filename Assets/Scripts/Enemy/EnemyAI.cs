@@ -21,7 +21,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     [Header("陣營設定")]
     [Tooltip("敵方視為自己的立場符號，1 代表正向(對應 opponentColor)，-1 代表負向(對應 playerColor)。")]
     public int ownSideSign = 1;
-    public bool canAttackNeutral = true;
 
     [Header("顯示")]
     public Animator characterAnimator;
@@ -38,6 +37,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private CharacterController characterController;
     private CinemachineImpulseSource impulseSource;
     private VoterLogic currentTarget;
+    private float lastAttackTime;
     private Vector3 lastMoveDirection = Vector3.forward;
 
     public float AttackRange => attackRange;
@@ -76,14 +76,11 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         Vector3 moveDir = toTarget.normalized;
         lastMoveDirection = moveDir;
-        //transform.rotation = Quaternion.LookRotation(moveDir);
 
         if (attackRangeMesh != null)
             attackRangeMesh.transform.rotation = Quaternion.LookRotation(moveDir);
 
         float distance = toTarget.magnitude;
-        // 攻擊判定用的是 attackRange，所以「進入攻擊」的距離至少要不小於 attackRange。
-        // 否則很容易出現：已經靠近到可命中範圍，但 distance 還沒 <= stoppingDistance，導致沒有播動畫/沒有施加影響。
         float effectiveStoppingDistance = Mathf.Max(stoppingDistance, attackRange);
         bool inAttackDistance = distance <= effectiveStoppingDistance;
 
@@ -105,6 +102,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         while (true)
         {
+            currentTarget = FindNearestEnemyVoter();
             yield return wait;
         }
     }
@@ -117,8 +115,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         foreach (var hit in hits)
         {
-            // Collider 可能在子物件上，而 VoterLogic 在父物件（常見於 prefab）。
-            // 用 GetComponentInParent 讓目標抓取更穩定，避免 currentTarget 永遠為 null。
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter == null) continue;
 
@@ -143,7 +139,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         VoterData data = voter.GetComponent<VoterData>();
         if (data == null) return false;
 
-        // ⭐ 改成「只要還沒到我方極值，就可以打」
         if (ownSideSign > 0)
         {
             return data.currentPosition < VoterConfig.MAX_POS;
@@ -153,8 +148,13 @@ public class EnemyAI : MonoBehaviour, IAttackSource
             return data.currentPosition > VoterConfig.MIN_POS;
         }
     }
+
     private void TryAttack()
     {
+        if (Time.time < lastAttackTime + attackCooldown)
+            return;
+
+        lastAttackTime = Time.time;
         PerformAttack();
     }
 
@@ -184,9 +184,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
             if (Vector3.Angle(attackDir, dirToTarget) >= attackAngle / 2f)
                 continue;
 
-            // 影響方向決定於敵人自身立場：
-            // ownSideSign = 1 代表推向正向(對應 opponentColor)
-            // ownSideSign = -1 代表推向負向(對應 playerColor)
             int sideSign = ownSideSign >= 0 ? 1 : -1;
             int influence = Mathf.Abs(attackInfluence) * sideSign;
             voter.OnInfluence(influence, false, transform.position);
@@ -197,6 +194,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         impulseSource?.GenerateImpulse();
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;

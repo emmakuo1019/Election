@@ -19,13 +19,12 @@ public class PlayerController : MonoBehaviour
     public InputActionReference dashAction;
 
     [Header("Animation")]
-    public Animator characterAnimator;   // 拖入 player_female 的 Animator
+    public Animator characterAnimator;
 
     public event Action<Vector3> OnDirectionChanged;
     public Vector3 LastMoveDirection { get; private set; } = Vector3.forward;
     public bool    IsDashing         { get; private set; }
 
-    // Animator parameter hashes（比字串快）
     private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
     private static readonly int HashDash     = Animator.StringToHash("dash");
 
@@ -50,6 +49,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (IsDashing) return;
         HandleMovement();
     }
 
