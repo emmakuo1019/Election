@@ -38,8 +38,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private CharacterController characterController;
     private CinemachineImpulseSource impulseSource;
     private VoterLogic currentTarget;
-    private bool isFrozenByHitStop;
-    private float lastAttackTime;
     private Vector3 lastMoveDirection = Vector3.forward;
 
     public float AttackRange => attackRange;
@@ -60,12 +58,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
     private void Update()
     {
-        if (isFrozenByHitStop)
-        {
-            characterAnimator?.SetBool(HashIsMoving, false);
-            return;
-        }
-
         if (currentTarget == null || !IsValidTarget(currentTarget))
         {
             characterAnimator?.SetBool(HashIsMoving, false);
@@ -113,9 +105,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         while (true)
         {
-            if (!isFrozenByHitStop)
-                currentTarget = FindNearestEnemyVoter();
-
             yield return wait;
         }
     }
@@ -166,10 +155,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     }
     private void TryAttack()
     {
-        if (Time.time < lastAttackTime + attackCooldown)
-            return;
-
-        lastAttackTime = Time.time;
         PerformAttack();
     }
 
@@ -212,14 +197,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         impulseSource?.GenerateImpulse();
     }
-
-    private void OnHitStopChanged(bool frozen)
-    {
-        isFrozenByHitStop = frozen;
-        if (frozen)
-            characterAnimator?.SetBool(HashIsMoving, false);
-    }
-
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;

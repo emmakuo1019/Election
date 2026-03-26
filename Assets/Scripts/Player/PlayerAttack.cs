@@ -5,8 +5,6 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour, IAttackSource
 {
-    private PlayerController playerController;
-
     [Header("Input")]
     public InputActionReference attackAction;
 
@@ -27,32 +25,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     [Header("Layer")]
     public LayerMask voterLayer;
+    
+    private Animator characterAnimator;
 
     void Awake()
     {
-        playerController = GetComponent<PlayerController>();
+        
         impulseSource = GetComponent<CinemachineImpulseSource>();
-    }
-
-    void OnEnable()
-    {
-        if (playerController != null)
-            playerController.OnDirectionChanged += OnDirectionChanged;
-
-        if (attackAction != null)
-            attackAction.action.performed += OnAttackInput;
-
-        // 初始化推送
-        OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
-    }
-
-    void OnDisable()
-    {
-        if (playerController != null)
-            playerController.OnDirectionChanged -= OnDirectionChanged;
-
-        if (attackAction != null)
-            attackAction.action.performed -= OnAttackInput;
     }
 
     private void OnAttackInput(InputAction.CallbackContext context)
@@ -64,12 +43,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         if (attackRangeMesh != null)
             attackRangeMesh.ShowIdle();
-    }
-
-    private void OnDirectionChanged(Vector3 dir)
-    {
-        if (attackRangeMesh != null)
-            attackRangeMesh.transform.rotation = Quaternion.LookRotation(dir);
     }
 
     public float AttackRange => attackRange;
@@ -85,14 +58,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public void PerformSpeech()
     {
         OnAttackPerformed?.Invoke();
-
-        playerController?.characterAnimator?.SetTrigger(HashAttack);
-
         attackRangeMesh?.Show();
-
-        Vector3 attackDir = playerController != null
-            ? playerController.LastMoveDirection
-            : transform.forward;
 
         bool hitAny = false;
 
@@ -107,12 +73,10 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
-
-                if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
-                {
+                
                     voter.OnInfluence(attackInfluence, false, transform.position);
                     hitAny = true;
-                }
+                
             }
         }
 
