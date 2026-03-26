@@ -69,8 +69,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void PerformSpeech()
     {
-        OnAttackPerformed?.Invoke();
+        if (!SceneContext.IsLevelScene())
+        {
+            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
+            return;
+        }
 
+        OnAttackPerformed?.Invoke();
         characterAnimator?.SetTrigger(HashAttack);
         attackRangeMesh?.Show();
 
