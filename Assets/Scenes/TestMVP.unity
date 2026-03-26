@@ -1214,6 +1214,14 @@ PrefabInstance:
       propertyPath: m_WasSpriteAssigned
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4772087986091062864, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: partyUnlocked
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4772087986091062864, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: speechUnlocked
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5403555500550337343, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_Name
       value: player

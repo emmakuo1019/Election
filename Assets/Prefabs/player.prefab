@@ -213,8 +213,10 @@ GameObject:
   - component: {fileID: 791982393808381288}
   - component: {fileID: 2547561403663121926}
   - component: {fileID: 4301370479251906322}
+  - component: {fileID: 4772087986091062864}
   - component: {fileID: 3641732488253732350}
   - component: {fileID: 8545510738008723634}
+  - component: {fileID: 6143106577950043542}
   - component: {fileID: 1828503832510186331}
   - component: {fileID: 8606236126724025911}
   m_Layer: 0
@@ -322,6 +324,24 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: -1.49, y: 0, z: 0}
+--- !u!114 &4772087986091062864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5403555500550337343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd53237be1feb468badbe7bbdd541f8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speechAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  partyAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  speechUnlocked: 0
+  partyUnlocked: 0
+  speechAttack: {fileID: 8545510738008723634}
+  partySkillAttack: {fileID: 6143106577950043542}
 --- !u!114 &3641732488253732350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -361,6 +381,18 @@ MonoBehaviour:
   voterLayer:
     serializedVersion: 2
     m_Bits: 64
+--- !u!114 &6143106577950043542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5403555500550337343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc8f3a0c582c34ef6828cda7bbdbd833, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!95 &1828503832510186331
 Animator:
   serializedVersion: 7
