@@ -22,23 +22,26 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
 
     [Header("顯示")]
     [SerializeField] private AttackRangeMesh attackRangeMesh;
+
+    [Header("Layer")]
+    [SerializeField] private LayerMask voterLayer;
+
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
+    private PlayerController playerController;
 
     public event Action<float, float> OnAttackShapeChanged;
 
     private static readonly int HashPartyAttack = Animator.StringToHash("partyAttack");
 
-    [Header("Layer")]
-    public LayerMask voterLayer;
-
     private PlayerSkillManager.PartySkillType currentSkill = PlayerSkillManager.PartySkillType.None;
-    private float lastSkillTime;
+    private float lastSkillTime = -999f;
 
     void Awake()
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
+        playerController = GetComponent<PlayerController>();
     }
 
     void Start()
@@ -94,13 +97,13 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             return;
         }
 
-        float cooldown = currentSkill == PlayerSkillManager.PartySkillType.PolicyDebate 
-            ? policyCooldown 
+        float cooldown = currentSkill == PlayerSkillManager.PartySkillType.PolicyDebate
+            ? policyCooldown
             : emotionalCooldown;
 
         if (Time.time < lastSkillTime + cooldown)
         {
-            Debug.LogWarning($"⏳ 技能冷卻中... {(lastSkillTime + cooldown - Time.time):F1}秒");
+            Debug.LogWarning($"⏳ 技能冷卻中... {(lastSkillTime + cooldown - Time.time):F1} 秒");
             return;
         }
 
@@ -111,6 +114,7 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             case PlayerSkillManager.PartySkillType.PolicyDebate:
                 PerformPolicyDebate();
                 break;
+
             case PlayerSkillManager.PartySkillType.EmotionalStirring:
                 PerformEmotionalStirring();
                 break;
@@ -119,13 +123,13 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
 
     private void PerformPolicyDebate()
     {
-        Debug.Log("[PartySkill] 執行: 政策論述");
+        Debug.Log("🗣️ [PartySkill] 執行: 政策論述");
 
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
 
-        Vector3 attackDir = transform.forward;
-        bool hitAny = false;
+        Vector3 attackDir = GetAttackDirection();
+        int hitCount = 0;
 
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
@@ -141,18 +145,30 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
 
                 if (Vector3.Angle(attackDir, dirToTarget) < policyAngle / 2f)
                 {
-                    voter.OnInfluence(policyInfluence, false, transform.position);
-                    hitAny = true;
+                    voter.OnInfluence(policyInfluence, true, transform.position);
+                    hitCount++;
                 }
             }
         }
 
-        if (hitAny)
+        if (hitCount > 0)
         {
             impulseSource?.GenerateImpulse();
-        }
 
-        // TODO: 增加全域變數影響 (理性立場+)
+            // 玩家自身立場（如果你有 CampaignManager）----------------------------------
+            //if (CampaignManager.Instance != null)
+            //{
+              //  CampaignManager.Instance.AddRationalism(hitCount);
+            //}
+
+            // 全球社會風氣
+            if (SocialAtmosphereManager.Instance != null)
+            {
+                SocialAtmosphereManager.Instance.OnSkillUsed(true, hitCount);
+            }
+
+            Debug.Log($"📊 政策論述命中 {hitCount} 名選民");
+        }
     }
 
     private void PerformEmotionalStirring()
@@ -162,8 +178,8 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
 
-        Vector3 attackDir = transform.forward;
-        bool hitAny = false;
+        Vector3 attackDir = GetAttackDirection();
+        int hitCount = 0;
 
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
@@ -179,18 +195,38 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
 
                 if (Vector3.Angle(attackDir, dirToTarget) < emotionalAngle / 2f)
                 {
-                    voter.OnInfluence(emotionalInfluence, false, transform.position);
-                    hitAny = true;
+                    voter.OnInfluence(emotionalInfluence, true, transform.position);
+                    hitCount++;
                 }
             }
         }
 
-        if (hitAny)
+        if (hitCount > 0)
         {
             impulseSource?.GenerateImpulse();
-        }
 
-        // 增加全域變數影響 (情感立場+)
+            // 玩家自身立場（如果你有 CampaignManager）----------------------
+            //if (CampaignManager.Instance != null)
+            //{
+              //  CampaignManager.Instance.AddEmotion(hitCount);
+            //}
+
+            // 全球社會風氣
+            if (SocialAtmosphereManager.Instance != null)
+            {
+                SocialAtmosphereManager.Instance.OnSkillUsed(false, hitCount);
+            }
+
+            Debug.Log($"煽動情緒命中 {hitCount} 名選民");
+        }
+    }
+
+    private Vector3 GetAttackDirection()
+    {
+        if (playerController != null && playerController.LastMoveDirection != Vector3.zero)
+            return playerController.LastMoveDirection;
+
+        return transform.forward;
     }
 
     private void UpdateAttackShape()

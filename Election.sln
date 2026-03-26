@@ -87,9 +87,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Navigation.Updater
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityEditor.UI", "UnityEditor.UI.csproj", "{dfddf479-6d73-cc35-398b-ee5b616f5d15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Navigation.Editor", "Unity.AI.Navigation.Editor.csproj", "{cf76135e-2411-0dff-3f3e-9a144d36380c}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{9c76e3b7-5270-f0b9-9c14-5306b7b541db}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.AI.Navigation.Editor", "Unity.AI.Navigation.Editor.csproj", "{cf76135e-2411-0dff-3f3e-9a144d36380c}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.2D.Sprite.Editor", "Unity.2D.Sprite.Editor.csproj", "{8c36212e-085f-b9f2-5c6a-2a04a4c0998c}"
 EndProject
@@ -288,10 +288,10 @@ Global
 		{186d01b4-fb9e-453d-488c-e9200b547353}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{dfddf479-6d73-cc35-398b-ee5b616f5d15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{dfddf479-6d73-cc35-398b-ee5b616f5d15}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{cf76135e-2411-0dff-3f3e-9a144d36380c}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{cf76135e-2411-0dff-3f3e-9a144d36380c}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9c76e3b7-5270-f0b9-9c14-5306b7b541db}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9c76e3b7-5270-f0b9-9c14-5306b7b541db}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{cf76135e-2411-0dff-3f3e-9a144d36380c}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{cf76135e-2411-0dff-3f3e-9a144d36380c}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8c36212e-085f-b9f2-5c6a-2a04a4c0998c}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8c36212e-085f-b9f2-5c6a-2a04a4c0998c}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{b65f812e-aa7c-75bf-790b-2a9ba6bcf8bb}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
