@@ -69,6 +69,18 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void PerformSpeech()
     {
+        if (LevelTimer.Instance != null && LevelTimer.Instance.IsTimeUp)
+        {
+            Debug.LogWarning("⏰ 時間已用完，無法進行攻擊！");
+            return;
+        }
+
+        if (!SceneContext.IsLevelScene())
+        {
+            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
+            return;
+        }
+        
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
