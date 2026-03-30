@@ -70,6 +70,12 @@ public class PlayerController : MonoBehaviour
                 OnDirectionChanged?.Invoke(LastMoveDirection);
             }
         }
+        else if (movement.sqrMagnitude > 0.01f)  // 即使不移動也更新方向
+        {
+            Vector3 newDir = movement.normalized;
+            LastMoveDirection = newDir;
+            OnDirectionChanged?.Invoke(LastMoveDirection);
+        }
 
         charCon.Move(movement * moveSpeed * Time.deltaTime);
     }

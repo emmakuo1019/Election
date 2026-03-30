@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour, IAttackSource
 {
+    private PlayerController playerController;
+
     [Header("Input")]
     public InputActionReference attackAction;
 
@@ -16,7 +18,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
-    private Animator characterAnimator;
+
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
@@ -28,20 +30,27 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     void Awake()
     {
+        playerController = GetComponent<PlayerController>();
         impulseSource = GetComponent<CinemachineImpulseSource>();
-        characterAnimator = GetComponent<Animator>();
     }
 
     void OnEnable()
     {
+        if (playerController != null)
+            playerController.OnDirectionChanged += OnDirectionChanged;
+
         if (attackAction != null)
             attackAction.action.performed += OnAttackInput;
 
+        // 初始化推送
         OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
     }
 
     void OnDisable()
     {
+        if (playerController != null)
+            playerController.OnDirectionChanged -= OnDirectionChanged;
+
         if (attackAction != null)
             attackAction.action.performed -= OnAttackInput;
     }
@@ -57,6 +66,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             attackRangeMesh.ShowIdle();
     }
 
+    private void OnDirectionChanged(Vector3 dir)
+    {
+        if (attackRangeMesh != null)
+            attackRangeMesh.transform.rotation = Quaternion.LookRotation(dir);
+    }
+
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
 
@@ -69,29 +84,16 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void PerformSpeech()
     {
-        if (LevelTimer.Instance != null && LevelTimer.Instance.IsTimeUp)
-        {
-            Debug.LogWarning("⏰ 時間已用完，無法進行攻擊！");
-            return;
-        }
-
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
-            return;
-        }
-        
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
-            return;
-        }
-
         OnAttackPerformed?.Invoke();
-        characterAnimator?.SetTrigger(HashAttack);
+
+        playerController?.characterAnimator?.SetTrigger(HashAttack);
+
         attackRangeMesh?.Show();
 
-        Vector3 attackDir = transform.forward;
+        Vector3 attackDir = playerController != null
+            ? playerController.LastMoveDirection
+            : transform.forward;
+
         bool hitAny = false;
 
         Collider[] hits = Physics.OverlapSphere(
@@ -118,5 +120,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         {
             impulseSource?.GenerateImpulse();
         }
-    }
+        
+    }  
 }
