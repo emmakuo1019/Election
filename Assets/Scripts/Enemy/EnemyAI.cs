@@ -39,6 +39,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private VoterLogic currentTarget;
     private float lastAttackTime;
     private Vector3 lastMoveDirection = Vector3.forward;
+    private bool isGameActive = true;
 
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
@@ -47,6 +48,29 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     {
         characterController = GetComponent<CharacterController>();
         impulseSource = GetComponent<CinemachineImpulseSource>();
+    }
+    
+    private void OnEnable()
+    {
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
+    }
+
+    private void OnGameEnd()
+    {
+        isGameActive = false;
+        characterAnimator?.SetBool(HashIsMoving, false);
+        Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
     }
 
     private void Start()
@@ -58,6 +82,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
     private void Update()
     {
+        if (!isGameActive)
+            return;
         if (currentTarget == null || !IsValidTarget(currentTarget))
         {
             characterAnimator?.SetBool(HashIsMoving, false);

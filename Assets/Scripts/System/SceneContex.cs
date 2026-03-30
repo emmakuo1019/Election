@@ -24,7 +24,7 @@ public class SceneContext : MonoBehaviour
         {
             "S0" => SceneType.Menu,
             "S1" => SceneType.Intro,
-            "TestMVP ,TestMVP02" => SceneType.Level,
+            "TestMVP,TestMVP02" => SceneType.Level,
             "headquarters" => SceneType.Headquarters,
             _ => SceneType.Menu
         };
