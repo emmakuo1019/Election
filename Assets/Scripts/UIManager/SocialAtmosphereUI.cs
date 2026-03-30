@@ -9,8 +9,6 @@ using UnityEngine.UI;
 public class SocialAtmosphereUI : MonoBehaviour
 {
     [SerializeField] private Slider atmosphereSlider;
-    [SerializeField] private TMP_Text atmosphereValueText;
-    [SerializeField] private TMP_Text atmosphereDescText;
     [SerializeField] private Image atmosphereBarColor;
 
     private Color rationalColor = Color.green;
@@ -26,8 +24,7 @@ public class SocialAtmosphereUI : MonoBehaviour
             return;
         }
 
-        if (atmosphereSlider == null || atmosphereValueText == null ||
-            atmosphereDescText == null || atmosphereBarColor == null)
+        if (atmosphereSlider == null || atmosphereBarColor == null)
         {
             Debug.LogError("❌ SocialAtmosphereUI 有 UI 元件未指定！");
             enabled = false;
@@ -56,8 +53,6 @@ public class SocialAtmosphereUI : MonoBehaviour
         SocialAtmosphereManager mgr = SocialAtmosphereManager.Instance;
 
         atmosphereSlider.value = mgr.AtmosphereNormalized;
-        atmosphereValueText.text = $"{mgr.SocialAtmosphere} / {mgr.MaxAtmosphere}";
-        atmosphereDescText.text = mgr.GetAtmosphereDescription();
 
         float intensity = Mathf.Abs(mgr.SocialAtmosphere) / (float)mgr.MaxAtmosphere;
 

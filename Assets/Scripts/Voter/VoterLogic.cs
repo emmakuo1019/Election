@@ -26,7 +26,7 @@ public class VoterLogic : MonoBehaviour
     private Animator anim;
 
     private bool isKnockedBack;
-    private bool isFrozenByHitStop;
+    private bool isGameActive = true;
 
     void Awake()
     {
@@ -37,6 +37,40 @@ public class VoterLogic : MonoBehaviour
         agent.speed = moveSpeed;
         agent.angularSpeed = 0f;
         agent.updateRotation = false;
+    }
+    
+    private void OnEnable()
+    {
+        // 訂閱計時結束事件
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        }
+    }
+
+    private void OnDisable()
+    {
+        // 取消訂閱
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
+    }
+
+    /// <summary>
+    /// 遊戲結束時停止選民
+    /// </summary>
+    private void OnGameEnd()
+    {
+        isGameActive = false;
+    
+        // 停止 NavMeshAgent
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+        }
+    
+        Debug.Log($"🛑 [{gameObject.name}] 遊戲結束，選民停止動作");
     }
 
     void Start()
@@ -90,6 +124,10 @@ public class VoterLogic : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(Random.Range(wanderIntervalMin, wanderIntervalMax));
+
+            // ✅ 新增：檢查遊戲是否結束
+            if ( isGameActive == false)
+                continue;
 
             if (!isKnockedBack && !data.isConverted && agent.isOnNavMesh)
             {

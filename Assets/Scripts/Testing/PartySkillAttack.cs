@@ -85,6 +85,18 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
 
     public void PerformPartySkill()
     {
+        if (LevelTimer.Instance != null && LevelTimer.Instance.IsTimeUp)
+        {
+            Debug.LogWarning("⏰ 時間已用完，無法使用技能！");
+            return;
+        }
+
+        if (!SceneContext.IsLevelScene())
+        {
+            Debug.LogWarning("⚠️ 只能在關卡中使用政黨技能！");
+            return;
+        }
+        
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中使用政黨技能！");
