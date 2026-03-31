@@ -74,8 +74,17 @@ public class VoterLogic : MonoBehaviour
     {
         if (Mathf.Abs(data.currentPosition) >= VoterConfig.MAX_POS)
         {
+            // 轉化前的陣營
+            int oldSide = data.convertedSide;
+        
             data.isConverted = true;
             data.convertedSide = data.currentPosition > 0 ? 1 : -1;
+
+            // 只有在首次轉化時才計票
+            if (oldSide != data.convertedSide && oldSide == 0)
+            {
+                VoteManager.Instance?.AddVote(data.convertedSide);
+            }
         }
         else
         {

@@ -10,7 +10,7 @@ public class SceneContext : MonoBehaviour
     {
         Menu,           // S0 - 主菜單
         Intro,          // S1 - 劇情介紹
-        Level,          // TestMVP - 真正的關卡
+        Level,          // 真正的關卡
         Headquarters    // 總部
     }
 
@@ -24,7 +24,8 @@ public class SceneContext : MonoBehaviour
         {
             "S0" => SceneType.Menu,
             "S1" => SceneType.Intro,
-            "TestMVP,TestMVP02" => SceneType.Level,
+            "TestMVP" => SceneType.Level,
+            "TestMVP02" => SceneType.Level,
             "headquarters" => SceneType.Headquarters,
             _ => SceneType.Menu
         };
