@@ -5119,7 +5119,7 @@ MonoBehaviour:
   wanderRadius: 6
   wanderIntervalMin: 2
   wanderIntervalMax: 5
-  moveSpeed: 2
+  moveSpeed: 3
   knockbackDistance: 1.2
   knockbackDuration: 0.25
 --- !u!114 &5396591549920925665
@@ -5155,8 +5155,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 9e758346486b146cfbb6ab29360fd0bf, type: 2}
   currentPosition: -1
   isConverted: 0
-  attentionBar: 0
-  influenceCount: 0
+  convertedSide: 0
 --- !u!195 &1022887108545879583
 NavMeshAgent:
   m_ObjectHideFlags: 0

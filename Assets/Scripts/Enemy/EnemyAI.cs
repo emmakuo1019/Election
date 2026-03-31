@@ -40,6 +40,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private float lastAttackTime;
     private Vector3 lastMoveDirection = Vector3.forward;
     private bool isGameActive = true;
+    private Coroutine targetingCoroutine;
 
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
@@ -49,7 +50,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         characterController = GetComponent<CharacterController>();
         impulseSource = GetComponent<CinemachineImpulseSource>();
     }
-    
+
     private void OnEnable()
     {
         if (LevelTimer.Instance != null)
@@ -66,24 +67,19 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         }
     }
 
-    private void OnGameEnd()
-    {
-        isGameActive = false;
-        characterAnimator?.SetBool(HashIsMoving, false);
-        Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
-    }
-
     private void Start()
     {
         OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
         attackRangeMesh?.ShowIdle();
-        StartCoroutine(TargetingRoutine());
+
+        targetingCoroutine = StartCoroutine(TargetingRoutine());
     }
 
     private void Update()
     {
         if (!isGameActive)
             return;
+
         if (currentTarget == null || !IsValidTarget(currentTarget))
         {
             characterAnimator?.SetBool(HashIsMoving, false);
@@ -122,11 +118,27 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         }
     }
 
+    private void OnGameEnd()
+    {
+        isGameActive = false;
+        currentTarget = null;
+
+        if (targetingCoroutine != null)
+        {
+            StopCoroutine(targetingCoroutine);
+            targetingCoroutine = null;
+        }
+
+        characterAnimator?.SetBool(HashIsMoving, false);
+
+        Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
+    }
+
     private IEnumerator TargetingRoutine()
     {
         WaitForSeconds wait = new WaitForSeconds(targetRefreshInterval);
 
-        while (true)
+        while (isGameActive)
         {
             currentTarget = FindNearestEnemyVoter();
             yield return wait;
@@ -177,6 +189,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
     private void TryAttack()
     {
+        if (!isGameActive) return;
+
         if (Time.time < lastAttackTime + attackCooldown)
             return;
 
@@ -186,6 +200,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
     private void PerformAttack()
     {
+        if (!isGameActive) return;
+
         characterAnimator?.SetTrigger(HashAttack);
         attackRangeMesh?.Show();
 

@@ -27,6 +27,8 @@ public class VoterLogic : MonoBehaviour
 
     private bool isKnockedBack;
     private bool isFrozenByHitStop;
+    private bool isGameActive = true;
+    private Coroutine wanderCoroutine;
 
     void Awake()
     {
@@ -39,14 +41,50 @@ public class VoterLogic : MonoBehaviour
         agent.updateRotation = false;
     }
 
+    private void OnEnable()
+    {
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
+    }
+
     void Start()
     {
-        StartCoroutine(WanderRoutine());
+        wanderCoroutine = StartCoroutine(WanderRoutine());
+    }
+
+    private void OnGameEnd()
+    {
+        isGameActive = false;
+
+        if (wanderCoroutine != null)
+        {
+            StopCoroutine(wanderCoroutine);
+            wanderCoroutine = null;
+        }
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        Debug.Log("🛑 [VoterLogic] 遊戲結束，選民停止移動");
     }
 
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default)
     {
-        // ❌ 刪掉 isConverted 鎖死
+        if (!isGameActive) return;
+
         if (data.Tag == VoterTag.HatePolitics && !isSkill) return;
 
         int finalAmount = (data.Tag == VoterTag.DontKnow) ? amount * 2 : amount;
@@ -56,7 +94,6 @@ public class VoterLogic : MonoBehaviour
             VoterConfig.MIN_POS,
             VoterConfig.MAX_POS);
 
-        // ⭐ 更新陣營狀態（可逆）
         UpdateConversionState();
 
         OnPositionChanged?.Invoke(data.currentPosition);
@@ -74,13 +111,11 @@ public class VoterLogic : MonoBehaviour
     {
         if (Mathf.Abs(data.currentPosition) >= VoterConfig.MAX_POS)
         {
-            // 轉化前的陣營
             int oldSide = data.convertedSide;
-        
+
             data.isConverted = true;
             data.convertedSide = data.currentPosition > 0 ? 1 : -1;
 
-            // 只有在首次轉化時才計票
             if (oldSide != data.convertedSide && oldSide == 0)
             {
                 VoteManager.Instance?.AddVote(data.convertedSide);
@@ -88,7 +123,6 @@ public class VoterLogic : MonoBehaviour
         }
         else
         {
-            // ⭐ 離開極值 → 取消轉化
             data.isConverted = false;
             data.convertedSide = 0;
         }
@@ -96,9 +130,11 @@ public class VoterLogic : MonoBehaviour
 
     private IEnumerator WanderRoutine()
     {
-        while (true)
+        while (isGameActive)
         {
             yield return new WaitForSeconds(Random.Range(wanderIntervalMin, wanderIntervalMax));
+
+            if (!isGameActive) yield break;
 
             if (!isKnockedBack && !data.isConverted && agent.isOnNavMesh)
             {
@@ -123,6 +159,8 @@ public class VoterLogic : MonoBehaviour
 
     private IEnumerator KnockbackRoutine(Vector3 direction)
     {
+        if (!isGameActive) yield break;
+
         isKnockedBack = true;
         if (agent.isOnNavMesh) agent.isStopped = true;
 
@@ -136,13 +174,17 @@ public class VoterLogic : MonoBehaviour
 
         while (elapsed < knockbackDuration)
         {
+            if (!isGameActive) yield break;
+
             elapsed += Time.deltaTime;
             float t = elapsed / knockbackDuration;
             agent.Warp(Vector3.Lerp(startPos, targetPos, t));
             yield return null;
         }
 
-        if (agent.isOnNavMesh) agent.isStopped = false;
+        if (agent.isOnNavMesh)
+            agent.isStopped = false;
+
         isKnockedBack = false;
     }
 }

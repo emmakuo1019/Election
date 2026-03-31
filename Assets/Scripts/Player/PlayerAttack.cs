@@ -39,7 +39,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             attackAction.action.performed += OnAttackInput;
 
         OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
-        
+
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
@@ -50,13 +50,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         if (attackAction != null)
             attackAction.action.performed -= OnAttackInput;
-        
+
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
         }
     }
-    
+
     private void OnGameEnd()
     {
         isGameActive = false;
@@ -65,6 +65,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private void OnAttackInput(InputAction.CallbackContext context)
     {
+        if (!isGameActive) return;
         PerformSpeech();
     }
 
@@ -86,10 +87,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void PerformSpeech()
     {
-        
         if (!isGameActive)
             return;
-        
+
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");

@@ -31,6 +31,7 @@ public class PlayerSkillManager : MonoBehaviour
     public bool SpeechUnlocked => speechUnlocked;
     public PartySkillType SelectedPartySkill => selectedPartySkill;
     public bool HasPartySkill => selectedPartySkill != PartySkillType.None;
+    private bool isGameActive = true;
 
     private void OnEnable()
     {
@@ -44,6 +45,10 @@ public class PlayerSkillManager : MonoBehaviour
         {
             partySelectAction.action.started += OnPartySelectStarted;
             partySelectAction.action.canceled += OnPartySelectCanceled;
+        }
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
         }
     }
 
@@ -60,6 +65,18 @@ public class PlayerSkillManager : MonoBehaviour
             partySelectAction.action.started -= OnPartySelectStarted;
             partySelectAction.action.canceled -= OnPartySelectCanceled;
         }
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
+    }
+    
+    private void OnGameEnd()
+    {
+        isGameActive = false;
+        isHolding = false;
+        holdTimer = 0f;
+        Debug.Log("🛑 [PlayerSkillManager] 遊戲結束，技能禁用");
     }
 
     private void Update()
@@ -126,6 +143,8 @@ public class PlayerSkillManager : MonoBehaviour
 
     public void UseSpeech()
     {
+        if (!isGameActive)
+            return;
         // 檢查場景
         if (!SceneContext.IsLevelScene())
         {
@@ -150,6 +169,8 @@ public class PlayerSkillManager : MonoBehaviour
 
     public void UsePartySkill()
     {
+        if (!isGameActive)
+            return;
         // 檢查場景
         if (!SceneContext.IsLevelScene())
         {

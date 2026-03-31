@@ -1,48 +1,74 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 
 /// <summary>
 /// 計時 UI 顯示
-/// 在遊戲畫面顯示倒計時和進度條
+/// 在遊戲畫面顯示倒計時
 /// </summary>
 public class LevelTimerUI : MonoBehaviour
 {
-    [SerializeField] private TMP_Text timerText;        // 顯示 MM:SS
+    [SerializeField] private TMP_Text timerText;
+    private bool hasSubscribed = false;
 
     private void Start()
     {
+        SubscribeToTimer();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromTimer();
+    }
+
+    private void SubscribeToTimer()
+    {
+        if (hasSubscribed) return;
+
         if (LevelTimer.Instance == null)
         {
-            Debug.LogError("❌ LevelTimer 未初始化！");
-            enabled = false;
+            Debug.LogError("❌ 場景中找不到 LevelTimer，請確認此關卡有放置 LevelTimer");
             return;
         }
 
         LevelTimer.Instance.OnTimerTick += OnTimerTick;
         LevelTimer.Instance.OnTimerEnd += OnTimerEnd;
+        hasSubscribed = true;
+
+        RefreshTimerDisplay();
+
+        Debug.Log("✅ LevelTimerUI 已訂閱計時事件");
     }
 
-    private void OnDestroy()
+    private void UnsubscribeFromTimer()
     {
+        if (!hasSubscribed) return;
+
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerTick -= OnTimerTick;
             LevelTimer.Instance.OnTimerEnd -= OnTimerEnd;
         }
+
+        hasSubscribed = false;
     }
 
     private void OnTimerTick(float timeRemaining, float totalTime)
     {
-        // 更新文字 (MM:SS 格式)
-        int minutes = Mathf.FloorToInt(timeRemaining / 60f);
-        int seconds = Mathf.FloorToInt(timeRemaining % 60f);
-        timerText.text = $"{minutes:00}:{seconds:00}";
+        RefreshTimerDisplay();
     }
 
     private void OnTimerEnd()
     {
-        timerText.text = "00:00";
+        if (timerText != null)
+            timerText.text = "00:00";
+
         Debug.Log("⏰ 時間用完！");
+    }
+
+    private void RefreshTimerDisplay()
+    {
+        if (timerText == null || LevelTimer.Instance == null) return;
+
+        timerText.text = LevelTimer.Instance.GetFormattedTime();
     }
 }
