@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3434cf435ca834b85886e773060f7766, type: 3}
+  m_Name: test02
+  m_EditorClassIdentifier: 
+  cardName: "\u8A71\u8853\u5F37\u5316 "
+  description: "\u4F60\u7684\u8AD6\u8FF0\u66F4\u5177\u8AAA\u670D\u529B\uFF0C\u6F14\u8AAA\u6548\u679C\u63D0\u5347\u3002"
+  upgradeType: 0
+  value: 3

@@ -1,22 +1,15 @@
 using UnityEngine;
 
-public enum PolicyCardType
-{
-    SpeechRangeUp,
-    SpeechPowerUp,
-    PartyCooldownDown,
-    PolicyDebateRangeUp,
-    EmotionalRangeUp,
-    VoteBonus
-}
-
 [CreateAssetMenu(fileName = "PolicyCard", menuName = "Game/Policy Card")]
 public class PolicyCardData : ScriptableObject
 {
+    [Header("基本資料")]
     public string cardName;
-    [TextArea] public string description;
-    public Sprite icon;
 
-    public PolicyCardType cardType;
-    public float value;
+    [TextArea(2, 5)]
+    public string description;
+
+    [Header("效果資料")]
+    public PolicyUpgradeType upgradeType;
+    public float value = 1f;
 }

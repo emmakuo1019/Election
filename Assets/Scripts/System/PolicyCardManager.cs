@@ -3,31 +3,21 @@ using UnityEngine;
 
 public class PolicyCardManager : MonoBehaviour
 {
-    public static PolicyCardManager Instance { get; private set; }
-
-    [SerializeField] private List<PolicyCardData> allCards = new();
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-    }
+    [Header("所有可抽政策卡")]
+    public List<PolicyCardData> allCards = new List<PolicyCardData>();
 
     public List<PolicyCardData> GetRandomCards(int count)
     {
-        List<PolicyCardData> pool = new List<PolicyCardData>(allCards);
         List<PolicyCardData> result = new List<PolicyCardData>();
+        List<PolicyCardData> tempPool = new List<PolicyCardData>(allCards);
 
-        for (int i = 0; i < count && pool.Count > 0; i++)
+        int drawCount = Mathf.Min(count, tempPool.Count);
+
+        for (int i = 0; i < drawCount; i++)
         {
-            int index = Random.Range(0, pool.Count);
-            result.Add(pool[index]);
-            pool.RemoveAt(index);
+            int randomIndex = Random.Range(0, tempPool.Count);
+            result.Add(tempPool[randomIndex]);
+            tempPool.RemoveAt(randomIndex);
         }
 
         return result;

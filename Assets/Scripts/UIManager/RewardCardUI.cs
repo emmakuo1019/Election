@@ -20,7 +20,6 @@ public class RewardCardUI : MonoBehaviour
 
         titleText.text = card.cardName;
         descriptionText.text = card.description;
-        iconImage.sprite = card.icon;
 
         selectButton.onClick.RemoveAllListeners();
         selectButton.onClick.AddListener(() => onSelected?.Invoke(currentCard));
