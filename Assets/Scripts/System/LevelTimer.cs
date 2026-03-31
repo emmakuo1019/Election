@@ -16,6 +16,7 @@ public class LevelTimer : MonoBehaviour
     [SerializeField] private float remainingTime;
     [SerializeField] private bool isActive = false;
     [SerializeField] private bool isTimeUp = false;
+    [SerializeField] private RewardPanelController rewardPanelController;
 
     public delegate void TimerEventDelegate();
     public delegate void TimerTickDelegate(float timeRemaining, float totalTime);
@@ -71,6 +72,11 @@ public class LevelTimer : MonoBehaviour
             OnTimeUpFinal?.Invoke();
 
             Debug.Log("⏰ [LevelTimer] 時間結束！");
+
+            if (rewardPanelController != null)
+            {
+                rewardPanelController.ShowRewardPanel();
+            }
         }
     }
 
@@ -88,8 +94,6 @@ public class LevelTimer : MonoBehaviour
 
         OnTimerStart?.Invoke();
         OnTimerTick?.Invoke(remainingTime, levelDuration);
-
-        Debug.Log($"⏱️ [LevelTimer] 計時開始（{levelDuration} 秒）");
     }
 
     public void PauseTimer()
@@ -111,15 +115,6 @@ public class LevelTimer : MonoBehaviour
 
         isActive = true;
         Debug.Log("▶️ [LevelTimer] 計時繼續");
-    }
-
-    public void ResetTimer()
-    {
-        isActive = false;
-        isTimeUp = false;
-        remainingTime = levelDuration;
-        OnTimerTick?.Invoke(remainingTime, levelDuration);
-        Debug.Log("🔄 [LevelTimer] 計時已重置");
     }
 
     public string GetFormattedTime()

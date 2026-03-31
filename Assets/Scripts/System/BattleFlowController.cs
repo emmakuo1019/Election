@@ -15,7 +15,7 @@ public class BattleFlowController : MonoBehaviour
 
     [Header("引用")]
     [SerializeField] private LevelTimer levelTimer;
-    [SerializeField] private UpgradeRewardUI rewardUI;
+    [SerializeField] private RewardPanelController rewardUI;
     [SerializeField] private RoomExitController roomExitController;
 
     public BattleState CurrentState { get; private set; } = BattleState.WaitingStart;
@@ -69,7 +69,7 @@ public class BattleFlowController : MonoBehaviour
         {
             CurrentState = BattleState.RewardSelecting;
             Debug.Log("🏆 [BattleFlow] 玩家獲勝，進入選卡階段");
-            rewardUI?.OpenRewardPanel();
+            rewardUI?.ShowRewardPanel();
         }
         else
         {
