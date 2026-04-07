@@ -9,7 +9,15 @@ public class PolicyCardManager : MonoBehaviour
     public List<PolicyCardData> GetRandomCards(int count)
     {
         List<PolicyCardData> result = new List<PolicyCardData>();
-        List<PolicyCardData> tempPool = new List<PolicyCardData>(allCards);
+        List<PolicyCardData> tempPool = new List<PolicyCardData>();
+
+        foreach (PolicyCardData card in allCards)
+        {
+            if (card != null)
+            {
+                tempPool.Add(card);
+            }
+        }
 
         int drawCount = Mathf.Min(count, tempPool.Count);
 

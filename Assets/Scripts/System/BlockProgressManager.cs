@@ -29,6 +29,11 @@ public static class BlockProgressManager
         return PlayerPrefs.GetInt(ROOM_COUNT_KEY, 0);
     }
 
+    public static bool HasBlockProgress()
+    {
+        return PlayerPrefs.HasKey(MAX_ROOM_KEY);
+    }
+
     public static int GetMaxRooms()
     {
         return PlayerPrefs.GetInt(MAX_ROOM_KEY, 3);

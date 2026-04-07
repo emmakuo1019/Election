@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class UpgradePanelUI : MonoBehaviour
 {
@@ -13,8 +12,8 @@ public class UpgradePanelUI : MonoBehaviour
     [Header("UI - 主面板")]
     [SerializeField] private Button closeButton;
     [SerializeField] private Button speechButton;
-    [SerializeField] private TMP_Text speechStatusText;
-    [SerializeField] private TMP_Text partyStatusText;
+    [SerializeField] private Text speechStatusText;
+    [SerializeField] private Text partyStatusText;
 
     [Header("UI - 政黨技能選擇")]
     [SerializeField] private Button policyDebateButton;

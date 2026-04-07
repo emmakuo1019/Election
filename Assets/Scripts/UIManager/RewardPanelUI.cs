@@ -23,6 +23,15 @@ public class RewardPanelUI : MonoBehaviour
 
     private void Start()
     {
+        if (rewardBtn01 == null || rewardBtn02 == null || rewardBtn03 == null)
+        {
+            Debug.LogWarning("RewardPanelUI：按鈕引用未完整指定");
+            return;
+        }
+
+        rewardBtn01.onClick.RemoveAllListeners();
+        rewardBtn02.onClick.RemoveAllListeners();
+        rewardBtn03.onClick.RemoveAllListeners();
         rewardBtn01.onClick.AddListener(() => ClickRewardBtn(0));
         rewardBtn02.onClick.AddListener(() => ClickRewardBtn(1));
         rewardBtn03.onClick.AddListener(() => ClickRewardBtn(2));
@@ -38,6 +47,12 @@ public class RewardPanelUI : MonoBehaviour
         if (policyCardManager == null)
         {
             Debug.LogWarning("PolicyCardManager 沒有指定");
+            return;
+        }
+
+        if (rewardBtn01Text == null || rewardBtn02Text == null || rewardBtn03Text == null)
+        {
+            Debug.LogWarning("RewardPanelUI：按鈕文字引用未完整指定");
             return;
         }
 
@@ -68,6 +83,8 @@ public class RewardPanelUI : MonoBehaviour
 
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
         Debug.Log("卡片效果：" + selectedCard.upgradeType + " / 數值：" + selectedCard.value);
+
+        BattleFlowController.Instance?.OnRewardSelected();
 
         if (rewardPanelController != null)
         {

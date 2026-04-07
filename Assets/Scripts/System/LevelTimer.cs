@@ -42,6 +42,8 @@ public class LevelTimer : MonoBehaviour
         }
 
         Instance = this;
+        isActive = false;
+        isTimeUp = false;
         remainingTime = levelDuration;
     }
 
@@ -73,7 +75,9 @@ public class LevelTimer : MonoBehaviour
 
             Debug.Log("⏰ [LevelTimer] 時間結束！");
 
-            if (rewardPanelController != null)
+            // 若場景已由 BattleFlowController 接手結算，就不要在這裡直接跳獎勵，
+            // 避免重複顯示或在失敗時仍誤開獎勵面板。
+            if (BattleFlowController.Instance == null && rewardPanelController != null)
             {
                 rewardPanelController.ShowRewardPanel();
             }

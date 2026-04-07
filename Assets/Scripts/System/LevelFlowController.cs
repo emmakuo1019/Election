@@ -13,8 +13,20 @@ public class LevelFlowController : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        if (BlockProgressManager.IsLastRoomInBlock())
+        if (BlockProgressManager.HasBlockProgress() && BlockProgressManager.IsLastRoomInBlock())
         {
+            if (string.IsNullOrEmpty(mapSceneName))
+            {
+                Debug.LogWarning("大地圖場景名稱沒有設定");
+                return;
+            }
+
+            if (!Application.CanStreamedLevelBeLoaded(mapSceneName))
+            {
+                Debug.LogWarning("大地圖場景無法載入：" + mapSceneName);
+                return;
+            }
+
             Debug.Log("本區塊最後一房，前往大地圖：" + mapSceneName);
             BlockProgressManager.ClearBlockProgress();
             SceneManager.LoadScene(mapSceneName);
@@ -24,6 +36,12 @@ public class LevelFlowController : MonoBehaviour
             if (string.IsNullOrEmpty(nextSceneName))
             {
                 Debug.LogWarning("下一關場景名稱沒有設定");
+                return;
+            }
+
+            if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
+            {
+                Debug.LogWarning("下一關場景無法載入：" + nextSceneName);
                 return;
             }
 
