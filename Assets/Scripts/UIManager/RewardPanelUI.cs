@@ -4,37 +4,20 @@ using UnityEngine.UI;
 
 public class RewardPanelUI : MonoBehaviour
 {
-    [Header("三個按鈕")]
-    public Button rewardBtn01;
-    public Button rewardBtn02;
-    public Button rewardBtn03;
-
-    [Header("按鈕文字")]
-    public Text rewardBtn01Text;
-    public Text rewardBtn02Text;
-    public Text rewardBtn03Text;
-
-    [Header("系統引用")]
+    public Button rewardBtn01, rewardBtn02, rewardBtn03;
     public RewardPanelController rewardPanelController;
-    public PolicyCardManager policyCardManager;
     public LevelFlowController levelFlowController;
+    public PolicyCardManager policyCardManager;
 
-    private List<PolicyCardData> currentCards = new List<PolicyCardData>();
+    private readonly List<PolicyCardData> currentCards = new List<PolicyCardData>();
+    private Text rewardBtn01Text;
+    private Text rewardBtn02Text;
+    private Text rewardBtn03Text;
 
-    private void Start()
+    void Start()
     {
-        if (rewardBtn01 == null || rewardBtn02 == null || rewardBtn03 == null)
-        {
-            Debug.LogWarning("RewardPanelUI：按鈕引用未完整指定");
-            return;
-        }
-
-        rewardBtn01.onClick.RemoveAllListeners();
-        rewardBtn02.onClick.RemoveAllListeners();
-        rewardBtn03.onClick.RemoveAllListeners();
-        rewardBtn01.onClick.AddListener(() => ClickRewardBtn(0));
-        rewardBtn02.onClick.AddListener(() => ClickRewardBtn(1));
-        rewardBtn03.onClick.AddListener(() => ClickRewardBtn(2));
+        CacheTextReferences();
+        BindButtons();
     }
 
     private void OnEnable()
@@ -42,54 +25,85 @@ public class RewardPanelUI : MonoBehaviour
         RefreshRewardChoices();
     }
 
+    private void CacheTextReferences()
+    {
+        if (rewardBtn01 != null) rewardBtn01Text = rewardBtn01.GetComponentInChildren<Text>(true);
+        if (rewardBtn02 != null) rewardBtn02Text = rewardBtn02.GetComponentInChildren<Text>(true);
+        if (rewardBtn03 != null) rewardBtn03Text = rewardBtn03.GetComponentInChildren<Text>(true);
+    }
+
+    private void BindButtons()
+    {
+        if (rewardBtn01 != null)
+        {
+            rewardBtn01.onClick.RemoveAllListeners();
+            rewardBtn01.onClick.AddListener(() => OnRewardClicked(0));
+        }
+
+        if (rewardBtn02 != null)
+        {
+            rewardBtn02.onClick.RemoveAllListeners();
+            rewardBtn02.onClick.AddListener(() => OnRewardClicked(1));
+        }
+
+        if (rewardBtn03 != null)
+        {
+            rewardBtn03.onClick.RemoveAllListeners();
+            rewardBtn03.onClick.AddListener(() => OnRewardClicked(2));
+        }
+    }
+
     public void RefreshRewardChoices()
     {
         if (policyCardManager == null)
         {
-            Debug.LogWarning("PolicyCardManager 沒有指定");
-            return;
+            policyCardManager = FindFirstObjectByType<PolicyCardManager>();
         }
 
-        if (rewardBtn01Text == null || rewardBtn02Text == null || rewardBtn03Text == null)
+        if (policyCardManager == null)
         {
-            Debug.LogWarning("RewardPanelUI：按鈕文字引用未完整指定");
+            Debug.LogWarning("RewardPanelUI：找不到 PolicyCardManager，無法刷新獎勵卡");
+            SetFallbackTexts("無卡片資料");
+            SetButtonsInteractable(false);
             return;
         }
 
-        currentCards = policyCardManager.GetRandomCards(3);
+        currentCards.Clear();
+        currentCards.AddRange(policyCardManager.GetRandomCards(3));
 
         if (currentCards.Count < 3)
         {
-            Debug.LogWarning("政策卡數量不足，至少需要 3 張卡");
+            Debug.LogWarning("RewardPanelUI：可用政策卡不足 3 張");
+            SetFallbackTexts("卡片不足");
+            SetButtonsInteractable(false);
             return;
         }
 
-        rewardBtn01Text.text = currentCards[0].cardName;
-        rewardBtn02Text.text = currentCards[1].cardName;
-        rewardBtn03Text.text = currentCards[2].cardName;
+        SetButtonText(rewardBtn01Text, currentCards[0].cardName);
+        SetButtonText(rewardBtn02Text, currentCards[1].cardName);
+        SetButtonText(rewardBtn03Text, currentCards[2].cardName);
+        SetButtonsInteractable(true);
 
-        Debug.Log("已刷新三張政策卡");
+        Debug.Log("RewardPanelUI：已刷新三張政策卡");
     }
 
-    private void ClickRewardBtn(int index)
+    void OnRewardClicked(int index)
     {
         if (index < 0 || index >= currentCards.Count)
         {
-            Debug.LogWarning("選卡索引超出範圍");
+            Debug.LogWarning("RewardPanelUI：點擊的卡片索引超出範圍");
             return;
         }
 
         PolicyCardData selectedCard = currentCards[index];
-
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
-        Debug.Log("卡片效果：" + selectedCard.upgradeType + " / 數值：" + selectedCard.value);
-
-        BattleFlowController.Instance?.OnRewardSelected();
 
         if (rewardPanelController != null)
         {
             rewardPanelController.HideRewardPanel();
         }
+
+        BattleFlowController.Instance?.OnRewardSelected();
 
         if (levelFlowController != null)
         {
@@ -97,7 +111,29 @@ public class RewardPanelUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("LevelFlowController 沒有指定");
+            Debug.LogWarning("RewardPanelUI：levelFlowController 沒有指定");
+        }
+    }
+
+    private void SetFallbackTexts(string fallbackText)
+    {
+        SetButtonText(rewardBtn01Text, fallbackText);
+        SetButtonText(rewardBtn02Text, fallbackText);
+        SetButtonText(rewardBtn03Text, fallbackText);
+    }
+
+    private void SetButtonsInteractable(bool interactable)
+    {
+        if (rewardBtn01 != null) rewardBtn01.interactable = interactable;
+        if (rewardBtn02 != null) rewardBtn02.interactable = interactable;
+        if (rewardBtn03 != null) rewardBtn03.interactable = interactable;
+    }
+
+    private void SetButtonText(Text targetText, string value)
+    {
+        if (targetText != null)
+        {
+            targetText.text = value;
         }
     }
 }

@@ -475,12 +475,9 @@ MonoBehaviour:
   rewardBtn01: {fileID: 1419625604}
   rewardBtn02: {fileID: 254430186}
   rewardBtn03: {fileID: 788858243}
-  rewardBtn01Text: {fileID: 1395924380}
-  rewardBtn02Text: {fileID: 1160286130}
-  rewardBtn03Text: {fileID: 799964558}
   rewardPanelController: {fileID: 1924568608}
-  policyCardManager: {fileID: 1491899061}
   levelFlowController: {fileID: 865470750}
+  policyCardManager: {fileID: 1491899061}
 --- !u!114 &334181496
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -542,6 +539,53 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1200, y: 800}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &364288608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 364288610}
+  - component: {fileID: 364288609}
+  m_Layer: 0
+  m_Name: RoomClearFlowController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &364288609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364288608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  needRewardPanel: 1
+  rewardPanelController: {fileID: 1924568608}
+  levelFlowController: {fileID: 865470750}
+--- !u!4 &364288610
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364288608}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.9866323, y: 2.7660003, z: 1.1200004}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &594298573
 GameObject:
   m_ObjectHideFlags: 0
@@ -3010,3 +3054,4 @@ SceneRoots:
   - {fileID: 1679250630}
   - {fileID: 865470751}
   - {fileID: 1428800388}
+  - {fileID: 364288610}

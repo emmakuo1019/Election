@@ -319,55 +319,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &176838098
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 176838100}
-  - component: {fileID: 176838099}
-  m_Layer: 0
-  m_Name: PolicyCardSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &176838099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 176838098}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ea2e47dd804448ab9baac552bf51015, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  allCards:
-  - {fileID: 11400000, guid: dc0de1ad28ad04235883febe58e8b2d3, type: 2}
-  - {fileID: 11400000, guid: a6d87df453d5348e38efa39a93047273, type: 2}
-  - {fileID: 11400000, guid: fe62735dc916d48fa81294f737acfd92, type: 2}
-  - {fileID: 11400000, guid: c6dcbff3382dd490881e89a3f719bb02, type: 2}
---- !u!4 &176838100
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 176838098}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.7, y: 14.9, z: 20.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &180257612
 GameObject:
   m_ObjectHideFlags: 0
@@ -1736,6 +1687,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76a36bb4e499b4405a71b614c49c7be3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mapSceneName: MapScene
+  triggerOnlyOnce: 1
 --- !u!65 &900058136
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1819,7 +1772,7 @@ Transform:
   m_GameObject: {fileID: 900058134}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.9866323, y: 2.7660003, z: 1.1200004}
+  m_LocalPosition: {x: 5.84, y: 2.7660003, z: 1.1200004}
   m_LocalScale: {x: 2.096, y: 2.096, z: 2.096}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2564,7 +2517,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 7.94, y: 4.85}
+  m_AnchoredPosition: {x: 5.793368, y: 4.85}
   m_SizeDelta: {x: 20, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1217379300
@@ -2892,6 +2845,53 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1427157690
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1427157692}
+  - component: {fileID: 1427157691}
+  m_Layer: 0
+  m_Name: RoomClearFlowController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1427157691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427157690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  needRewardPanel: 1
+  rewardPanelController: {fileID: 0}
+  levelFlowController: {fileID: 1202408175}
+--- !u!4 &1427157692
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427157690}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.9866323, y: 2.7660003, z: 1.1200004}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1633569674
 GameObject:
   m_ObjectHideFlags: 0
@@ -3005,11 +3005,7 @@ MonoBehaviour:
   rewardBtn01: {fileID: 331829389}
   rewardBtn02: {fileID: 2516128}
   rewardBtn03: {fileID: 944325705}
-  rewardBtn01Text: {fileID: 1633569675}
-  rewardBtn02Text: {fileID: 167990302}
-  rewardBtn03Text: {fileID: 623412789}
   rewardPanelController: {fileID: 1327279585}
-  policyCardManager: {fileID: 176838099}
   levelFlowController: {fileID: 1202408175}
 --- !u!114 &1637705313
 MonoBehaviour:
@@ -3607,7 +3603,7 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!1 &1950400576
+--- !u!1 &1940474776
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3615,37 +3611,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1950400578}
-  - component: {fileID: 1950400577}
+  - component: {fileID: 1940474778}
+  - component: {fileID: 1940474777}
   m_Layer: 0
-  m_Name: BattleFlow
+  m_Name: PolicyCardSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1950400577
+--- !u!114 &1940474777
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950400576}
+  m_GameObject: {fileID: 1940474776}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dbdffa9eb89c94bd98b2dbeef0ce6a9d, type: 3}
+  m_Script: {fileID: 11500000, guid: 1ea2e47dd804448ab9baac552bf51015, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelTimer: {fileID: 0}
-  rewardUI: {fileID: 1327279585}
-  roomExitController: {fileID: 0}
---- !u!4 &1950400578
+  allCards:
+  - {fileID: 11400000, guid: dc0de1ad28ad04235883febe58e8b2d3, type: 2}
+  - {fileID: 11400000, guid: a6d87df453d5348e38efa39a93047273, type: 2}
+  - {fileID: 11400000, guid: fe62735dc916d48fa81294f737acfd92, type: 2}
+  - {fileID: 11400000, guid: c6dcbff3382dd490881e89a3f719bb02, type: 2}
+--- !u!4 &1940474778
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950400576}
+  m_GameObject: {fileID: 1940474776}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 6.7, y: 14.9, z: 20.9}
@@ -3661,16 +3659,16 @@ SceneRoots:
   - {fileID: 1832533525}
   - {fileID: 1940474774}
   - {fileID: 1645146956}
+  - {fileID: 900058139}
+  - {fileID: 1212032594}
   - {fileID: 513494900}
   - {fileID: 549522827}
   - {fileID: 392185109}
   - {fileID: 1327279586}
   - {fileID: 1092949433}
-  - {fileID: 1950400578}
-  - {fileID: 176838100}
   - {fileID: 1863071590}
   - {fileID: 1217379302}
   - {fileID: 1202408176}
   - {fileID: 492516680}
-  - {fileID: 900058139}
-  - {fileID: 1212032594}
+  - {fileID: 1427157692}
+  - {fileID: 1940474778}

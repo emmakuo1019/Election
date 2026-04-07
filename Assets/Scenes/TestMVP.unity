@@ -2570,12 +2570,56 @@ MonoBehaviour:
   rewardBtn01: {fileID: 289865593}
   rewardBtn02: {fileID: 665918642}
   rewardBtn03: {fileID: 590950883}
-  rewardBtn01Text: {fileID: 2065330126}
-  rewardBtn02Text: {fileID: 708743391}
-  rewardBtn03Text: {fileID: 1727479836}
   rewardPanelController: {fileID: 1113263786}
-  policyCardManager: {fileID: 608356171}
   levelFlowController: {fileID: 1684716563}
+  policyCardManager: {fileID: 608356171}
+--- !u!1 &1638184978
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1638184980}
+  - component: {fileID: 1638184979}
+  m_Layer: 0
+  m_Name: RoomClearFlowController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1638184979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638184978}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  needRewardPanel: 1
+  rewardPanelController: {fileID: 1113263786}
+  levelFlowController: {fileID: 1684716563}
+--- !u!4 &1638184980
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638184978}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.9866323, y: 2.7660003, z: 1.1200004}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1684716562
 GameObject:
   m_ObjectHideFlags: 0
@@ -3495,3 +3539,4 @@ SceneRoots:
   - {fileID: 608356172}
   - {fileID: 1684716564}
   - {fileID: 2040122688}
+  - {fileID: 1638184980}

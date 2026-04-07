@@ -28,6 +28,10 @@ public class LevelFlowController : MonoBehaviour
             }
 
             Debug.Log("本區塊最後一房，前往大地圖：" + mapSceneName);
+
+            // 新增：記錄完成一個區塊
+            CampaignProgressManager.AddCompletedBlock();
+
             BlockProgressManager.ClearBlockProgress();
             SceneManager.LoadScene(mapSceneName);
         }
