@@ -17,6 +17,24 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TestMVP.unity
     guid: a49e42934b58f4ef6a654b371efa9cf9
+  - enabled: 1
+    path: Assets/Scenes/TestMVP02.unity
+    guid: 816f82d1c00f6451aade46bbc4daffa4
+  - enabled: 1
+    path: Assets/Scenes/TestMVP03.unity
+    guid: 049413c3afbed45d7a0d65752b09dd26
+  - enabled: 1
+    path: Assets/Scenes/MapScene.unity
+    guid: 486a4358c363e4e82be821f1482be25e
+  - enabled: 1
+    path: Assets/Scenes/TestSpecial.unity
+    guid: 8171375b2b7df4b64a5b3fe259625d25
+  - enabled: 1
+    path: Assets/Scenes/TestSmallBoss.unity
+    guid: 38e67b4a45ca54bfea23bf6a9f93cfb8
+  - enabled: 1
+    path: Assets/Scenes/endGamePanel.unity
+    guid: f3b93c2cb31684b46b70a12baa008248
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

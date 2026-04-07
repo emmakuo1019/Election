@@ -17,6 +17,7 @@ public class RewardPanelUI : MonoBehaviour
     [Header("系統引用")]
     public RewardPanelController rewardPanelController;
     public PolicyCardManager policyCardManager;
+    public LevelFlowController levelFlowController;
 
     private List<PolicyCardData> currentCards = new List<PolicyCardData>();
 
@@ -68,6 +69,18 @@ public class RewardPanelUI : MonoBehaviour
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
         Debug.Log("卡片效果：" + selectedCard.upgradeType + " / 數值：" + selectedCard.value);
 
-        //rewardPanelController.HideRewardPanel();
+        if (rewardPanelController != null)
+        {
+            rewardPanelController.HideRewardPanel();
+        }
+
+        if (levelFlowController != null)
+        {
+            levelFlowController.GoToNextLevel();
+        }
+        else
+        {
+            Debug.LogWarning("LevelFlowController 沒有指定");
+        }
     }
 }
