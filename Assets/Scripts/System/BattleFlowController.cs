@@ -17,6 +17,7 @@ public class BattleFlowController : MonoBehaviour
     [SerializeField] private LevelTimer levelTimer;
     [SerializeField] private RewardPanelController rewardUI;
     [SerializeField] private RoomExitController roomExitController;
+    [SerializeField] private RoomClearFlowController roomClearFlowController;
 
     public BattleState CurrentState { get; private set; } = BattleState.WaitingStart;
 
@@ -47,6 +48,11 @@ public class BattleFlowController : MonoBehaviour
 
     private void Start()
     {
+        if (roomClearFlowController == null)
+        {
+            roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+        }
+
         StartBattle();
     }
 
@@ -69,7 +75,20 @@ public class BattleFlowController : MonoBehaviour
         {
             CurrentState = BattleState.RewardSelecting;
             Debug.Log("🏆 [BattleFlow] 玩家獲勝，進入選卡階段");
-            rewardUI?.ShowRewardPanel();
+
+            if (roomClearFlowController == null)
+            {
+                roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+            }
+
+            if (roomClearFlowController != null)
+            {
+                roomClearFlowController.OnRoomCleared();
+            }
+            else
+            {
+                rewardUI?.ShowRewardPanel();
+            }
         }
         else
         {

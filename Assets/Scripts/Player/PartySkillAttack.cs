@@ -33,9 +33,11 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
     public event Action<float, float> OnAttackShapeChanged;
 
     private static readonly int HashPartyAttack = Animator.StringToHash("partyAttack");
+    private const int HitBufferSize = 128;
 
     private PlayerSkillManager.PartySkillType currentSkill = PlayerSkillManager.PartySkillType.None;
     private float lastSkillTime = -999f;
+    private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
 
     void Awake()
     {
@@ -131,14 +133,18 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         Vector3 attackDir = GetAttackDirection();
         int hitCount = 0;
 
-        Collider[] hits = Physics.OverlapSphere(
+        int overlapCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             policyRange,
+            hitBuffer,
             voterLayer
         );
 
-        foreach (var hit in hits)
+        for (int i = 0; i < overlapCount; i++)
         {
+            Collider hit = hitBuffer[i];
+            if (hit == null) continue;
+
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
@@ -181,14 +187,18 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         Vector3 attackDir = GetAttackDirection();
         int hitCount = 0;
 
-        Collider[] hits = Physics.OverlapSphere(
+        int overlapCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             emotionalRange,
+            hitBuffer,
             voterLayer
         );
 
-        foreach (var hit in hits)
+        for (int i = 0; i < overlapCount; i++)
         {
+            Collider hit = hitBuffer[i];
+            if (hit == null) continue;
+
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;

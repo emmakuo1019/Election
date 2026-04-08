@@ -47,7 +47,7 @@ public class OpenUpgradeUI : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("玩家已進入區域！");
+            //Debug.Log("玩家已進入區域！");
             tips.SetActive(true);
             isPlayerNearSwitch = true;
         }
@@ -57,7 +57,7 @@ public class OpenUpgradeUI : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("玩家離開");
+            //Debug.Log("玩家離開");
             tips.SetActive(false);
             isPlayerNearSwitch = false;
         }

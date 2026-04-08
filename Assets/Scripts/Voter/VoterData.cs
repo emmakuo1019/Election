@@ -14,7 +14,7 @@ public class VoterData : MonoBehaviour
     [HideInInspector] public int  currentPosition;
     [HideInInspector] public bool isConverted;
 
-    // 1 = enemy, -1 = player, 0 = none
+    // 1 = player, -1 = opponent, 0 = none
     [HideInInspector] public int convertedSide;
 
     void Awake()

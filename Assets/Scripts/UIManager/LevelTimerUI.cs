@@ -35,8 +35,6 @@ public class LevelTimerUI : MonoBehaviour
         hasSubscribed = true;
 
         RefreshTimerDisplay();
-
-        Debug.Log("✅ LevelTimerUI 已訂閱計時事件");
     }
 
     private void UnsubscribeFromTimer()

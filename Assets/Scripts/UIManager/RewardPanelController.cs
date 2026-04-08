@@ -20,7 +20,7 @@ public class RewardPanelController : MonoBehaviour
         if (isShowing) return;
         isShowing = true;
 
-        Debug.Log("顯示 Reward Panel");
+        //Debug.Log("顯示 Reward Panel");
 
         if (rewardPanel != null)
         {
@@ -35,7 +35,7 @@ public class RewardPanelController : MonoBehaviour
         if (!isShowing) return;
         isShowing = false;
 
-        Debug.Log("關閉 Reward Panel");
+        //Debug.Log("關閉 Reward Panel");
 
         if (rewardPanel != null)
         {

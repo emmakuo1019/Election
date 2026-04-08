@@ -12,6 +12,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public float attackRange = 3f;
     public float attackAngle = 60f;
     public int attackInfluence = 1;
+    
+    [Header("MP 消耗")]
+    [SerializeField] private int speechMPCost = 1;
 
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
@@ -23,6 +26,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private static readonly int HashAttack = Animator.StringToHash("attack");
     private bool isGameActive = true;
+    private const int HitBufferSize = 64;
+    private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
 
     [Header("Layer")]
     public LayerMask voterLayer;
@@ -96,6 +101,18 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             return;
         }
 
+        if (PlayerMPSystem.Instance == null)
+        {
+            Debug.LogWarning("找不到 PlayerMPSystem，無法施放演說");
+            return;
+        }
+
+        if (!PlayerMPSystem.Instance.UseMP(speechMPCost))
+        {
+            Debug.Log("⚠️ MP 不足，無法施放演說");
+            return;
+        }
+
         OnAttackPerformed?.Invoke();
         characterAnimator?.SetTrigger(HashAttack);
         attackRangeMesh?.Show();
@@ -103,14 +120,18 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         Vector3 attackDir = transform.forward;
         bool hitAny = false;
 
-        Collider[] hits = Physics.OverlapSphere(
+        int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             attackRange,
+            hitBuffer,
             voterLayer
         );
 
-        foreach (var hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = hitBuffer[i];
+            if (hit == null) continue;
+
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;

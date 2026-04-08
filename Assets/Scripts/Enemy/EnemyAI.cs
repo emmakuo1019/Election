@@ -29,6 +29,10 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     [Header("Layer")]
     public LayerMask voterLayer;
 
+    [Header("搜尋快取")]
+    [SerializeField] private int targetSearchBufferSize = 64;
+    [SerializeField] private int attackHitBufferSize = 32;
+
     public event Action<float, float> OnAttackShapeChanged;
 
     private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
@@ -41,6 +45,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private Vector3 lastMoveDirection = Vector3.forward;
     private bool isGameActive = true;
     private Coroutine targetingCoroutine;
+    private Collider[] targetSearchBuffer;
+    private Collider[] attackHitBuffer;
 
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
@@ -49,6 +55,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     {
         characterController = GetComponent<CharacterController>();
         impulseSource = GetComponent<CinemachineImpulseSource>();
+        targetSearchBuffer = new Collider[Mathf.Max(8, targetSearchBufferSize)];
+        attackHitBuffer = new Collider[Mathf.Max(8, attackHitBufferSize)];
     }
 
     private void OnEnable()
@@ -131,7 +139,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         characterAnimator?.SetBool(HashIsMoving, false);
 
-        Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
+        //Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
     }
 
     private IEnumerator TargetingRoutine()
@@ -140,19 +148,42 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         while (isGameActive)
         {
-            currentTarget = FindNearestEnemyVoter();
+            if (ShouldRefreshTarget())
+            {
+                currentTarget = FindNearestEnemyVoter();
+            }
+
             yield return wait;
         }
     }
 
+    private bool ShouldRefreshTarget()
+    {
+        if (currentTarget == null)
+        {
+            return true;
+        }
+
+        if (!IsValidTarget(currentTarget))
+        {
+            return true;
+        }
+
+        float detectionRadiusSqr = detectionRadius * detectionRadius;
+        return (currentTarget.transform.position - transform.position).sqrMagnitude > detectionRadiusSqr;
+    }
+
     private VoterLogic FindNearestEnemyVoter()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, detectionRadius, voterLayer);
         float minSqrDist = float.MaxValue;
         VoterLogic nearest = null;
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, detectionRadius, targetSearchBuffer, voterLayer);
 
-        foreach (var hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = targetSearchBuffer[i];
+            if (hit == null) continue;
+
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter == null) continue;
 
@@ -174,7 +205,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     {
         if (voter == null) return false;
 
-        VoterData data = voter.GetComponent<VoterData>();
+        VoterData data = voter.Data;
         if (data == null) return false;
 
         if (ownSideSign > 0)
@@ -208,9 +239,12 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         Vector3 attackDir = lastMoveDirection.sqrMagnitude > 0.001f ? lastMoveDirection : transform.forward;
         bool hitAny = false;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, attackRange, voterLayer);
-        foreach (var hit in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, attackRange, attackHitBuffer, voterLayer);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = attackHitBuffer[i];
+            if (hit == null) continue;
+
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter == null) continue;
 

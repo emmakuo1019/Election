@@ -217,6 +217,7 @@ GameObject:
   - component: {fileID: 3641732488253732350}
   - component: {fileID: 8545510738008723634}
   - component: {fileID: 6143106577950043542}
+  - component: {fileID: 5073905417636021098}
   - component: {fileID: 1828503832510186331}
   - component: {fileID: 8606236126724025911}
   m_Layer: 0
@@ -338,8 +339,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speechAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   partyAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  partySelectAction: {fileID: 0}
   speechUnlocked: 0
-  partyUnlocked: 0
+  selectedPartySkill: 0
   speechAttack: {fileID: 8545510738008723634}
   partySkillAttack: {fileID: 6143106577950043542}
 --- !u!114 &3641732488253732350
@@ -377,6 +379,7 @@ MonoBehaviour:
   attackRange: 5
   attackAngle: 60
   attackInfluence: 1
+  speechMPCost: 1
   attackRangeMesh: {fileID: 4360986305226485520}
   voterLayer:
     serializedVersion: 2
@@ -393,6 +396,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc8f3a0c582c34ef6828cda7bbdbd833, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  policyRange: 5
+  policyAngle: 90
+  policyInfluence: 2
+  policyCooldown: 2
+  emotionalRange: 8
+  emotionalAngle: 120
+  emotionalInfluence: 2
+  emotionalCooldown: 3
+  attackRangeMesh: {fileID: 0}
+  voterLayer:
+    serializedVersion: 2
+    m_Bits: 0
+--- !u!114 &5073905417636021098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5403555500550337343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8804be72f495049349a72a2932eb09be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxMP: 100
+  currentMP: 100
 --- !u!95 &1828503832510186331
 Animator:
   serializedVersion: 7

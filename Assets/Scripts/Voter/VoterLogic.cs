@@ -30,15 +30,20 @@ public class VoterLogic : MonoBehaviour
     private bool isGameActive = true;
     private Coroutine wanderCoroutine;
 
+    public VoterData Data => data;
+
     void Awake()
     {
         data = GetComponent<VoterData>();
         agent = GetComponent<NavMeshAgent>();
         anim = GetComponentInChildren<Animator>();
 
-        agent.speed = moveSpeed;
-        agent.angularSpeed = 0f;
-        agent.updateRotation = false;
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+            agent.angularSpeed = 0f;
+            agent.updateRotation = false;
+        }
     }
 
     private void OnEnable()
@@ -78,7 +83,7 @@ public class VoterLogic : MonoBehaviour
             agent.ResetPath();
         }
 
-        Debug.Log("🛑 [VoterLogic] 遊戲結束，選民停止移動");
+        //Debug.Log("🛑 [VoterLogic] 遊戲結束，選民停止移動");
     }
 
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default)
@@ -119,6 +124,13 @@ public class VoterLogic : MonoBehaviour
             if (oldSide != data.convertedSide && oldSide == 0)
             {
                 VoteManager.Instance?.AddVote(data.convertedSide);
+
+                // 如果是玩家成功轉化，回復少量 MP
+                if (data.convertedSide > 0)
+                {
+                    PlayerMPSystem.Instance?.RecoverMP(1);
+                    Debug.Log("🗳️ 玩家成功轉化選民，回復 1 MP");
+                }
             }
         }
         else
