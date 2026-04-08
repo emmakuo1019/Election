@@ -9,8 +9,15 @@ public class LevelFlowController : MonoBehaviour
     [Header("大地圖場景名稱")]
     [SerializeField] private string mapSceneName = "MapScene";
 
+    private bool isLoadingScene = false;
+
     public void GoToNextLevel()
     {
+        if (isLoadingScene)
+        {
+            return;
+        }
+
         Time.timeScale = 1f;
 
         if (BlockProgressManager.HasBlockProgress() && BlockProgressManager.IsLastRoomInBlock())
@@ -33,7 +40,7 @@ public class LevelFlowController : MonoBehaviour
             CampaignProgressManager.AddCompletedBlock();
 
             BlockProgressManager.ClearBlockProgress();
-            SceneManager.LoadScene(mapSceneName);
+            StartCoroutine(LoadSceneAsyncRoutine(mapSceneName));
         }
         else
         {
@@ -50,7 +57,27 @@ public class LevelFlowController : MonoBehaviour
             }
 
             Debug.Log("前往下一關：" + nextSceneName);
-            SceneManager.LoadScene(nextSceneName);
+            StartCoroutine(LoadSceneAsyncRoutine(nextSceneName));
         }
+    }
+
+    private System.Collections.IEnumerator LoadSceneAsyncRoutine(string sceneName)
+    {
+        isLoadingScene = true;
+
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
+
+        if (loadOperation == null)
+        {
+            isLoadingScene = false;
+            yield break;
+        }
+
+        while (!loadOperation.isDone)
+        {
+            yield return null;
+        }
+
+        isLoadingScene = false;
     }
 }

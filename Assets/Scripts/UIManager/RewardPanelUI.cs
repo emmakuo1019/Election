@@ -14,7 +14,7 @@ public class RewardPanelUI : MonoBehaviour
     private Text rewardBtn02Text;
     private Text rewardBtn03Text;
 
-    void Start()
+    void Awake()
     {
         CacheTextReferences();
         BindButtons();
@@ -55,6 +55,8 @@ public class RewardPanelUI : MonoBehaviour
 
     public void RefreshRewardChoices()
     {
+        CacheTextReferences();
+
         if (policyCardManager == null)
         {
             policyCardManager = FindFirstObjectByType<PolicyCardManager>();
@@ -134,6 +136,9 @@ public class RewardPanelUI : MonoBehaviour
         if (targetText != null)
         {
             targetText.text = value;
+            return;
         }
+
+        Debug.LogWarning("RewardPanelUI：按鈕文字元件未找到，無法更新卡片名稱");
     }
 }
