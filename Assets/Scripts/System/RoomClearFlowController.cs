@@ -3,20 +3,20 @@ using System.Collections;
 
 public class RoomClearFlowController : MonoBehaviour
 {
-    [Header("這個房間結束後是否顯示獎勵面板")]
-    [SerializeField] private bool needRewardPanel = true;
-
-    [Header("獎勵面板控制器（有獎勵房才需要）")]
-    [SerializeField] private RewardPanelController rewardPanelController;
-
-    [Header("關卡流程控制器")]
-    [SerializeField] private LevelFlowController levelFlowController;
+    [Header("這個房間結束後是否顯示選情快報")]
+    [SerializeField] private bool needMiniSettlement = true;
 
     [Header("房間選情結算器")]
     [SerializeField] private RoomResultCalculator roomResultCalculator;
 
     [Header("迷你結算 UI（可選）")]
     [SerializeField] private MiniSettlementUI miniSettlementUI;
+
+    [Header("房間出口控制器")]
+    [SerializeField] private RoomExitController roomExitController;
+
+    [Header("獎勵面板控制器")]
+    [SerializeField] private RewardPanelController rewardPanelController;
 
     private bool isResolvingRoomClear = false;
 
@@ -29,7 +29,7 @@ public class RoomClearFlowController : MonoBehaviour
 
         Debug.Log("=== 房間已清空 / 倒數結束 ===");
         Debug.Log("目前場景：" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
-        Debug.Log("needRewardPanel = " + needRewardPanel);
+        Debug.Log("needMiniSettlement = " + needMiniSettlement);
 
         StartCoroutine(RoomClearFlowRoutine());
     }
@@ -37,14 +37,15 @@ public class RoomClearFlowController : MonoBehaviour
     private IEnumerator RoomClearFlowRoutine()
     {
         isResolvingRoomClear = true;
+        PauseGameplayForSettlement();
 
         int rewardedMP = 0;
         float supportRate = 0f;
         int totalVoters = 0;
         int playerSupporters = 0;
 
-        // 先做房間 MP 結算
-        if (roomResultCalculator != null)
+        // 只有需要顯示選情快報的房間，才做這套流程（前兩房）
+        if (needMiniSettlement && roomResultCalculator != null)
         {
             supportRate = roomResultCalculator.GetSupportRate();
             totalVoters = roomResultCalculator.GetTotalVoters();
@@ -53,58 +54,94 @@ public class RoomClearFlowController : MonoBehaviour
 
             Debug.Log($"📢 房間結算完成，額外回補 MP：{rewardedMP}");
         }
-        else
+
+        // 前兩房顯示選情快報
+        if (needMiniSettlement)
         {
-            Debug.LogWarning("⚠️ roomResultCalculator 沒有指定，略過房間 MP 結算");
+            if (miniSettlementUI == null)
+            {
+                miniSettlementUI = FindFirstObjectByType<MiniSettlementUI>(FindObjectsInactive.Include);
+            }
+
+            if (miniSettlementUI != null)
+            {
+                yield return StartCoroutine(
+                    miniSettlementUI.ShowSettlementThenContinue(
+                        supportRate,
+                        playerSupporters,
+                        totalVoters,
+                        rewardedMP,
+                        null
+                    )
+                );
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ needMiniSettlement = true，但找不到 MiniSettlementUI");
+            }
         }
 
-        // 如果有迷你結算 UI，就先顯示
-        if (miniSettlementUI == null)
+        if (needMiniSettlement)
         {
-            miniSettlementUI = FindFirstObjectByType<MiniSettlementUI>(FindObjectsInactive.Include);
+            ShowRewardPanel();
+            yield break;
         }
 
-        if (miniSettlementUI != null)
-        {
-            yield return StartCoroutine(
-                miniSettlementUI.ShowSettlementThenContinue(
-                    supportRate,
-                    playerSupporters,
-                    totalVoters,
-                    rewardedMP,
-                    null
-                )
-            );
-        }
-
-        // 結算顯示完後，再決定後續流程
-        ContinueRoomFlow();
-        isResolvingRoomClear = false;
+        OpenExitAndFinish();
     }
 
-    private void ContinueRoomFlow()
+    private void PauseGameplayForSettlement()
     {
-        if (needRewardPanel)
-        {
-            if (rewardPanelController == null)
-            {
-                Debug.LogWarning("needRewardPanel = true，但 rewardPanelController 沒有指定");
-                return;
-            }
+        LevelTimer.Instance?.PauseTimer();
+        Time.timeScale = 0f;
+    }
 
-            Debug.Log("開啟獎勵面板");
-            rewardPanelController.ShowRewardPanel();
-        }
-        else
+    public void OnRewardSelected()
+    {
+        if (!isResolvingRoomClear)
         {
-            if (levelFlowController == null)
-            {
-                Debug.LogWarning("levelFlowController 沒有指定");
-                return;
-            }
-
-            Debug.Log("此房不顯示獎勵，直接進入下一流程");
-            levelFlowController.GoToNextLevel();
+            Debug.LogWarning("⚠️ RoomClearFlowController：目前沒有等待中的獎勵流程");
+            return;
         }
+
+        OpenExitAndFinish();
+    }
+
+    private void ShowRewardPanel()
+    {
+        if (rewardPanelController == null)
+        {
+            rewardPanelController = FindFirstObjectByType<RewardPanelController>(FindObjectsInactive.Include);
+        }
+
+        if (rewardPanelController == null)
+        {
+            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RewardPanelController，直接開啟出口");
+            OpenExitAndFinish();
+            return;
+        }
+
+        rewardPanelController.ShowRewardPanel();
+        Debug.Log("🎁 選情快報結束，顯示三選一獎勵");
+    }
+
+    private void OpenExitAndFinish()
+    {
+        Time.timeScale = 1f;
+
+        if (roomExitController == null)
+        {
+            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        }
+
+        if (roomExitController == null)
+        {
+            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RoomExitController，無法開啟出口");
+            return;
+        }
+
+        roomExitController.UnlockExit();
+        isResolvingRoomClear = false;
+        Debug.Log("🚪 房間結束流程完成，出口已開啟");
     }
 }

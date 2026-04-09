@@ -31,6 +31,8 @@ public class PlayerController : MonoBehaviour
     private CharacterController charCon;
     private Vector3 movement;
     private bool    canDash = true;
+    private bool    isGameplayActive = true;
+    private Coroutine dashCoroutine;
 
     private void Awake()
     {
@@ -40,15 +42,31 @@ public class PlayerController : MonoBehaviour
     private void OnEnable()
     {
         dashAction.action.performed += OnDashInput;
+
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        }
     }
 
     private void OnDisable()
     {
         dashAction.action.performed -= OnDashInput;
+
+        if (LevelTimer.Instance != null)
+        {
+            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
     }
 
     private void Update()
     {
+        if (!isGameplayActive)
+        {
+            characterAnimator?.SetBool(HashIsMoving, false);
+            return;
+        }
+
         if (IsDashing) return;
         HandleMovement();
     }
@@ -76,7 +94,27 @@ public class PlayerController : MonoBehaviour
 
     private void OnDashInput(InputAction.CallbackContext context)
     {
-        if (canDash && !IsDashing) StartCoroutine(DashRoutine());
+        if (!isGameplayActive) return;
+        if (canDash && !IsDashing)
+        {
+            dashCoroutine = StartCoroutine(DashRoutine());
+        }
+    }
+
+    private void OnGameEnd()
+    {
+        isGameplayActive = false;
+        movement = Vector3.zero;
+        canDash = false;
+
+        if (dashCoroutine != null)
+        {
+            StopCoroutine(dashCoroutine);
+            dashCoroutine = null;
+        }
+
+        IsDashing = false;
+        characterAnimator?.SetBool(HashIsMoving, false);
     }
 
     private IEnumerator DashRoutine()
@@ -96,6 +134,7 @@ public class PlayerController : MonoBehaviour
         }
 
         IsDashing = false;
+        dashCoroutine = null;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }

@@ -8,15 +8,12 @@ public class BattleFlowController : MonoBehaviour
     {
         WaitingStart,
         Fighting,
-        RewardSelecting,
         Completed,
         Failed
     }
 
     [Header("引用")]
     [SerializeField] private LevelTimer levelTimer;
-    [SerializeField] private RewardPanelController rewardUI;
-    [SerializeField] private RoomExitController roomExitController;
     [SerializeField] private RoomClearFlowController roomClearFlowController;
 
     public BattleState CurrentState { get; private set; } = BattleState.WaitingStart;
@@ -73,8 +70,8 @@ public class BattleFlowController : MonoBehaviour
 
         if (playerVotes >= opponentVotes)
         {
-            CurrentState = BattleState.RewardSelecting;
-            Debug.Log("🏆 [BattleFlow] 玩家獲勝，進入選卡階段");
+            CurrentState = BattleState.Completed;
+            Debug.Log("🏆 [BattleFlow] 玩家獲勝，進入房間結束流程");
 
             if (roomClearFlowController == null)
             {
@@ -87,22 +84,19 @@ public class BattleFlowController : MonoBehaviour
             }
             else
             {
-                rewardUI?.ShowRewardPanel();
+                Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
             }
         }
         else
         {
             CurrentState = BattleState.Failed;
             Debug.Log("💀 [BattleFlow] 玩家失敗");
-            // 顯示失敗 UI-------------------------------------
         }
     }
 
     public void OnRewardSelected()
     {
         CurrentState = BattleState.Completed;
-        Debug.Log("🚪 [BattleFlow] 獎勵已選擇，開放下一關");
-
-        roomExitController?.UnlockExit();
+        Debug.Log("🎴 [BattleFlow] 獎勵已選擇");
     }
 }

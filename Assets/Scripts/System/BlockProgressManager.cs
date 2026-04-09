@@ -44,6 +44,27 @@ public static class BlockProgressManager
         return GetCurrentRoomCount() >= GetMaxRooms();
     }
 
+    public static bool TryCompleteCurrentBlock()
+    {
+        if (!HasBlockProgress())
+        {
+            Debug.LogWarning("無區塊進度可完成，略過完成區塊");
+            return false;
+        }
+
+        if (!IsLastRoomInBlock())
+        {
+            Debug.LogWarning(
+                $"尚未到區塊最後一房，略過完成區塊。當前房數：{GetCurrentRoomCount()} / {GetMaxRooms()}"
+            );
+            return false;
+        }
+
+        CampaignProgressManager.AddCompletedBlock();
+        ClearBlockProgress();
+        return true;
+    }
+
     public static void ClearBlockProgress()
     {
         PlayerPrefs.DeleteKey(ROOM_COUNT_KEY);

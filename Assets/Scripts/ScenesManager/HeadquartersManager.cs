@@ -10,5 +10,11 @@ void Start()
     Time.timeScale = 1f;
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
+
+    MapProgressManager mapProgressManager = FindFirstObjectByType<MapProgressManager>();
+    if (mapProgressManager != null)
+    {
+        mapProgressManager.ResetMapProgress();
+    }
 }
 }

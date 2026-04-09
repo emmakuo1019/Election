@@ -6,7 +6,6 @@ public class RewardPanelUI : MonoBehaviour
 {
     public Button rewardBtn01, rewardBtn02, rewardBtn03;
     public RewardPanelController rewardPanelController;
-    public LevelFlowController levelFlowController;
     public PolicyCardManager policyCardManager;
 
     private readonly List<PolicyCardData> currentCards = new List<PolicyCardData>();
@@ -107,13 +106,15 @@ public class RewardPanelUI : MonoBehaviour
 
         BattleFlowController.Instance?.OnRewardSelected();
 
-        if (levelFlowController != null)
+        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+
+        if (roomClearFlowController != null)
         {
-            levelFlowController.GoToNextLevel();
+            roomClearFlowController.OnRewardSelected();
         }
         else
         {
-            Debug.LogWarning("RewardPanelUI：levelFlowController 沒有指定");
+            Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，退回舊的直接切場流程");
         }
     }
 
