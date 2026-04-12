@@ -15,6 +15,7 @@ public class BattleFlowController : MonoBehaviour
     [Header("引用")]
     [SerializeField] private LevelTimer levelTimer;
     [SerializeField] private RoomClearFlowController roomClearFlowController;
+    [SerializeField] private bool autoStartBattle = false;
 
     public BattleState CurrentState { get; private set; } = BattleState.WaitingStart;
 
@@ -45,16 +46,29 @@ public class BattleFlowController : MonoBehaviour
 
     private void Start()
     {
+        if (levelTimer == null)
+        {
+            levelTimer = FindFirstObjectByType<LevelTimer>();
+        }
+
         if (roomClearFlowController == null)
         {
             roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
         }
 
-        StartBattle();
+        if (autoStartBattle)
+        {
+            StartBattle();
+        }
     }
 
     public void StartBattle()
     {
+        if (CurrentState == BattleState.Fighting)
+        {
+            return;
+        }
+
         VoteManager.Instance?.ResetVotes();
 
         CurrentState = BattleState.Fighting;

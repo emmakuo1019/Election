@@ -19,8 +19,8 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     public float attackCooldown = 0.8f;
 
     [Header("陣營設定")]
-    [Tooltip("敵方視為自己的立場符號，1 代表正向(對應 opponentColor)，-1 代表負向(對應 playerColor)。")]
-    public int ownSideSign = 1;
+    [Tooltip("敵方攻擊應為負值推進，預設 -1。")]
+    public int ownSideSign = -1;
 
     [Header("顯示")]
     public Animator characterAnimator;
@@ -208,14 +208,18 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         VoterData data = voter.Data;
         if (data == null) return false;
 
-        if (ownSideSign > 0)
+        int attackSign = GetAttackSign();
+        if (attackSign > 0)
         {
             return data.currentPosition < VoterConfig.MAX_POS;
         }
-        else
+
+        if (attackSign < 0)
         {
             return data.currentPosition > VoterConfig.MIN_POS;
         }
+
+        return false;
     }
 
     private void TryAttack()
@@ -248,6 +252,10 @@ public class EnemyAI : MonoBehaviour, IAttackSource
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter == null) continue;
 
+            VoterData voterData = voter.Data;
+            if (voterData != null && voterData.voterType == VoterType.Dark)
+                continue;
+
             if (!IsValidTarget(voter))
                 continue;
 
@@ -260,8 +268,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
             if (Vector3.Angle(attackDir, dirToTarget) >= attackAngle / 2f)
                 continue;
 
-            int sideSign = ownSideSign >= 0 ? 1 : -1;
-            int influence = Mathf.Abs(attackInfluence) * sideSign;
+            int influence = Mathf.Abs(attackInfluence) * GetAttackSign();
             voter.OnInfluence(influence, false, transform.position);
             hitAny = true;
         }
@@ -275,5 +282,10 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
+    }
+
+    private int GetAttackSign()
+    {
+        return ownSideSign >= 0 ? VoterData.PlayerSideSign : VoterData.EnemySideSign;
     }
 }

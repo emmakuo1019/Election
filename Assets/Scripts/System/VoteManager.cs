@@ -36,23 +36,42 @@ public class VoteManager : MonoBehaviour
         Debug.Log("[VoteManager] 初始化完成");
     }
 
-    /// <summary>
-    /// 當選民被轉化時調用 - 增加對應陣營得票
-    /// </summary>
-    public void AddVote(int sideSign)
+    public void ApplyAlignmentChange(int oldSideSign, int newSideSign)
     {
-        // sideSign: 1 = 對手陣營, -1 = 玩家陣營
-        if (sideSign > 0)
+        if (oldSideSign == newSideSign)
         {
-            playerVotes++;
+            return;
         }
-        else if (sideSign < 0)
-        {
-            opponentVotes++;
-        }
+
+        RemoveVoteFromSide(oldSideSign);
+        AddVoteToSide(newSideSign);
 
         Debug.Log($"📊 得票數更新 | 你: {playerVotes} | 對手: {opponentVotes}");
         OnVotesChanged?.Invoke(playerVotes, opponentVotes);
+    }
+
+    private void AddVoteToSide(int sideSign)
+    {
+        if (sideSign == VoterData.PlayerSideSign)
+        {
+            playerVotes++;
+        }
+        else if (sideSign == VoterData.EnemySideSign)
+        {
+            opponentVotes++;
+        }
+    }
+
+    private void RemoveVoteFromSide(int sideSign)
+    {
+        if (sideSign == VoterData.PlayerSideSign)
+        {
+            playerVotes = Mathf.Max(0, playerVotes - 1);
+        }
+        else if (sideSign == VoterData.EnemySideSign)
+        {
+            opponentVotes = Mathf.Max(0, opponentVotes - 1);
+        }
     }
 
     public void ResetVotes()

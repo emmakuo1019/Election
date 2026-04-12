@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 3962820855032073483}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.78, z: -0.18}
+  m_LocalPosition: {x: -0.06, y: 1.89, z: -0.18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -116,7 +116,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.6
+      scalar: 0.2
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -223,7 +223,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0, g: 1, b: 0.95107245, a: 1}
+      maxColor: {r: 1, g: 0.1462264, b: 0.1608482, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -287,7 +287,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.39
+      scalar: 0.45
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -4902,7 +4902,7 @@ GameObject:
   - component: {fileID: 4693748593575835549}
   - component: {fileID: 2774184649760543316}
   m_Layer: 0
-  m_Name: Voter-removebg-preview_0
+  m_Name: Voter-Normal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5096,8 +5096,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3.43, y: 0, z: 6.29}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4693748593575835549}
   - {fileID: 3909163827661493348}
@@ -5122,6 +5122,8 @@ MonoBehaviour:
   moveSpeed: 3
   knockbackDistance: 1.2
   knockbackDuration: 0.25
+  darkApproachStoppingDistance: 1.5
+  darkDestinationRefreshInterval: 0.28
 --- !u!114 &5396591549920925665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5134,10 +5136,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9506c684f59e461d86df36594d352ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bodyRenderer: {fileID: 0}
   bubbleOutline: {fileID: 4798280922386667136}
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
-  playerColor: {r: 1, g: 0.41037738, b: 0.75143343, a: 1}
-  opponentColor: {r: 1, g: 0.98223907, b: 0.4198113, a: 1}
+  playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
+  opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}
+  darkVoterColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  darkUiColor: {r: 0.8679245, g: 0.7372131, b: 0, a: 1}
+  normalUiSprite: {fileID: 21300000, guid: 9d8e68bb729df4efa8fe0097cc21ace3, type: 3}
+  darkUiSprite: {fileID: 21300000, guid: 0aa026f8a673d4ac6bd3fe01f2c98bba, type: 3}
   colorTransitionDuration: 0.8
   voteParticles: {fileID: 8118177006610108402}
 --- !u!114 &4672302401026481900
@@ -5153,9 +5160,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 9e758346486b146cfbb6ab29360fd0bf, type: 2}
-  currentPosition: -1
-  isConverted: 0
+  voterType: 0
+  normalMoveSpeed: 1.2
+  darkMoveSpeed: 2
+  fallbackTag: 0
+  currentPosition: 0
   convertedSide: 0
+  isConverted: 0
 --- !u!195 &1022887108545879583
 NavMeshAgent:
   m_ObjectHideFlags: 0

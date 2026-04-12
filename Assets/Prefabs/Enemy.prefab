@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: bccb87320ad9a475d80fae855879eeed, type: 3}
-  m_Color: {r: 0.69853634, g: 0.3066038, b: 1, a: 1}
+  m_Color: {r: 0.6588312, g: 0.3726415, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -213,12 +213,13 @@ MonoBehaviour:
   attackInfluence: 1
   attackCooldown: 0.8
   ownSideSign: -1
-  canAttackNeutral: 1
   characterAnimator: {fileID: 4063213746404083202}
   attackRangeMesh: {fileID: 7081915337751549930}
   voterLayer:
     serializedVersion: 2
     m_Bits: 64
+  targetSearchBufferSize: 64
+  attackHitBufferSize: 32
 --- !u!1 &1568685876034101917
 GameObject:
   m_ObjectHideFlags: 0
@@ -284,7 +285,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 7c3bbc96de07e4329ae8008cfd0e06c1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

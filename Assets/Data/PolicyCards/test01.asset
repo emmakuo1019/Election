@@ -12,7 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3434cf435ca834b85886e773060f7766, type: 3}
   m_Name: test01
   m_EditorClassIdentifier: 
-  cardName: "\u5C0F\u871C\u8702"
-  description: "\u4F60\u7684\u6F14\u8AAA\u8986\u84CB\u7BC4\u570D\u64F4\u5927\uFF0C\u66F4\u5BB9\u6613\u5F71\u97FF\u4E2D\u7ACB\u9078\u6C11\u3002"
-  upgradeType: 0
-  value: 3
+  cardName: "\u8857\u982D\u9020\u52E2"
+  description: "\u666E\u901A\u653B\u64CA\u7BC4\u570D x1.5\u3001\u793E\u6703\u98A8\u6C23\u8F49\u5411\u60C5\u7DD2 +20\uff0c\u4F46\u8F49\u5316\u5F8C\u66F4\u5BB9\u6613\u6D41\u5931\u3002"
+  attackRadiusMultiplier: 1.5
+  convertChanceDelta: 0
+  attackCooldownDelta: 0
+  socialClimateDelta: 20
+  loseControlRateDelta: 0.25
+  spreadRadius: 0
+  globalNpcSpeedMultiplier: 1

@@ -80,9 +80,9 @@ public class RewardPanelUI : MonoBehaviour
             return;
         }
 
-        SetButtonText(rewardBtn01Text, currentCards[0].cardName);
-        SetButtonText(rewardBtn02Text, currentCards[1].cardName);
-        SetButtonText(rewardBtn03Text, currentCards[2].cardName);
+        SetButtonText(rewardBtn01Text, FormatCardLabel(currentCards[0]));
+        SetButtonText(rewardBtn02Text, FormatCardLabel(currentCards[1]));
+        SetButtonText(rewardBtn03Text, FormatCardLabel(currentCards[2]));
         SetButtonsInteractable(true);
 
         Debug.Log("RewardPanelUI：已刷新三張政策卡");
@@ -98,6 +98,8 @@ public class RewardPanelUI : MonoBehaviour
 
         PolicyCardData selectedCard = currentCards[index];
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
+
+        PolicyEffectRuntimeManager.Instance.ApplyCard(selectedCard);
 
         if (rewardPanelController != null)
         {
@@ -130,6 +132,21 @@ public class RewardPanelUI : MonoBehaviour
         if (rewardBtn01 != null) rewardBtn01.interactable = interactable;
         if (rewardBtn02 != null) rewardBtn02.interactable = interactable;
         if (rewardBtn03 != null) rewardBtn03.interactable = interactable;
+    }
+
+    private string FormatCardLabel(PolicyCardData card)
+    {
+        if (card == null)
+        {
+            return "無卡片資料";
+        }
+
+        if (string.IsNullOrWhiteSpace(card.description))
+        {
+            return card.cardName;
+        }
+
+        return $"{card.cardName}\n{card.description}";
     }
 
     private void SetButtonText(Text targetText, string value)

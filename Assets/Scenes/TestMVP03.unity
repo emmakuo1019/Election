@@ -1404,7 +1404,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lockedVisual: {fileID: 1070497524}
   unlockedVisual: {fileID: 2128972444}
-  targetSceneName: MapScene
+  targetSceneName: TestmVP02
   isFinalRoomExit: 1
   currentMapNode: {fileID: 0}
   triggerOnlyOnce: 1
@@ -1827,55 +1827,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 852075380}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1092949431
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1092949433}
-  - component: {fileID: 1092949432}
-  m_Layer: 0
-  m_Name: SocialAtmesphere
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1092949432
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1092949431}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c9c0ea58de214e8fb9f192d1176d1a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  socialAtmosphere: 0
-  minAtmosphere: -100
-  maxAtmosphere: 100
-  policyDebateGain: 3
-  emotionalStirringGain: 3
---- !u!4 &1092949433
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1092949431}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.7, y: 14.9, z: 20.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1126534963
 GameObject:
@@ -2310,7 +2261,7 @@ MonoBehaviour:
   roomResultCalculator: {fileID: 0}
   miniSettlementUI: {fileID: 0}
   roomExitController: {fileID: 852075376}
-  rewardPanelController: {fileID: 0}
+  rewardPanelController: {fileID: 1327279585}
 --- !u!4 &1427157692
 Transform:
   m_ObjectHideFlags: 0
@@ -3042,7 +2993,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: eecd3b6b91bda4d1c81f9f49f66aec37, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3645,6 +3596,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelTimer: {fileID: 2143000201}
   roomClearFlowController: {fileID: 1427157691}
+  autoStartBattle: 1
 --- !u!4 &2143000102
 Transform:
   m_ObjectHideFlags: 0
@@ -3691,8 +3643,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelDuration: 0
   remainingTime: 0
-  isActive: 1
-  isTimeUp: 1
+  isActive: 0
+  isTimeUp: 0
   rewardPanelController: {fileID: 1327279585}
 --- !u!4 &2143000202
 Transform:
@@ -3721,7 +3673,6 @@ SceneRoots:
   - {fileID: 513494900}
   - {fileID: 392185109}
   - {fileID: 1327279586}
-  - {fileID: 1092949433}
   - {fileID: 1217379302}
   - {fileID: 492516680}
   - {fileID: 1427157692}

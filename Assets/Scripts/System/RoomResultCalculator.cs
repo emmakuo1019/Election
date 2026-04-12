@@ -73,7 +73,7 @@ public class RoomResultCalculator : MonoBehaviour
         int count = 0;
         foreach (var voter in allVoters)
         {
-            if (TryGetVoterData(voter, out VoterData voterData) && voterData.convertedSide > 0)
+            if (TryGetVoterData(voter, out VoterData voterData) && voterData.IsPlayerAligned)
                 count++;
         }
 

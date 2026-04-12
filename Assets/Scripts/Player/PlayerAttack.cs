@@ -12,6 +12,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public float attackRange = 3f;
     public float attackAngle = 60f;
     public int attackInfluence = 1;
+    [SerializeField] private float attackCooldown = 0f;
+    [SerializeField] private float convertChance = 0.3f;
+    [SerializeField] private float darkVoterConvertChance = 0.8f;
     
     [Header("MP 消耗")]
     [SerializeField] private int speechMPCost = 1;
@@ -28,6 +31,10 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     private bool isGameActive = true;
     private const int HitBufferSize = 64;
     private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
+    private float lastAttackTime = -999f;
+    private float baseAttackRange;
+    private float currentAttackRange;
+    private float currentAttackCooldown;
 
     [Header("Layer")]
     public LayerMask voterLayer;
@@ -36,6 +43,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
+        baseAttackRange = attackRange;
+        currentAttackRange = attackRange;
+        currentAttackCooldown = attackCooldown;
     }
 
     void OnEnable()
@@ -43,7 +53,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (attackAction != null)
             attackAction.action.performed += OnAttackInput;
 
-        OnAttackShapeChanged?.Invoke(attackRange, attackAngle);
+        RefreshAttackStats();
+
+        if (PolicyEffectRuntimeManager.HasInstance)
+        {
+            PolicyEffectRuntimeManager.Instance.OnEffectsChanged += RefreshAttackStats;
+        }
 
         if (LevelTimer.Instance != null)
         {
@@ -55,6 +70,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         if (attackAction != null)
             attackAction.action.performed -= OnAttackInput;
+
+        if (PolicyEffectRuntimeManager.HasInstance)
+        {
+            PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= RefreshAttackStats;
+        }
 
         if (LevelTimer.Instance != null)
         {
@@ -85,9 +105,19 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void UpdateAttackShape(float range, float angle)
     {
+        baseAttackRange = range;
         attackRange = range;
         attackAngle = angle;
-        OnAttackShapeChanged?.Invoke(range, angle);
+        RefreshAttackStats();
+    }
+
+    private void RefreshAttackStats()
+    {
+        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        currentAttackRange = effects != null ? effects.GetModifiedAttackRange(baseAttackRange) : baseAttackRange;
+        currentAttackCooldown = effects != null ? effects.GetModifiedAttackCooldown(attackCooldown) : attackCooldown;
+        attackRange = currentAttackRange;
+        OnAttackShapeChanged?.Invoke(currentAttackRange, attackAngle);
     }
 
     public void PerformSpeech()
@@ -107,11 +137,19 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             return;
         }
 
+        if (Time.time < lastAttackTime + currentAttackCooldown)
+        {
+            Debug.Log($"⏳ 普通攻擊冷卻中... {(lastAttackTime + currentAttackCooldown - Time.time):F1} 秒");
+            return;
+        }
+
         if (!PlayerMPSystem.Instance.UseMP(speechMPCost))
         {
             Debug.Log("⚠️ MP 不足，無法施放演說");
             return;
         }
+
+        lastAttackTime = Time.time;
 
         OnAttackPerformed?.Invoke();
         characterAnimator?.SetTrigger(HashAttack);
@@ -122,7 +160,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
         int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position,
-            attackRange,
+            currentAttackRange,
             hitBuffer,
             voterLayer
         );
@@ -134,11 +172,18 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
             if (hit.TryGetComponent<VoterLogic>(out var voter))
             {
+                VoterData voterData = voter.Data;
+                if (voterData != null && voterData.voterType == VoterType.Dark)
+                {
+                    continue;
+                }
+
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
 
                 if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
                 {
                     voter.OnInfluence(attackInfluence, false, transform.position);
+                    TryConvert(voterData);
                     hitAny = true;
                 }
             }
@@ -147,6 +192,39 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (hitAny)
         {
             impulseSource?.GenerateImpulse();
+        }
+    }
+    
+    public void TryConvert(VoterData voter)
+    {
+        if (voter == null)
+            return;
+
+        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        float chance = effects != null
+            ? effects.GetModifiedConvertChance(convertChance)
+            : convertChance;
+
+        if (voter.voterType == VoterType.Dark)
+            chance = effects != null
+                ? effects.GetModifiedConvertChance(darkVoterConvertChance)
+                : darkVoterConvertChance;
+
+        if (UnityEngine.Random.value < chance)
+        {
+            ForceConvert(voter);
+        }
+    }
+
+    private void ForceConvert(VoterData voter)
+    {
+        if (voter.TryGetComponent<VoterLogic>(out var logic))
+        {
+            int requiredInfluence = VoterConfig.MAX_POS - voter.currentPosition;
+            if (requiredInfluence > 0)
+            {
+                logic.OnInfluence(requiredInfluence, true, transform.position);
+            }
         }
     }
 }

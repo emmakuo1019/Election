@@ -18,7 +18,7 @@ public class SocialAtmosphereManager : MonoBehaviour
     [Header("影響效應")]
     [SerializeField] private int policyDebateGain = 3;
     [SerializeField] private int emotionalStirringGain = 3;
-
+    
     public delegate void AtmosphereChangeDelegate(int oldValue, int newValue);
     public event AtmosphereChangeDelegate OnAtmosphereChanged;
 
@@ -54,6 +54,13 @@ public class SocialAtmosphereManager : MonoBehaviour
 
         Debug.Log("[SocialAtmosphereManager] 初始化完成");
     }
+    
+    public float GetDarkVoterRate()
+    {
+        // 情緒動員越強，深色選民越常出現。
+        float emotionalBias = Mathf.InverseLerp(maxAtmosphere, minAtmosphere, socialAtmosphere);
+        return Mathf.Lerp(0.1f, 0.6f, emotionalBias);
+    }
 
     public void AddRationalism(int amount)
     {
@@ -63,6 +70,20 @@ public class SocialAtmosphereManager : MonoBehaviour
     public void AddEmotion(int amount)
     {
         ModifyAtmosphere(-amount);
+    }
+
+    public void ApplyClimateDelta(int delta)
+    {
+        if (delta > 0)
+        {
+            AddEmotion(delta);
+            return;
+        }
+
+        if (delta < 0)
+        {
+            AddRationalism(-delta);
+        }
     }
 
     private void ModifyAtmosphere(int delta)

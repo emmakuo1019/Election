@@ -4,19 +4,26 @@ using TMPro;
 
 public class VoterVisuals : MonoBehaviour
 {
-    [Header("泡泡元件")]
+    [Header("渲染元件")]
+    public SpriteRenderer bodyRenderer;
     public SpriteRenderer bubbleOutline;
 
     [Header("色彩設定")]
     public Color neutralColor;
     public Color playerColor;
     public Color opponentColor;
+    public Color darkUiColor = new(1f, 0.9f, 0.35f, 1f);
+
+    [Header("UI 圖樣")]
+    public Sprite normalUiSprite;
+    public Sprite darkUiSprite;
 
     [Header("顏色過渡")]
     public float colorTransitionDuration = 0.8f;
 
     private Coroutine colorCoroutine;
     private VoterLogic logic;
+    private VoterData data;
     
     [Header("打擊特效")]
     public ParticleSystem voteParticles;
@@ -24,56 +31,159 @@ public class VoterVisuals : MonoBehaviour
     void Awake()
     {
         logic = GetComponent<VoterLogic>();
+        data = GetComponent<VoterData>();
     }
 
     void OnEnable()
     {
         logic.OnPositionChanged += UpdateBubbleVisual;
+
+        if (data != null)
+        {
+            data.OnTypeChanged += OnTypeChanged;
+        }
+
+        ApplyCurrentVisualState();
     }
 
     void OnDisable()
     {
         logic.OnPositionChanged -= UpdateBubbleVisual;
+
+        if (data != null)
+        {
+            data.OnTypeChanged -= OnTypeChanged;
+        }
+    }
+
+    public void ApplyCurrentVisualState()
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        ApplyUiSprite();
+        UpdateBubbleVisual(data.currentPosition);
     }
     
     // 依據立場值緩慢插值更新外框顏色。由 OnPositionChanged event 驅動。
     private void UpdateBubbleVisual(int position)
     {
-        Color targetColor;
-        if (position == 0)
-        {
-            targetColor = neutralColor;
-        }
-        else
-        {
-            float maxAbsPosition = Mathf.Max(Mathf.Abs(VoterConfig.MIN_POS), Mathf.Abs(VoterConfig.MAX_POS));
-            float intensity = maxAbsPosition > 0f
-                ? Mathf.Clamp01(Mathf.Abs(position) / maxAbsPosition)
-                : 0f;
-            Color sideColor = (position < 0) ? playerColor : opponentColor;
-            targetColor = Color.Lerp(neutralColor, sideColor, intensity);
-        }
+        Color targetColor = ResolveUiColor(position);
+        Color targetBodyColor = ResolveBodyColor(position);
 
         if (colorCoroutine != null)
             StopCoroutine(colorCoroutine);
 
-        colorCoroutine = StartCoroutine(LerpColorRoutine(targetColor));
+        colorCoroutine = StartCoroutine(LerpColorRoutine(targetColor, targetBodyColor));
         voteParticles?.Play();
     }
 
-    private IEnumerator LerpColorRoutine(Color targetColor)
+    private void OnTypeChanged(VoterType _)
     {
-        Color startColor = bubbleOutline.color;
+        ApplyCurrentVisualState();
+    }
+
+    private void ApplyUiSprite()
+    {
+        if (bubbleOutline == null || data == null)
+        {
+            return;
+        }
+
+        bubbleOutline.sprite = data.voterType == VoterType.Dark && darkUiSprite != null
+            ? darkUiSprite
+            : normalUiSprite;
+    }
+
+    private Color ResolveUiColor(int position)
+    {
+        if (data != null && data.voterType == VoterType.Dark)
+        {
+            if (data.IsPlayerAligned)
+            {
+                return playerColor;
+            }
+
+            if (data.IsEnemyAligned)
+            {
+                return opponentColor;
+            }
+
+            return darkUiColor;
+        }
+
+        if (position == 0)
+        {
+            return neutralColor;
+        }
+
+        return ResolveConvertedColor(position);
+    }
+
+    private Color ResolveBodyColor(int position)
+    {
+        if (data != null && data.voterType == VoterType.Dark)
+        {
+            if (data.IsPlayerAligned)
+            {
+                return playerColor;
+            }
+
+            if (data.IsEnemyAligned)
+            {
+                return opponentColor;
+            }
+        }
+
+        return neutralColor;
+    }
+
+    private Color ResolveConvertedColor(int position)
+    {
+        float maxAbsPosition = Mathf.Max(Mathf.Abs(VoterConfig.MIN_POS), Mathf.Abs(VoterConfig.MAX_POS));
+        float intensity = maxAbsPosition > 0f
+            ? Mathf.Clamp01(Mathf.Abs(position) / maxAbsPosition)
+            : 0f;
+        Color sideColor = (position < 0) ? opponentColor : playerColor;
+        return Color.Lerp(neutralColor, sideColor, intensity);
+    }
+
+    private IEnumerator LerpColorRoutine(Color targetColor, Color targetBodyColor)
+    {
+        Color startColor = bubbleOutline != null ? bubbleOutline.color : Color.white;
+        Color startBodyColor = bodyRenderer != null ? bodyRenderer.color : Color.white;
         float elapsed    = 0f;
 
         while (elapsed < colorTransitionDuration)
         {
             elapsed += Time.deltaTime;
-            bubbleOutline.color = Color.Lerp(startColor, targetColor, elapsed / colorTransitionDuration);
+            float t = elapsed / colorTransitionDuration;
+
+            if (bubbleOutline != null)
+            {
+                bubbleOutline.color = Color.Lerp(startColor, targetColor, t);
+            }
+
+            if (bodyRenderer != null)
+            {
+                bodyRenderer.color = Color.Lerp(startBodyColor, targetBodyColor, t);
+            }
+
             yield return null;
         }
 
-        bubbleOutline.color = targetColor;
+        if (bubbleOutline != null)
+        {
+            bubbleOutline.color = targetColor;
+        }
+
+        if (bodyRenderer != null)
+        {
+            bodyRenderer.color = targetBodyColor;
+        }
+
         colorCoroutine = null;
     }
     
