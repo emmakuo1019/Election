@@ -11,11 +11,9 @@ public class UpgradePanelUI : MonoBehaviour
 
     [Header("UI - 主面板")]
     [SerializeField] private Button closeButton;
-    [SerializeField] private Button speechButton;
-    [SerializeField] private Text speechStatusText;
     [SerializeField] private Text partyStatusText;
 
-    [Header("UI - 政黨技能選擇")]
+    [Header("UI - 技能選擇")]
     [SerializeField] private Button policyDebateButton;
     [SerializeField] private Button emotionalStirringButton;
 
@@ -27,17 +25,13 @@ public class UpgradePanelUI : MonoBehaviour
 
         panel.SetActive(false);
 
-        // 主面板按鈕
         closeButton.onClick.AddListener(ClosePanel);
-        speechButton.onClick.AddListener(OnClickUnlockSpeech);
-
-        // 政黨技能選擇按鈕
         policyDebateButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
         emotionalStirringButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.EmotionalStirring));
 
-        // 訂閱 PlayerSkillManager 事件
         playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
 
+        UpdateSkillButtonLabels();
         RefreshUI();
     }
 
@@ -45,9 +39,6 @@ public class UpgradePanelUI : MonoBehaviour
     {
         if (closeButton != null)
             closeButton.onClick.RemoveListener(ClosePanel);
-
-        if (speechButton != null)
-            speechButton.onClick.RemoveListener(OnClickUnlockSpeech);
 
         if (policyDebateButton != null)
             policyDebateButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
@@ -75,8 +66,7 @@ public class UpgradePanelUI : MonoBehaviour
             return;
         }
 
-        if (closeButton == null || speechButton == null ||
-            speechStatusText == null || partyStatusText == null ||
+        if (closeButton == null || partyStatusText == null ||
             policyDebateButton == null || emotionalStirringButton == null)
         {
             Debug.LogError("❌ UpgradePanelUI 的 UI 元件有未指定項目！");
@@ -89,6 +79,7 @@ public class UpgradePanelUI : MonoBehaviour
     {
         panel.SetActive(true);
         Time.timeScale = 0f;
+        UpdateSkillButtonLabels();
         RefreshUI();
     }
 
@@ -98,30 +89,12 @@ public class UpgradePanelUI : MonoBehaviour
         Time.timeScale = 1f;
     }
 
-    private void OnClickUnlockSpeech()
-    {
-        playerSkillManager.UnlockSpeech();
-        RefreshUI();
-        Debug.Log("✅ 演說攻擊已解鎖");
-    }
-
-    private void OnClickOpenPartySelection()
-    {
-        if (!playerSkillManager.SpeechUnlocked)
-        {
-            Debug.LogWarning("⚠️ 需要先解鎖演說攻擊才能選擇政黨技能");
-            return;
-        }
-    }
-
     private void OnPartySkillSelectionRequested()
     {
-        // 長按E時自動打開面板
         if (!IsOpen)
         {
             OpenPanel();
         }
-        OnClickOpenPartySelection();
     }
 
     private void OnSelectPartySkill(PlayerSkillManager.PartySkillType skillType)
@@ -133,12 +106,43 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        bool speechUnlocked = playerSkillManager.SpeechUnlocked;
         bool hasPartySkill = playerSkillManager.HasPartySkill;
 
-        speechStatusText.text = speechUnlocked ? "✅ 已解鎖" : "❌ 未解鎖";
-        partyStatusText.text = hasPartySkill ? $"✅ 已選擇: {playerSkillManager.SelectedPartySkill}" : "❌ 未選擇";
+        partyStatusText.text = hasPartySkill
+            ? $"✅ 已選擇技能: {GetSkillDisplayName(playerSkillManager.SelectedPartySkill)}"
+            : "請從下方二選一：暈眩對手 / 增加攻擊範圍";
 
-        speechButton.interactable = !speechUnlocked;
+        policyDebateButton.interactable = !hasPartySkill;
+        emotionalStirringButton.interactable = !hasPartySkill;
+    }
+
+    private void UpdateSkillButtonLabels()
+    {
+        SetButtonLabel(policyDebateButton, "暈眩對手\n讓範圍內敵人短暫停下");
+        SetButtonLabel(emotionalStirringButton, "增加攻擊範圍\n暫時放大普通攻擊範圍");
+    }
+
+    private void SetButtonLabel(Button button, string label)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        Text text = button.GetComponentInChildren<Text>(true);
+        if (text != null)
+        {
+            text.text = label;
+        }
+    }
+
+    private string GetSkillDisplayName(PlayerSkillManager.PartySkillType skillType)
+    {
+        return skillType switch
+        {
+            PlayerSkillManager.PartySkillType.PolicyDebate => "暈眩對手",
+            PlayerSkillManager.PartySkillType.EmotionalStirring => "增加攻擊範圍",
+            _ => "未選擇"
+        };
     }
 }

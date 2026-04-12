@@ -16,7 +16,6 @@ public class PlayerSkillManager : MonoBehaviour
     [SerializeField] private InputActionReference partySelectAction; // 長按E
 
     [Header("技能狀態")]
-    [SerializeField] private bool speechUnlocked = false;
     [SerializeField] private PartySkillType selectedPartySkill = PartySkillType.None;
 
     [Header("技能引用")]
@@ -28,7 +27,7 @@ public class PlayerSkillManager : MonoBehaviour
     private float holdTimer = 0f;
     private bool isHolding = false;
 
-    public bool SpeechUnlocked => speechUnlocked;
+    public bool SpeechUnlocked => true;
     public PartySkillType SelectedPartySkill => selectedPartySkill;
     public bool HasPartySkill => selectedPartySkill != PartySkillType.None;
     private bool isGameActive = true;
@@ -117,12 +116,7 @@ public class PlayerSkillManager : MonoBehaviour
         holdTimer = 0f;
     }
 
-    public void UnlockSpeech()
-    {
-        if (speechUnlocked) return;
-        speechUnlocked = true;
-        Debug.Log("✅ 已解鎖：演說攻擊");
-    }
+    public void UnlockSpeech() { }
 
     public void SelectPartySkill(PartySkillType skillType)
     {
@@ -149,12 +143,6 @@ public class PlayerSkillManager : MonoBehaviour
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中使用技能！");
-            return;
-        }
-
-        if (!speechUnlocked)
-        {
-            Debug.LogWarning("⚠️ 演說攻擊未解鎖");
             return;
         }
 

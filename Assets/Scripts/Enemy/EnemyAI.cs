@@ -44,7 +44,9 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private float lastAttackTime;
     private Vector3 lastMoveDirection = Vector3.forward;
     private bool isGameActive = true;
+    private bool isStunned;
     private Coroutine targetingCoroutine;
+    private Coroutine stunCoroutine;
     private Collider[] targetSearchBuffer;
     private Collider[] attackHitBuffer;
 
@@ -88,6 +90,12 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         if (!isGameActive)
             return;
 
+        if (isStunned)
+        {
+            characterAnimator?.SetBool(HashIsMoving, false);
+            return;
+        }
+
         if (currentTarget == null || !IsValidTarget(currentTarget))
         {
             characterAnimator?.SetBool(HashIsMoving, false);
@@ -129,6 +137,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private void OnGameEnd()
     {
         isGameActive = false;
+        isStunned = false;
         currentTarget = null;
 
         if (targetingCoroutine != null)
@@ -140,6 +149,19 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         characterAnimator?.SetBool(HashIsMoving, false);
 
         //Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (!isGameActive || duration <= 0f)
+            return;
+
+        if (stunCoroutine != null)
+        {
+            StopCoroutine(stunCoroutine);
+        }
+
+        stunCoroutine = StartCoroutine(StunRoutine(duration));
     }
 
     private IEnumerator TargetingRoutine()
@@ -287,5 +309,22 @@ public class EnemyAI : MonoBehaviour, IAttackSource
     private int GetAttackSign()
     {
         return ownSideSign >= 0 ? VoterData.PlayerSideSign : VoterData.EnemySideSign;
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+        currentTarget = null;
+        characterAnimator?.SetBool(HashIsMoving, false);
+
+        if (attackRangeMesh != null)
+        {
+            attackRangeMesh.Hide();
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
+        stunCoroutine = null;
     }
 }

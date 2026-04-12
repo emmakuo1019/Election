@@ -3,32 +3,33 @@ using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
-/// 政黨技能執行器：政策論述 & 煽動情緒
-/// 由 PlayerSkillManager 控制，玩家只能選擇一個技能
+/// 技能執行器：暈眩對手 / 擴大普通攻擊範圍
 /// </summary>
 public class PartySkillAttack : MonoBehaviour, IAttackSource
 {
-    [Header("技能設定 - 政策論述")]
-    [SerializeField] private float policyRange = 5f;
-    [SerializeField] private float policyAngle = 90f;
-    [SerializeField] private int policyInfluence = 2;
-    [SerializeField] private float policyCooldown = 2f;
+    [Header("技能設定 - 暈眩對手")]
+    [SerializeField] private float stunRange = 6f;
+    [SerializeField] private float stunAngle = 120f;
+    [SerializeField] private float stunDuration = 2f;
+    [SerializeField] private float stunCooldown = 5f;
 
-    [Header("技能設定 - 煽動情緒")]
-    [SerializeField] private float emotionalRange = 8f;
-    [SerializeField] private float emotionalAngle = 120f;
-    [SerializeField] private int emotionalInfluence = 2;
-    [SerializeField] private float emotionalCooldown = 3f;
+    [Header("技能設定 - 攻擊範圍提升")]
+    [SerializeField] private float rangeBoostDisplayRange = 3.5f;
+    [SerializeField] private float rangeBoostDisplayAngle = 360f;
+    [SerializeField] private float rangeBoostMultiplier = 1.5f;
+    [SerializeField] private float rangeBoostDuration = 6f;
+    [SerializeField] private float rangeBoostCooldown = 6f;
 
     [Header("顯示")]
     [SerializeField] private AttackRangeMesh attackRangeMesh;
 
     [Header("Layer")]
-    [SerializeField] private LayerMask voterLayer;
+    [SerializeField] private LayerMask enemyLayer;
 
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
     private PlayerController playerController;
+    private PlayerAttack playerAttack;
 
     public event Action<float, float> OnAttackShapeChanged;
 
@@ -44,6 +45,7 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
         playerController = GetComponent<PlayerController>();
+        playerAttack = GetComponent<PlayerAttack>();
     }
 
     void Start()
@@ -58,8 +60,8 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         {
             return currentSkill switch
             {
-                PlayerSkillManager.PartySkillType.PolicyDebate => policyRange,
-                PlayerSkillManager.PartySkillType.EmotionalStirring => emotionalRange,
+                PlayerSkillManager.PartySkillType.PolicyDebate => stunRange,
+                PlayerSkillManager.PartySkillType.EmotionalStirring => rangeBoostDisplayRange,
                 _ => 0f
             };
         }
@@ -71,8 +73,8 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         {
             return currentSkill switch
             {
-                PlayerSkillManager.PartySkillType.PolicyDebate => policyAngle,
-                PlayerSkillManager.PartySkillType.EmotionalStirring => emotionalAngle,
+                PlayerSkillManager.PartySkillType.PolicyDebate => stunAngle,
+                PlayerSkillManager.PartySkillType.EmotionalStirring => rangeBoostDisplayAngle,
                 _ => 0f
             };
         }
@@ -100,8 +102,8 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         }
 
         float cooldown = currentSkill == PlayerSkillManager.PartySkillType.PolicyDebate
-            ? policyCooldown
-            : emotionalCooldown;
+            ? stunCooldown
+            : rangeBoostCooldown;
 
         if (Time.time < lastSkillTime + cooldown)
         {
@@ -114,30 +116,30 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         switch (currentSkill)
         {
             case PlayerSkillManager.PartySkillType.PolicyDebate:
-                PerformPolicyDebate();
+                PerformStunSkill();
                 break;
 
             case PlayerSkillManager.PartySkillType.EmotionalStirring:
-                PerformEmotionalStirring();
+                PerformRangeBoostSkill();
                 break;
         }
     }
 
-    private void PerformPolicyDebate()
+    private void PerformStunSkill()
     {
-        Debug.Log("🗣️ [PartySkill] 執行: 政策論述");
+        Debug.Log("🛑 [PartySkill] 執行: 暈眩對手");
 
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
 
         Vector3 attackDir = GetAttackDirection();
-        int hitCount = 0;
+        int stunCount = 0;
 
         int overlapCount = Physics.OverlapSphereNonAlloc(
             transform.position,
-            policyRange,
+            stunRange,
             hitBuffer,
-            voterLayer
+            enemyLayer
         );
 
         for (int i = 0; i < overlapCount; i++)
@@ -145,90 +147,35 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             Collider hit = hitBuffer[i];
             if (hit == null) continue;
 
-            if (hit.TryGetComponent<VoterLogic>(out var voter))
+            EnemyAI enemy = hit.GetComponentInParent<EnemyAI>();
+            if (enemy != null)
             {
                 Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
 
-                if (Vector3.Angle(attackDir, dirToTarget) < policyAngle / 2f)
+                if (Vector3.Angle(attackDir, dirToTarget) < stunAngle / 2f)
                 {
-                    voter.OnInfluence(policyInfluence, true, transform.position);
-                    hitCount++;
+                    enemy.ApplyStun(stunDuration);
+                    stunCount++;
                 }
             }
         }
 
-        if (hitCount > 0)
+        if (stunCount > 0)
         {
             impulseSource?.GenerateImpulse();
-
-            // 玩家自身立場（如果你有 CampaignManager）----------------------------------
-            //if (CampaignManager.Instance != null)
-            //{
-              //  CampaignManager.Instance.AddRationalism(hitCount);
-            //}
-
-            // 全球社會風氣
-            if (SocialAtmosphereManager.Instance != null)
-            {
-                SocialAtmosphereManager.Instance.OnSkillUsed(true, hitCount);
-            }
-
-            Debug.Log($"📊 政策論述命中 {hitCount} 名選民");
+            Debug.Log($"🛑 暈眩了 {stunCount} 名對手，持續 {stunDuration:F1} 秒");
         }
     }
 
-    private void PerformEmotionalStirring()
+    private void PerformRangeBoostSkill()
     {
-        Debug.Log("[PartySkill] 執行: 煽動情緒");
+        Debug.Log("📣 [PartySkill] 執行: 增加攻擊範圍");
 
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
-
-        Vector3 attackDir = GetAttackDirection();
-        int hitCount = 0;
-
-        int overlapCount = Physics.OverlapSphereNonAlloc(
-            transform.position,
-            emotionalRange,
-            hitBuffer,
-            voterLayer
-        );
-
-        for (int i = 0; i < overlapCount; i++)
-        {
-            Collider hit = hitBuffer[i];
-            if (hit == null) continue;
-
-            if (hit.TryGetComponent<VoterLogic>(out var voter))
-            {
-                Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
-
-                if (Vector3.Angle(attackDir, dirToTarget) < emotionalAngle / 2f)
-                {
-                    voter.OnInfluence(emotionalInfluence, true, transform.position);
-                    hitCount++;
-                }
-            }
-        }
-
-        if (hitCount > 0)
-        {
-            impulseSource?.GenerateImpulse();
-
-            // 玩家自身立場（如果你有 CampaignManager）----------------------
-            //if (CampaignManager.Instance != null)
-            //{
-              //  CampaignManager.Instance.AddEmotion(hitCount);
-            //}
-
-            // 全球社會風氣
-            if (SocialAtmosphereManager.Instance != null)
-            {
-                SocialAtmosphereManager.Instance.OnSkillUsed(false, hitCount);
-            }
-
-            Debug.Log($"煽動情緒命中 {hitCount} 名選民");
-        }
+        playerAttack?.ApplyTemporaryRangeBoost(rangeBoostMultiplier, rangeBoostDuration);
+        impulseSource?.GenerateImpulse();
+        Debug.Log($"📏 普通攻擊範圍提升 x{rangeBoostMultiplier:F1}，持續 {rangeBoostDuration:F1} 秒");
     }
 
     private Vector3 GetAttackDirection()

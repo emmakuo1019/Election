@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -35,6 +36,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     private float baseAttackRange;
     private float currentAttackRange;
     private float currentAttackCooldown;
+    private float temporaryAttackRangeMultiplier = 1f;
+    private Coroutine rangeBoostCoroutine;
 
     [Header("Layer")]
     public LayerMask voterLayer;
@@ -114,10 +117,26 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     private void RefreshAttackStats()
     {
         PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
-        currentAttackRange = effects != null ? effects.GetModifiedAttackRange(baseAttackRange) : baseAttackRange;
+        float policyAdjustedRange = effects != null ? effects.GetModifiedAttackRange(baseAttackRange) : baseAttackRange;
+        currentAttackRange = policyAdjustedRange * temporaryAttackRangeMultiplier;
         currentAttackCooldown = effects != null ? effects.GetModifiedAttackCooldown(attackCooldown) : attackCooldown;
         attackRange = currentAttackRange;
         OnAttackShapeChanged?.Invoke(currentAttackRange, attackAngle);
+    }
+
+    public void ApplyTemporaryRangeBoost(float multiplier, float duration)
+    {
+        if (multiplier <= 1f || duration <= 0f)
+        {
+            return;
+        }
+
+        if (rangeBoostCoroutine != null)
+        {
+            StopCoroutine(rangeBoostCoroutine);
+        }
+
+        rangeBoostCoroutine = StartCoroutine(TemporaryRangeBoostRoutine(multiplier, duration));
     }
 
     public void PerformSpeech()
@@ -226,5 +245,17 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                 logic.OnInfluence(requiredInfluence, true, transform.position);
             }
         }
+    }
+
+    private IEnumerator TemporaryRangeBoostRoutine(float multiplier, float duration)
+    {
+        temporaryAttackRangeMultiplier = multiplier;
+        RefreshAttackStats();
+
+        yield return new WaitForSeconds(duration);
+
+        temporaryAttackRangeMultiplier = 1f;
+        RefreshAttackStats();
+        rangeBoostCoroutine = null;
     }
 }

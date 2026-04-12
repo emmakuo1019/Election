@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelTimer: {fileID: 958389424}
   roomClearFlowController: {fileID: 0}
+  autoStartBattle: 1
 --- !u!4 &2424443
 Transform:
   m_ObjectHideFlags: 0
