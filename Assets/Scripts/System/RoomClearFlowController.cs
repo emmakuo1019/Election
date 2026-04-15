@@ -19,17 +19,21 @@ public class RoomClearFlowController : MonoBehaviour
     [SerializeField] private RewardPanelController rewardPanelController;
 
     private bool isResolvingRoomClear = false;
+    private bool shouldShowRewardPanel = true;
 
-    public void OnRoomCleared()
+    public void OnRoomCleared(bool showRewardPanel = true)
     {
         if (isResolvingRoomClear)
         {
             return;
         }
 
+        shouldShowRewardPanel = showRewardPanel;
+
         Debug.Log("=== 房間已清空 / 倒數結束 ===");
         Debug.Log("目前場景：" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
         Debug.Log("needMiniSettlement = " + needMiniSettlement);
+        Debug.Log("shouldShowRewardPanel = " + shouldShowRewardPanel);
 
         StartCoroutine(RoomClearFlowRoutine());
     }
@@ -81,7 +85,7 @@ public class RoomClearFlowController : MonoBehaviour
             }
         }
 
-        if (needMiniSettlement)
+        if (needMiniSettlement && shouldShowRewardPanel)
         {
             ShowRewardPanel();
             yield break;

@@ -30,8 +30,6 @@ public class UpgradePanelUI : MonoBehaviour
         emotionalStirringButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.EmotionalStirring));
 
         playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
-
-        UpdateSkillButtonLabels();
         RefreshUI();
     }
 
@@ -79,7 +77,6 @@ public class UpgradePanelUI : MonoBehaviour
     {
         panel.SetActive(true);
         Time.timeScale = 0f;
-        UpdateSkillButtonLabels();
         RefreshUI();
     }
 
@@ -114,12 +111,6 @@ public class UpgradePanelUI : MonoBehaviour
 
         policyDebateButton.interactable = !hasPartySkill;
         emotionalStirringButton.interactable = !hasPartySkill;
-    }
-
-    private void UpdateSkillButtonLabels()
-    {
-        SetButtonLabel(policyDebateButton, "暈眩對手\n讓範圍內敵人短暫停下");
-        SetButtonLabel(emotionalStirringButton, "增加攻擊範圍\n暫時放大普通攻擊範圍");
     }
 
     private void SetButtonLabel(Button button, string label)

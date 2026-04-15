@@ -94,7 +94,7 @@ public class BattleFlowController : MonoBehaviour
 
             if (roomClearFlowController != null)
             {
-                roomClearFlowController.OnRoomCleared();
+                roomClearFlowController.OnRoomCleared(showRewardPanel: true);
             }
             else
             {
@@ -104,7 +104,21 @@ public class BattleFlowController : MonoBehaviour
         else
         {
             CurrentState = BattleState.Failed;
-            Debug.Log("💀 [BattleFlow] 玩家失敗");
+            Debug.Log("💀 [BattleFlow] 玩家失敗，進入無獎勵結算流程");
+
+            if (roomClearFlowController == null)
+            {
+                roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+            }
+
+            if (roomClearFlowController != null)
+            {
+                roomClearFlowController.OnRoomCleared(showRewardPanel: false);
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
+            }
         }
     }
 
