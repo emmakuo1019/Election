@@ -15,5 +15,6 @@ public class VoterConfig : ScriptableObject
 
     [Header("屬性與標籤")]
     public VoterTag tag = VoterTag.Normal;
+    public VoterType voterType = VoterType.Normal;
     public bool isDieHard = false;
 }

@@ -126,9 +126,9 @@ public class VoterLogic : MonoBehaviour
     {
         if (!isGameActive) return;
 
-        if (data.Tag == VoterTag.HatePolitics && !isSkill) return;
+        if (data.Tag == VoterTag.cold && !isSkill) return;
 
-        int finalAmount = (data.Tag == VoterTag.DontKnow) ? amount * 2 : amount;
+        int finalAmount = (data.Tag == VoterTag.emotion) ? amount * 2 : amount;
 
         data.currentPosition = Mathf.Clamp(
             data.currentPosition + finalAmount,

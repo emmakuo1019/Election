@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PolicyEffectRuntimeManager : MonoBehaviour
@@ -28,6 +29,7 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
     public float GlobalNpcSpeedMultiplier { get; private set; } = 1f;
 
     private static PolicyEffectRuntimeManager instance;
+    private readonly List<string> appliedCardSummaries = new List<string>();
 
     private void Awake()
     {
@@ -39,6 +41,66 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
 
         instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void EnsureRuntimeInstanceExists()
+    {
+        _ = Instance;
+    }
+
+    private void OnGUI()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 30,
+            normal = { textColor = Color.black }
+        };
+
+        float lineHeight = 40f;
+        float lineCount = appliedCardSummaries.Count == 0 ? 8f : 7f + appliedCardSummaries.Count;
+        float startY = Screen.height - 10f - (lineCount * lineHeight);
+
+        float y = startY;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), "政策卡數據", labelStyle);
+        y += lineHeight;
+
+        if (appliedCardSummaries.Count == 0)
+        {
+            GUI.Label(new Rect(10f, y, 700f, lineHeight), "名稱: 尚未選擇政策卡", labelStyle);
+            y += lineHeight;
+        }
+        else
+        {
+            for (int i = 0; i < appliedCardSummaries.Count; i++)
+            {
+                GUI.Label(new Rect(10f, y, 700f, lineHeight), $"名稱 {i + 1}: {appliedCardSummaries[i]}", labelStyle);
+                y += lineHeight;
+            }
+        }
+
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"攻擊範圍倍率: {AttackRadiusMultiplier:F2}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"轉化率加成: {ConvertChanceBonus:+0.00;-0.00;0}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"攻擊冷卻增量: {AttackCooldownBonus:+0.00;-0.00;0.00}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"流失率: {LoseControlRate:F2}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"擴散半徑: {SpreadRadius:F1}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"NPC 速度倍率: {GlobalNpcSpeedMultiplier:F2}", labelStyle);
+        y += lineHeight;
+
+        if (SocialAtmosphereManager.Instance != null)
+        {
+            GUI.Label(new Rect(10f, y, 700f, lineHeight), $"社會風氣值: {SocialAtmosphereManager.Instance.SocialAtmosphere}", labelStyle);
+        }
     }
 
     public void ApplyCard(PolicyCardData card)
@@ -60,6 +122,8 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         {
             SocialAtmosphereManager.Instance?.ApplyClimateDelta(card.socialClimateDelta);
         }
+
+        appliedCardSummaries.Add(card.cardName);
 
         RefreshAllVoterMovement();
         OnEffectsChanged?.Invoke();

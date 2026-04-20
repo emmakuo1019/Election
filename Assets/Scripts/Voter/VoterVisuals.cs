@@ -8,6 +8,13 @@ public class VoterVisuals : MonoBehaviour
     public SpriteRenderer bodyRenderer;
     public SpriteRenderer bubbleOutline;
 
+    [Header("選民外觀")]
+    public Sprite normalBodySprite;
+    public Sprite emotionBodySprite;
+    public Sprite coldBodySprite;
+    public Sprite goodBodySprite;
+    public Sprite darkBodySprite;
+
     [Header("色彩設定")]
     public Color neutralColor;
     public Color playerColor;
@@ -63,6 +70,7 @@ public class VoterVisuals : MonoBehaviour
             return;
         }
 
+        ApplyBodySprite();
         ApplyUiSprite();
         UpdateBubbleVisual(data.currentPosition);
     }
@@ -95,6 +103,36 @@ public class VoterVisuals : MonoBehaviour
         bubbleOutline.sprite = data.voterType == VoterType.Dark && darkUiSprite != null
             ? darkUiSprite
             : normalUiSprite;
+    }
+
+    private void ApplyBodySprite()
+    {
+        if (bodyRenderer == null || data == null)
+        {
+            return;
+        }
+
+        Sprite targetSprite = ResolveBodySprite();
+        if (targetSprite != null)
+        {
+            bodyRenderer.sprite = targetSprite;
+        }
+    }
+
+    private Sprite ResolveBodySprite()
+    {
+        if (data.voterType == VoterType.Dark && darkBodySprite != null)
+        {
+            return darkBodySprite;
+        }
+
+        return data.Tag switch
+        {
+            VoterTag.emotion when emotionBodySprite != null => emotionBodySprite,
+            VoterTag.cold when coldBodySprite != null => coldBodySprite,
+            VoterTag.good when goodBodySprite != null => goodBodySprite,
+            _ => normalBodySprite != null ? normalBodySprite : darkBodySprite
+        };
     }
 
     private Color ResolveUiColor(int position)

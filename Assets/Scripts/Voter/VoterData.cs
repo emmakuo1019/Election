@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum VoterTag { Normal, HatePolitics, DontKnow }
+public enum VoterTag { Normal, emotion, cold, good}
 public enum CampaignRoute { Rational, Party }
 
 public enum VoterType 
@@ -37,6 +37,7 @@ public class VoterData : MonoBehaviour
     public bool isConverted = false;
     [Range(0f, 1f)] public float loyalty = 1f;
 
+    public VoterConfig Config => config;
     public VoterTag Tag => config != null ? config.tag : fallbackTag;
     public float MoveSpeed
     {
@@ -76,6 +77,21 @@ public class VoterData : MonoBehaviour
 
         currentPosition = Mathf.Clamp(config.startingPosition, VoterConfig.MIN_POS, VoterConfig.MAX_POS);
         fallbackTag = config.tag;
+        voterType = config.voterType;
+        convertedSide = EvaluateSideFromPosition();
+        isConverted = convertedSide != NeutralSideSign;
+        loyalty = 1f;
+    }
+
+    public void AssignConfig(VoterConfig newConfig)
+    {
+        if (newConfig == null)
+        {
+            return;
+        }
+
+        config = newConfig;
+        InitializeFromConfig();
     }
 
     public void ApplyType(VoterType type)

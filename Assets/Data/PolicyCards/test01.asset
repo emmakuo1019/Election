@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: test01
   m_EditorClassIdentifier: 
   cardName: "\u8857\u982D\u9020\u52E2"
-  description: "\u666E\u901A\u653B\u64CA\u7BC4\u570D x1.5\u3001\u793E\u6703\u98A8\u6C23\u8F49\u5411\u60C5\u7DD2
-    +20\uFF0C\u4F46\u8F49\u5316\u5F8C\u66F4\u5BB9\u6613\u6D41\u5931\u3002"
+  description: "\u653B\u64CA\u7BC4\u570D \u2191 \u98A8\u6C23\u60C5\u7DD2 +20\uFF0C\u6D41\u5931\u7387\u2191"
   attackRadiusMultiplier: 1.5
   convertChanceDelta: 0
   attackCooldownDelta: 0

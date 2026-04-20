@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class BattleSceneController : MonoBehaviour
 {
@@ -6,6 +9,24 @@ public class BattleSceneController : MonoBehaviour
     [SerializeField] private bool initializeVoterTypesOnStart = true;
     [SerializeField] private SocialAtmosphereManager socialAtmosphereManager;
     [SerializeField] private BattleFlowController battleFlowController;
+    [SerializeField] private VoterConfig[] voterConfigs;
+
+    private const string DefaultVoterConfigFolder = "Assets/Data/Voter";
+
+#if UNITY_EDITOR
+    private void Reset()
+    {
+        AutoPopulateVoterConfigs();
+    }
+
+    private void OnValidate()
+    {
+        if (voterConfigs == null || voterConfigs.Length == 0)
+        {
+            AutoPopulateVoterConfigs();
+        }
+    }
+#endif
 
     private void Start()
     {
@@ -41,12 +62,22 @@ public class BattleSceneController : MonoBehaviour
     private void InitializeSceneVoters()
     {
         float darkRate = socialAtmosphereManager != null ? socialAtmosphereManager.GetDarkVoterRate() : 0.1f;
+        EnsureVoterConfigsLoaded();
         VoterData[] voters = FindObjectsByType<VoterData>(FindObjectsSortMode.None);
 
         foreach (VoterData voter in voters)
         {
-            VoterType type = Random.value < darkRate ? VoterType.Dark : VoterType.Normal;
-            voter.ApplyType(type);
+            VoterConfig randomConfig = GetRandomVoterConfig();
+            if (randomConfig != null)
+            {
+                voter.AssignConfig(randomConfig);
+            }
+
+            if (voter.Config == null || voter.Config.voterType != VoterType.Dark)
+            {
+                VoterType type = Random.value < darkRate ? VoterType.Dark : VoterType.Normal;
+                voter.ApplyType(type);
+            }
 
             if (voter.TryGetComponent<VoterLogic>(out var logic))
             {
@@ -61,4 +92,40 @@ public class BattleSceneController : MonoBehaviour
 
         Debug.Log($"🗳️ [BattleSceneController] 已初始化 {voters.Length} 位選民，深色選民機率 {darkRate:P0}");
     }
+
+    private VoterConfig GetRandomVoterConfig()
+    {
+        if (voterConfigs == null || voterConfigs.Length == 0)
+        {
+            return null;
+        }
+
+        return voterConfigs[Random.Range(0, voterConfigs.Length)];
+    }
+
+    private void EnsureVoterConfigsLoaded()
+    {
+        if (voterConfigs != null && voterConfigs.Length > 0)
+        {
+            return;
+        }
+
+#if UNITY_EDITOR
+        AutoPopulateVoterConfigs();
+#endif
+    }
+
+#if UNITY_EDITOR
+    private void AutoPopulateVoterConfigs()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:VoterConfig", new[] { DefaultVoterConfigFolder });
+        voterConfigs = new VoterConfig[guids.Length];
+
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+            voterConfigs[i] = AssetDatabase.LoadAssetAtPath<VoterConfig>(path);
+        }
+    }
+#endif
 }

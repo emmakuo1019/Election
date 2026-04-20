@@ -76,14 +76,12 @@ public class UpgradePanelUI : MonoBehaviour
     public void OpenPanel()
     {
         panel.SetActive(true);
-        Time.timeScale = 0f;
         RefreshUI();
     }
 
     public void ClosePanel()
     {
         panel.SetActive(false);
-        Time.timeScale = 1f;
     }
 
     private void OnPartySkillSelectionRequested()

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8689738403584087593}
   - component: {fileID: 8118177006610108402}
   - component: {fileID: 550731369262533568}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: BeChangeParticle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 3962820855032073483}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.06, y: 1.89, z: -0.18}
+  m_LocalPosition: {x: 0.16, y: 0.34, z: 0.379}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -223,7 +223,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 0.1462264, b: 0.1608482, a: 1}
+      maxColor: {r: 1, g: 0.9238702, b: 0, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -287,7 +287,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.45
+      scalar: 0.42
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -4901,7 +4901,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4693748593575835549}
   - component: {fileID: 2774184649760543316}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Voter-Normal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4918,7 +4918,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.08, y: -0.05, z: 0}
-  m_LocalScale: {x: 1.32, y: 1.32, z: 1.32}
+  m_LocalScale: {x: 0.37, y: 0.37, z: 0.37}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
@@ -4967,7 +4967,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -580836790, guid: c8ec4c2edfb0d4d8aabd748570e68ff3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 89003e5b9b17140da90d1ea417f877c8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4988,7 +4988,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3909163827661493348}
   - component: {fileID: 4798280922386667136}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: UI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5079,9 +5079,9 @@ GameObject:
   - component: {fileID: 4672302401026481900}
   - component: {fileID: 1022887108545879583}
   - component: {fileID: 2651321641688485047}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Voter
-  m_TagString: Untagged
+  m_TagString: Voter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5095,8 +5095,8 @@ Transform:
   m_GameObject: {fileID: 7099554672830994185}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.43, y: 0, z: 6.29}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalPosition: {x: 3.43, y: 3.5, z: 6.29}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4693748593575835549}
@@ -5116,12 +5116,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a25643ea285c43f6acdc8aa425f97dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wanderRadius: 6
+  wanderRadius: 7
   wanderIntervalMin: 2
   wanderIntervalMax: 5
-  moveSpeed: 3
-  knockbackDistance: 1.2
-  knockbackDuration: 0.25
+  moveSpeed: 5
+  knockbackDistance: 1.5
+  knockbackDuration: 0.3
   darkApproachStoppingDistance: 1.5
   darkDestinationRefreshInterval: 0.28
 --- !u!114 &5396591549920925665
@@ -5136,12 +5136,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9506c684f59e461d86df36594d352ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bodyRenderer: {fileID: 0}
+  bodyRenderer: {fileID: 2774184649760543316}
   bubbleOutline: {fileID: 4798280922386667136}
+  normalBodySprite: {fileID: 21300000, guid: 89003e5b9b17140da90d1ea417f877c8, type: 3}
+  emotionBodySprite: {fileID: 21300000, guid: 7011be9fa24134456afaff12deaa54a4, type: 3}
+  coldBodySprite: {fileID: 21300000, guid: 106aea93289f74067939dff04d680a6a, type: 3}
+  goodBodySprite: {fileID: 21300000, guid: 07205186d53eb4b5db50f0485c26c0df, type: 3}
+  darkBodySprite: {fileID: 21300000, guid: 8b0e2286db8de465ba10d3f87a18bd2c, type: 3}
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
   opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}
-  darkVoterColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   darkUiColor: {r: 0.8679245, g: 0.7372131, b: 0, a: 1}
   normalUiSprite: {fileID: 21300000, guid: 9d8e68bb729df4efa8fe0097cc21ace3, type: 3}
   darkUiSprite: {fileID: 21300000, guid: 0aa026f8a673d4ac6bd3fe01f2c98bba, type: 3}
@@ -5159,7 +5163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00aacf6a80f7a486bbc5f3eed92a15d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: 9e758346486b146cfbb6ab29360fd0bf, type: 2}
+  config: {fileID: 0}
   voterType: 0
   normalMoveSpeed: 1.2
   darkMoveSpeed: 2
@@ -5167,6 +5171,7 @@ MonoBehaviour:
   currentPosition: 0
   convertedSide: 0
   isConverted: 0
+  loyalty: 1
 --- !u!195 &1022887108545879583
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -5177,7 +5182,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
+  m_Speed: 5
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -5186,7 +5191,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 0
+  m_BaseOffset: 3.25
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!136 &2651321641688485047
@@ -5208,7 +5213,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.1002377
-  m_Height: 4.2223787
+  m_Radius: 0.92332697
+  m_Height: 6.3925447
   m_Direction: 1
-  m_Center: {x: -0.117669225, y: 1.6111894, z: 0}
+  m_Center: {x: 0.31513953, y: -0.06842661, z: 0}

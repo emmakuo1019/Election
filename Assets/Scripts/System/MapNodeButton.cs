@@ -15,8 +15,14 @@ public class MapNodeButton : MonoBehaviour
     [SerializeField] private GameObject availableVisual;
     [SerializeField] private GameObject completedVisual;
 
+    [Header("節點縮放")]
+    [SerializeField] private float availableScaleMultiplier = 1.08f;
+
+    private Vector3 defaultScale;
+
     private void Start()
     {
+        defaultScale = transform.localScale;
         RefreshState();
     }
 
@@ -28,14 +34,25 @@ public class MapNodeButton : MonoBehaviour
             return;
         }
 
-        if (button != null)
+        if (MapProgressManager.Instance == null)
         {
-            button.interactable = true;
+            Debug.LogWarning("MapProgressManager 尚未存在");
+            return;
         }
 
-        if (lockedVisual != null) lockedVisual.SetActive(false);
-        if (availableVisual != null) availableVisual.SetActive(true);
-        if (completedVisual != null) completedVisual.SetActive(false);
+        bool isCompleted = MapProgressManager.Instance.IsNodeCompleted(nodeData.nodeID);
+        bool isAvailable = MapProgressManager.Instance.CanEnterNode(nodeData.nodeID);
+
+        if (button != null)
+        {
+            button.interactable = isAvailable;
+        }
+
+        if (lockedVisual != null) lockedVisual.SetActive(!isAvailable && !isCompleted);
+        if (availableVisual != null) availableVisual.SetActive(isAvailable);
+        if (completedVisual != null) completedVisual.SetActive(isCompleted);
+
+        transform.localScale = isAvailable ? defaultScale * availableScaleMultiplier : defaultScale;
     }
 
     public void OnClickNode()
@@ -43,6 +60,18 @@ public class MapNodeButton : MonoBehaviour
         if (nodeData == null)
         {
             Debug.LogWarning("MapNodeButton：nodeData 為空");
+            return;
+        }
+
+        if (MapProgressManager.Instance == null)
+        {
+            Debug.LogWarning("MapProgressManager 不存在");
+            return;
+        }
+
+        if (!MapProgressManager.Instance.CanEnterNode(nodeData.nodeID))
+        {
+            Debug.Log($"⛔ 此節點目前不可進入：{nodeData.nodeID}");
             return;
         }
 
