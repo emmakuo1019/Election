@@ -3,6 +3,9 @@ using UnityEngine.InputSystem;
 
 public class PlayerSkillManager : MonoBehaviour
 {
+    private const string SavedPartySkillKey = "SavedPartySkill";
+    private const string PendingMapSkillSelectionKey = "PendingMapSkillSelection";
+
     public enum PartySkillType
     {
         None,              // 未選擇
@@ -32,6 +35,11 @@ public class PlayerSkillManager : MonoBehaviour
     public bool HasPartySkill => selectedPartySkill != PartySkillType.None;
     private bool isGameActive = true;
 
+    private void Awake()
+    {
+        selectedPartySkill = LoadSavedPartySkill();
+    }
+
     private void OnEnable()
     {
         if (speechAction != null)
@@ -49,6 +57,8 @@ public class PlayerSkillManager : MonoBehaviour
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
         }
+
+        InitializeLoadedSkill();
     }
 
     private void OnDisable()
@@ -127,6 +137,8 @@ public class PlayerSkillManager : MonoBehaviour
         }
 
         selectedPartySkill = skillType;
+        SavePartySkill(skillType);
+        ClearPendingMapSkillSelection();
         Debug.Log($"✅ 已解鎖政黨技能: {skillType}");
 
         if (partySkillAttack != null)
@@ -183,4 +195,65 @@ public class PlayerSkillManager : MonoBehaviour
     public delegate void PartySkillSelectionDelegate();
     public event PartySkillSelectionDelegate OnPartySkillSelectionRequested;
     public float HoldProgress => isHolding ? Mathf.Clamp01(holdTimer / holdDuration) : 0f;
+
+    public static bool HasSavedPartySkill()
+    {
+        return LoadSavedPartySkill() != PartySkillType.None;
+    }
+
+    public static PartySkillType LoadSavedPartySkill()
+    {
+        int savedValue = PlayerPrefs.GetInt(SavedPartySkillKey, (int)PartySkillType.None);
+        if (!System.Enum.IsDefined(typeof(PartySkillType), savedValue))
+        {
+            return PartySkillType.None;
+        }
+
+        return (PartySkillType)savedValue;
+    }
+
+    public static void SavePartySkill(PartySkillType skillType)
+    {
+        PlayerPrefs.SetInt(SavedPartySkillKey, (int)skillType);
+        PlayerPrefs.Save();
+    }
+
+    public static void ResetSavedPartySkill()
+    {
+        PlayerPrefs.DeleteKey(SavedPartySkillKey);
+        PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
+        PlayerPrefs.Save();
+    }
+
+    public static void MarkPendingMapSkillSelection()
+    {
+        if (HasSavedPartySkill())
+        {
+            return;
+        }
+
+        PlayerPrefs.SetInt(PendingMapSkillSelectionKey, 1);
+        PlayerPrefs.Save();
+    }
+
+    public static bool HasPendingMapSkillSelection()
+    {
+        return PlayerPrefs.GetInt(PendingMapSkillSelectionKey, 0) == 1;
+    }
+
+    public static void ClearPendingMapSkillSelection()
+    {
+        PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
+        PlayerPrefs.Save();
+    }
+
+    private void InitializeLoadedSkill()
+    {
+        if (selectedPartySkill == PartySkillType.None || partySkillAttack == null)
+        {
+            return;
+        }
+
+        partySkillAttack.Initialize(selectedPartySkill);
+    }
 }

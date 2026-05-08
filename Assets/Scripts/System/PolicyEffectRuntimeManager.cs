@@ -27,6 +27,9 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
     public float LoseControlRate { get; private set; }
     public float SpreadRadius { get; private set; }
     public float GlobalNpcSpeedMultiplier { get; private set; } = 1f;
+    public float IntegrityHp { get; private set; } = 70f;
+    public float MaxIntegrityHp { get; private set; } = 100f;
+    public float IntegrityHpRatio => MaxIntegrityHp <= 0f ? 0f : IntegrityHp / MaxIntegrityHp;
 
     private static PolicyEffectRuntimeManager instance;
     private readonly List<string> appliedCardSummaries = new List<string>();
@@ -63,7 +66,7 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         };
 
         float lineHeight = 40f;
-        float lineCount = appliedCardSummaries.Count == 0 ? 8f : 7f + appliedCardSummaries.Count;
+        float lineCount = appliedCardSummaries.Count == 0 ? 9f : 8f + appliedCardSummaries.Count;
         float startY = Screen.height - 10f - (lineCount * lineHeight);
 
         float y = startY;
@@ -95,6 +98,8 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         GUI.Label(new Rect(10f, y, 700f, lineHeight), $"擴散半徑: {SpreadRadius:F1}", labelStyle);
         y += lineHeight;
         GUI.Label(new Rect(10f, y, 700f, lineHeight), $"NPC 速度倍率: {GlobalNpcSpeedMultiplier:F2}", labelStyle);
+        y += lineHeight;
+        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"誠信值 HP: {IntegrityHp:F0}/{MaxIntegrityHp:F0}", labelStyle);
         y += lineHeight;
 
         if (SocialAtmosphereManager.Instance != null)
@@ -148,6 +153,38 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
     public float GetModifiedConvertChance(float baseChance)
     {
         return Mathf.Clamp01(baseChance + ConvertChanceBonus);
+    }
+
+    public float GetModifiedVoterBaseHp(float baseHp)
+    {
+        return Mathf.Max(0f, baseHp * IntegrityHpRatio);
+    }
+
+    public void SetIntegrityHp(float currentValue)
+    {
+        IntegrityHp = Mathf.Clamp(currentValue, 0f, MaxIntegrityHp);
+        OnEffectsChanged?.Invoke();
+    }
+
+    public void AddIntegrityHp(float delta)
+    {
+        SetIntegrityHp(IntegrityHp + delta);
+    }
+
+    public void SetMaxIntegrityHp(float maxValue, bool refillCurrentHp = false)
+    {
+        MaxIntegrityHp = Mathf.Max(1f, maxValue);
+
+        if (refillCurrentHp)
+        {
+            IntegrityHp = MaxIntegrityHp;
+        }
+        else
+        {
+            IntegrityHp = Mathf.Clamp(IntegrityHp, 0f, MaxIntegrityHp);
+        }
+
+        OnEffectsChanged?.Invoke();
     }
 
     private static void CreateRuntimeInstance()

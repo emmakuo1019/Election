@@ -5119,11 +5119,14 @@ MonoBehaviour:
   wanderRadius: 7
   wanderIntervalMin: 2
   wanderIntervalMax: 5
-  moveSpeed: 5
+  moveSpeed: 7
   knockbackDistance: 1.5
   knockbackDuration: 0.3
   darkApproachStoppingDistance: 1.5
   darkDestinationRefreshInterval: 0.28
+  hitAnimationTriggerCooldown: 0.08
+  moveToExitWhenBattleEnds: 1
+  exitMoveSpeedMultiplier: 7
 --- !u!114 &5396591549920925665
 MonoBehaviour:
   m_ObjectHideFlags: 0

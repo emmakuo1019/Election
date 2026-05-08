@@ -12,6 +12,7 @@ public class RewardPanelUI : MonoBehaviour
     private Text rewardBtn01Text;
     private Text rewardBtn02Text;
     private Text rewardBtn03Text;
+    private bool isProcessingSelection;
 
     void Awake()
     {
@@ -21,6 +22,7 @@ public class RewardPanelUI : MonoBehaviour
 
     private void OnEnable()
     {
+        isProcessingSelection = false;
         RefreshRewardChoices();
     }
 
@@ -90,6 +92,11 @@ public class RewardPanelUI : MonoBehaviour
 
     void OnRewardClicked(int index)
     {
+        if (isProcessingSelection)
+        {
+            return;
+        }
+
         if (index < 0 || index >= currentCards.Count)
         {
             Debug.LogWarning("RewardPanelUI：點擊的卡片索引超出範圍");
@@ -97,9 +104,18 @@ public class RewardPanelUI : MonoBehaviour
         }
 
         PolicyCardData selectedCard = currentCards[index];
+        if (selectedCard == null)
+        {
+            Debug.LogWarning("RewardPanelUI：選到空白政策卡");
+            return;
+        }
+
+        isProcessingSelection = true;
+        SetButtonsInteractable(false);
+
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
 
-        PolicyEffectRuntimeManager.Instance.ApplyCard(selectedCard);
+        PolicyEffectRuntimeManager.Instance?.ApplyCard(selectedCard);
 
         if (rewardPanelController != null)
         {
@@ -108,7 +124,7 @@ public class RewardPanelUI : MonoBehaviour
 
         BattleFlowController.Instance?.OnRewardSelected();
 
-        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
 
         if (roomClearFlowController != null)
         {
@@ -116,7 +132,13 @@ public class RewardPanelUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，退回舊的直接切場流程");
+            Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，改用出口控制器收尾");
+
+            RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+            if (roomExitController != null)
+            {
+                roomExitController.UnlockExit();
+            }
         }
     }
 

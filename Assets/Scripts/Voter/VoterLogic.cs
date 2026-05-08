@@ -7,6 +7,8 @@ using Random = UnityEngine.Random;
 [RequireComponent(typeof(NavMeshAgent))]
 public class VoterLogic : MonoBehaviour
 {
+    private const float ExitArrivalThreshold = 0.05f;
+
     [Header("隨機移動")]
     public float wanderRadius = 6f;
     public float wanderIntervalMin = 2f;
@@ -20,6 +22,11 @@ public class VoterLogic : MonoBehaviour
     [Header("深色選民追擊")]
     [SerializeField] private float darkApproachStoppingDistance = 1.5f;
     [SerializeField] private float darkDestinationRefreshInterval = 0.25f;
+    [SerializeField] private float hitAnimationTriggerCooldown = 0.08f;
+
+    [Header("倒數結束離場")]
+    [SerializeField] private bool moveToExitWhenBattleEnds = true;
+    [SerializeField] private float exitMoveSpeedMultiplier = 1f;
 
     private static readonly int HashHit = Animator.StringToHash("hit");
 
@@ -32,9 +39,12 @@ public class VoterLogic : MonoBehaviour
     private bool isKnockedBack;
     private bool isFrozenByHitStop;
     private bool isGameActive = true;
+    private bool isExitingAfterBattle;
     private Coroutine wanderCoroutine;
     private Transform playerTransform;
     private float nextDarkRefreshTime;
+    private float lastHitAnimationTriggerTime = float.NegativeInfinity;
+    private Vector3 exitDestination;
     private readonly Collider[] spreadHitBuffer = new Collider[32];
 
     public VoterData Data => data;
@@ -80,6 +90,12 @@ public class VoterLogic : MonoBehaviour
 
     private void Update()
     {
+        if (isExitingAfterBattle)
+        {
+            UpdateExitMovement();
+            return;
+        }
+
         if (!isGameActive || data == null || agent == null || !agent.isOnNavMesh)
         {
             return;
@@ -119,7 +135,45 @@ public class VoterLogic : MonoBehaviour
             agent.ResetPath();
         }
 
-        //Debug.Log("🛑 [VoterLogic] 遊戲結束，選民停止移動");
+        if (!moveToExitWhenBattleEnds)
+        {
+            return;
+        }
+
+        RoomExitController exitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        if (exitController == null)
+        {
+            return;
+        }
+
+        BeginExitMovement(exitController.GetVoterExitPosition());
+    }
+
+    public void BeginExitMovement(Vector3 destination)
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        StopAllCoroutines();
+        wanderCoroutine = null;
+        isKnockedBack = false;
+        isGameActive = false;
+        exitDestination = destination;
+        exitDestination.y = transform.position.y;
+        isExitingAfterBattle = true;
+
+        if (agent != null)
+        {
+            if (agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+
+            agent.enabled = false;
+        }
     }
 
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default, bool allowSpread = true)
@@ -138,7 +192,7 @@ public class VoterLogic : MonoBehaviour
         UpdateConversionState(allowSpread);
 
         OnPositionChanged?.Invoke(data.currentPosition);
-        anim?.SetTrigger(HashHit);
+        TriggerHitAnimation();
 
         if (!isKnockedBack && attackerPosition != default)
         {
@@ -146,6 +200,23 @@ public class VoterLogic : MonoBehaviour
             dir.y = 0f;
             StartCoroutine(KnockbackRoutine(dir));
         }
+    }
+
+    private void TriggerHitAnimation()
+    {
+        if (anim == null)
+        {
+            return;
+        }
+
+        if (Time.time < lastHitAnimationTriggerTime + hitAnimationTriggerCooldown)
+        {
+            return;
+        }
+
+        lastHitAnimationTriggerTime = Time.time;
+        anim.ResetTrigger(HashHit);
+        anim.SetTrigger(HashHit);
     }
 
     private void UpdateConversionState(bool allowSpread)
@@ -168,7 +239,6 @@ public class VoterLogic : MonoBehaviour
             if (newSide == VoterData.PlayerSideSign && oldSide != VoterData.PlayerSideSign)
             {
                 PlayerMPSystem.Instance?.RecoverMP(1);
-                Debug.Log("🗳️ 玩家成功轉化選民，回復 1 MP");
 
                 if (allowSpread)
                 {
@@ -188,8 +258,6 @@ public class VoterLogic : MonoBehaviour
 
         VoteManager.Instance?.ApplyAlignmentChange(oldSide, VoterData.NeutralSideSign);
         OnPositionChanged?.Invoke(data.currentPosition);
-
-        Debug.Log("↩️ [VoterLogic] 選民忠誠耗盡，回到中立");
     }
 
     private void UpdateLoyaltyDecay()
@@ -288,6 +356,25 @@ public class VoterLogic : MonoBehaviour
 
         nextDarkRefreshTime = Time.time + darkDestinationRefreshInterval;
         agent.SetDestination(playerTransform.position);
+    }
+
+    private void UpdateExitMovement()
+    {
+        float speed = Mathf.Max(0.01f, (data != null ? data.MoveSpeed : moveSpeed) * exitMoveSpeedMultiplier);
+        Vector3 nextPosition = Vector3.MoveTowards(transform.position, exitDestination, speed * Time.deltaTime);
+        Vector3 moveDelta = nextPosition - transform.position;
+
+        if (moveDelta.sqrMagnitude > 0.000001f)
+        {
+            transform.position = nextPosition;
+        }
+
+        if ((exitDestination - transform.position).sqrMagnitude <= ExitArrivalThreshold * ExitArrivalThreshold)
+        {
+            transform.position = exitDestination;
+            isExitingAfterBattle = false;
+            enabled = false;
+        }
     }
 
     private Vector3 SampleRandomNavMeshPoint()

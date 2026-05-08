@@ -3237,6 +3237,13 @@ MonoBehaviour:
   initializeVoterTypesOnStart: 1
   socialAtmosphereManager: {fileID: 1679250629}
   battleFlowController: {fileID: 1513242721}
+  voterConfigs:
+  - {fileID: 11400000, guid: 9e758346486b146cfbb6ab29360fd0bf, type: 2}
+  - {fileID: 11400000, guid: 048b53421ac354b2b8014437050fdc76, type: 2}
+  - {fileID: 11400000, guid: d446c277d20d641518181c7c0b4c7e18, type: 2}
+  - {fileID: 11400000, guid: 5484084f22c2c46159a73d23bb0a494b, type: 2}
+  - {fileID: 11400000, guid: af1ca522845ec40f3bdb0b20e87ec89e, type: 2}
+  - {fileID: 11400000, guid: 72e6c036f6d524ae9a507a9d14ba8eeb, type: 2}
 --- !u!114 &1300555896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4789,7 +4796,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   socialAtmosphere: -100
-  minAtmosphere: -100
+  minAtmosphere: 50
   maxAtmosphere: 100
   policyDebateGain: 3
   emotionalStirringGain: 3
@@ -5357,6 +5364,7 @@ MonoBehaviour:
   isFinalRoomExit: 0
   currentMapNode: {fileID: 0}
   triggerOnlyOnce: 1
+  unlockOnStart: 0
 --- !u!65 &1831290305
 BoxCollider:
   m_ObjectHideFlags: 0

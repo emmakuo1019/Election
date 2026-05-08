@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 
 public class RoomExitController : MonoBehaviour
 {
+    private const float DefaultVoterExitOffset = 6f;
+
     [Header("出口外觀（可選）")]
     [SerializeField] private GameObject lockedVisual;
     [SerializeField] private GameObject unlockedVisual;
@@ -19,11 +21,37 @@ public class RoomExitController : MonoBehaviour
     [Header("是否只觸發一次")]
     [SerializeField] private bool triggerOnlyOnce = true;
 
+    [Header("特殊房間設定")]
+    [SerializeField] private bool unlockOnStart = false;
+
+    [Header("選民離場表演")]
+    [SerializeField] private Transform voterExitTarget;
+    [SerializeField] private float voterExitForwardOffset = DefaultVoterExitOffset;
+
     private bool isUnlocked = false;
     private bool hasTriggered = false;
 
+    public bool IsFinalRoomExit => isFinalRoomExit;
+    public string TargetSceneName => targetSceneName;
+
+    public Vector3 GetVoterExitPosition()
+    {
+        if (voterExitTarget != null)
+        {
+            return voterExitTarget.position;
+        }
+
+        float offset = Mathf.Max(voterExitForwardOffset, DefaultVoterExitOffset);
+        return transform.position + transform.forward * offset;
+    }
+
     private void Start()
     {
+        if (unlockOnStart)
+        {
+            isUnlocked = true;
+        }
+
         UpdateVisual();
     }
 
@@ -31,7 +59,6 @@ public class RoomExitController : MonoBehaviour
     {
         isUnlocked = true;
         UpdateVisual();
-        Debug.Log("🚪 出口已開啟");
     }
 
     public void LockExit()
@@ -54,16 +81,18 @@ public class RoomExitController : MonoBehaviour
 
         hasTriggered = true;
 
-        Debug.Log($"🚪 玩家進入出口，準備前往：{targetSceneName}");
-
         Time.timeScale = 1f;
 
         if (isFinalRoomExit)
         {
+            bool isFirstCompletedBlock = CampaignProgressManager.GetCompletedBlockCount() == 0;
             CampaignProgressManager.AddCompletedBlock();
             BlockProgressManager.ClearBlockProgress();
 
-            Debug.Log("✅ 已完成一個區塊，返回大地圖");
+            if (isFirstCompletedBlock)
+            {
+                PlayerSkillManager.MarkPendingMapSkillSelection();
+            }
         }
 
         if (string.IsNullOrEmpty(targetSceneName))

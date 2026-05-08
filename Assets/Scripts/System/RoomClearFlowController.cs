@@ -30,11 +30,6 @@ public class RoomClearFlowController : MonoBehaviour
 
         shouldShowRewardPanel = showRewardPanel;
 
-        Debug.Log("=== 房間已清空 / 倒數結束 ===");
-        Debug.Log("目前場景：" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
-        Debug.Log("needMiniSettlement = " + needMiniSettlement);
-        Debug.Log("shouldShowRewardPanel = " + shouldShowRewardPanel);
-
         StartCoroutine(RoomClearFlowRoutine());
     }
 
@@ -42,6 +37,7 @@ public class RoomClearFlowController : MonoBehaviour
     {
         isResolvingRoomClear = true;
         PauseGameplayForSettlement();
+        ForceAllVotersExit();
 
         int rewardedMP = 0;
         float supportRate = 0f;
@@ -55,8 +51,6 @@ public class RoomClearFlowController : MonoBehaviour
             totalVoters = roomResultCalculator.GetTotalVoters();
             playerSupporters = roomResultCalculator.GetPlayerSupporters();
             rewardedMP = roomResultCalculator.CalculateAndRewardMP();
-
-            Debug.Log($"📢 房間結算完成，額外回補 MP：{rewardedMP}");
         }
 
         // 前兩房顯示選情快報
@@ -97,17 +91,10 @@ public class RoomClearFlowController : MonoBehaviour
     private void PauseGameplayForSettlement()
     {
         LevelTimer.Instance?.PauseTimer();
-        Time.timeScale = 0f;
     }
 
     public void OnRewardSelected()
     {
-        if (!isResolvingRoomClear)
-        {
-            Debug.LogWarning("⚠️ RoomClearFlowController：目前沒有等待中的獎勵流程");
-            return;
-        }
-
         OpenExitAndFinish();
     }
 
@@ -126,12 +113,12 @@ public class RoomClearFlowController : MonoBehaviour
         }
 
         rewardPanelController.ShowRewardPanel();
-        Debug.Log("🎁 選情快報結束，顯示三選一獎勵");
     }
 
     private void OpenExitAndFinish()
     {
-        Time.timeScale = 1f;
+        PlayerController playerController = FindFirstObjectByType<PlayerController>();
+        playerController?.EnableMovementOnly();
 
         if (roomExitController == null)
         {
@@ -146,6 +133,25 @@ public class RoomClearFlowController : MonoBehaviour
 
         roomExitController.UnlockExit();
         isResolvingRoomClear = false;
-        Debug.Log("🚪 房間結束流程完成，出口已開啟");
+    }
+
+    private void ForceAllVotersExit()
+    {
+        if (roomExitController == null)
+        {
+            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        }
+
+        if (roomExitController == null)
+        {
+            return;
+        }
+
+        Vector3 exitPosition = roomExitController.GetVoterExitPosition();
+        VoterLogic[] voters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);
+        foreach (VoterLogic voter in voters)
+        {
+            voter.BeginExitMovement(exitPosition);
+        }
     }
 }

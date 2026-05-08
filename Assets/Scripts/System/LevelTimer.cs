@@ -8,6 +8,8 @@ using UnityEngine;
 public class LevelTimer : MonoBehaviour
 {
     public static LevelTimer Instance { get; private set; }
+    private const float MinimumValidDuration = 0.1f;
+    private const float FallbackDuration = 10f;
 
     [Header("計時設定")]
     [SerializeField] private float levelDuration = 120f;
@@ -42,6 +44,7 @@ public class LevelTimer : MonoBehaviour
         }
 
         Instance = this;
+        EnsureValidDuration();
         isActive = false;
         isTimeUp = false;
         remainingTime = levelDuration;
@@ -92,12 +95,24 @@ public class LevelTimer : MonoBehaviour
             return;
         }
 
+        EnsureValidDuration();
         isActive = true;
         isTimeUp = false;
         remainingTime = levelDuration;
 
         OnTimerStart?.Invoke();
         OnTimerTick?.Invoke(remainingTime, levelDuration);
+    }
+
+    private void EnsureValidDuration()
+    {
+        if (levelDuration >= MinimumValidDuration)
+        {
+            return;
+        }
+
+        Debug.LogWarning($"⚠️ [LevelTimer] levelDuration={levelDuration} 無效，改用預設 {FallbackDuration} 秒");
+        levelDuration = FallbackDuration;
     }
 
     public void PauseTimer()

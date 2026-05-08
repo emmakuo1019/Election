@@ -11,6 +11,7 @@ void Start()
     Time.timeScale = 1f;
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
+    PlayerSkillManager.ResetSavedPartySkill();
     backBtn.onClick.AddListener(backBtnOnClick);
 
     MapProgressManager mapProgressManager = FindFirstObjectByType<MapProgressManager>();

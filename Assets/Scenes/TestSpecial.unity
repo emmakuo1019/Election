@@ -748,6 +748,7 @@ MonoBehaviour:
   isFinalRoomExit: 1
   currentMapNode: {fileID: 0}
   triggerOnlyOnce: 1
+  unlockOnStart: 1
 --- !u!65 &594423866
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1114,7 +1115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fbc51c7e89f74306b9d29074fffdba6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelDuration: 0
+  levelDuration: 10
   remainingTime: 0
   isActive: 0
   isTimeUp: 1

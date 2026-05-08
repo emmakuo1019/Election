@@ -26,8 +26,6 @@ public class RewardPanelController : MonoBehaviour
         {
             rewardPanel.SetActive(true);
         }
-
-        Time.timeScale = 0f;
     }
 
     public void HideRewardPanel()
@@ -41,7 +39,5 @@ public class RewardPanelController : MonoBehaviour
         {
             rewardPanel.SetActive(false);
         }
-
-        Time.timeScale = 1f;
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BattleFlowController : MonoBehaviour
 {
@@ -73,8 +74,6 @@ public class BattleFlowController : MonoBehaviour
 
         CurrentState = BattleState.Fighting;
         levelTimer?.StartTimer();
-
-        Debug.Log("⚔️ [BattleFlow] 戰鬥開始");
     }
 
     private void OnBattleTimeEnd()
@@ -82,10 +81,9 @@ public class BattleFlowController : MonoBehaviour
         int playerVotes = VoteManager.Instance != null ? VoteManager.Instance.PlayerVotes : 0;
         int opponentVotes = VoteManager.Instance != null ? VoteManager.Instance.OpponentVotes : 0;
 
-        if (playerVotes >= opponentVotes)
+        if (playerVotes > opponentVotes)
         {
             CurrentState = BattleState.Completed;
-            Debug.Log("🏆 [BattleFlow] 玩家獲勝，進入房間結束流程");
 
             if (roomClearFlowController == null)
             {
@@ -103,8 +101,15 @@ public class BattleFlowController : MonoBehaviour
         }
         else
         {
+            if (IsFirstBlockFinalRoom())
+            {
+                CurrentState = BattleState.Failed;
+                Time.timeScale = 1f;
+                SceneManager.LoadScene("endGamePanel");
+                return;
+            }
+
             CurrentState = BattleState.Failed;
-            Debug.Log("💀 [BattleFlow] 玩家失敗，進入無獎勵結算流程");
 
             if (roomClearFlowController == null)
             {
@@ -122,9 +127,19 @@ public class BattleFlowController : MonoBehaviour
         }
     }
 
+    private bool IsFirstBlockFinalRoom()
+    {
+        if (CampaignProgressManager.GetCompletedBlockCount() != 0)
+        {
+            return false;
+        }
+
+        RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        return roomExitController != null && roomExitController.IsFinalRoomExit && BlockProgressManager.IsLastRoomInBlock();
+    }
+
     public void OnRewardSelected()
     {
         CurrentState = BattleState.Completed;
-        Debug.Log("🎴 [BattleFlow] 獎勵已選擇");
     }
 }

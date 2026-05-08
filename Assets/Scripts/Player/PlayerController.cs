@@ -117,6 +117,15 @@ public class PlayerController : MonoBehaviour
         characterAnimator?.SetBool(HashIsMoving, false);
     }
 
+    public void EnableMovementOnly()
+    {
+        isGameplayActive = true;
+        movement = Vector3.zero;
+        IsDashing = false;
+        dashCoroutine = null;
+        characterAnimator?.SetBool(HashIsMoving, false);
+    }
+
     private IEnumerator DashRoutine()
     {
         if (movement.sqrMagnitude <= 0.01f) yield break;
