@@ -10,8 +10,11 @@ public class VoteManager : MonoBehaviour
     public static VoteManager Instance { get; private set; }
 
     [Header("投票統計")]
-    private int playerVotes = 0;      // 玩家得票
-    private int opponentVotes = 0;    // 敵手得票
+    [SerializeField] private int defaultPlayerVotes = 50;
+    [SerializeField] private int defaultOpponentVotes = 50;
+
+    private int playerVotes;      // 玩家得票
+    private int opponentVotes;    // 敵手得票
 
     public delegate void VoteChangeDelegate(int playerVotes, int opponentVotes);
     public event VoteChangeDelegate OnVotesChanged;
@@ -33,6 +36,7 @@ public class VoteManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        ResetToDefaultVotes(notifyListeners: false);
         Debug.Log("[VoteManager] 初始化完成");
     }
 
@@ -48,6 +52,29 @@ public class VoteManager : MonoBehaviour
 
         Debug.Log($"📊 得票數更新 | 你: {playerVotes} | 對手: {opponentVotes}");
         OnVotesChanged?.Invoke(playerVotes, opponentVotes);
+    }
+
+    public void SetVotes(int newPlayerVotes, int newOpponentVotes, bool notifyListeners = true)
+    {
+        playerVotes = Mathf.Max(0, newPlayerVotes);
+        opponentVotes = Mathf.Max(0, newOpponentVotes);
+
+        if (notifyListeners)
+        {
+            Debug.Log($"🔄 得票數已設定 | 你: {playerVotes} | 對手: {opponentVotes}");
+            OnVotesChanged?.Invoke(playerVotes, opponentVotes);
+        }
+    }
+
+    public void SetDefaultVotes(int newDefaultPlayerVotes, int newDefaultOpponentVotes, bool applyImmediately = true)
+    {
+        defaultPlayerVotes = Mathf.Max(0, newDefaultPlayerVotes);
+        defaultOpponentVotes = Mathf.Max(0, newDefaultOpponentVotes);
+
+        if (applyImmediately)
+        {
+            ResetToDefaultVotes();
+        }
     }
 
     private void AddVoteToSide(int sideSign)
@@ -76,9 +103,11 @@ public class VoteManager : MonoBehaviour
 
     public void ResetVotes()
     {
-        playerVotes = 0;
-        opponentVotes = 0;
-        Debug.Log("🔄 得票數已重置");
-        OnVotesChanged?.Invoke(playerVotes, opponentVotes);
+        ResetToDefaultVotes();
+    }
+
+    public void ResetToDefaultVotes(bool notifyListeners = true)
+    {
+        SetVotes(defaultPlayerVotes, defaultOpponentVotes, notifyListeners);
     }
 }

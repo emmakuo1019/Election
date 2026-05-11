@@ -16,9 +16,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     [SerializeField] private float attackCooldown = 0f;
     [SerializeField] private float convertChance = 0.3f;
     [SerializeField] private float darkVoterConvertChance = 0.8f;
-    
-    [Header("MP 消耗")]
-    [SerializeField] private int speechMPCost = 1;
 
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
@@ -161,13 +158,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             Debug.Log($"⏳ 普通攻擊冷卻中... {(lastAttackTime + currentAttackCooldown - Time.time):F1} 秒");
             return;
         }
-
-        if (!PlayerMPSystem.Instance.UseMP(speechMPCost))
-        {
-            Debug.Log("⚠️ MP 不足，無法施放演說");
-            return;
-        }
-
         lastAttackTime = Time.time;
 
         OnAttackPerformed?.Invoke();

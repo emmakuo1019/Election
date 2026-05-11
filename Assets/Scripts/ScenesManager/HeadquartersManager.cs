@@ -12,6 +12,7 @@ void Start()
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
     PlayerSkillManager.ResetSavedPartySkill();
+    VoteManager.Instance?.ResetToDefaultVotes();
     backBtn.onClick.AddListener(backBtnOnClick);
 
     MapProgressManager mapProgressManager = FindFirstObjectByType<MapProgressManager>();

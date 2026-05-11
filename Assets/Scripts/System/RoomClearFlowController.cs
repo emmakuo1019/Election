@@ -39,18 +39,13 @@ public class RoomClearFlowController : MonoBehaviour
         PauseGameplayForSettlement();
         ForceAllVotersExit();
 
-        int rewardedMP = 0;
         float supportRate = 0f;
-        int totalVoters = 0;
-        int playerSupporters = 0;
 
         // 只有需要顯示選情快報的房間，才做這套流程（前兩房）
         if (needMiniSettlement && roomResultCalculator != null)
         {
-            supportRate = roomResultCalculator.GetSupportRate();
-            totalVoters = roomResultCalculator.GetTotalVoters();
-            playerSupporters = roomResultCalculator.GetPlayerSupporters();
-            rewardedMP = roomResultCalculator.CalculateAndRewardMP();
+            supportRate = roomResultCalculator.GetGlobalSupportRate();
+            roomResultCalculator.CalculateAndRewardMP();
         }
 
         // 前兩房顯示選情快報
@@ -66,9 +61,6 @@ public class RoomClearFlowController : MonoBehaviour
                 yield return StartCoroutine(
                     miniSettlementUI.ShowSettlementThenContinue(
                         supportRate,
-                        playerSupporters,
-                        totalVoters,
-                        rewardedMP,
                         null
                     )
                 );

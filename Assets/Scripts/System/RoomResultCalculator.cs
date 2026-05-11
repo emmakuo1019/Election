@@ -48,6 +48,16 @@ public class RoomResultCalculator : MonoBehaviour
         return (float)playerSupporters / totalVoters;
     }
 
+    public float GetGlobalSupportRate()
+    {
+        if (VoteManager.Instance == null)
+        {
+            return 0.5f;
+        }
+
+        return VoteManager.Instance.PlayerVotePercentage;
+    }
+
     public int GetTotalVoters()
     {
         VoterLogic[] allVoters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);

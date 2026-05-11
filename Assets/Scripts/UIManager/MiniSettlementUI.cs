@@ -27,7 +27,7 @@ public class MiniSettlementUI : MonoBehaviour
             panelRoot.SetActive(false);
     }
 
-    public void ShowSettlement(float supportRate, int playerSupporters, int totalVoters, int rewardMP)
+    public void ShowSettlement(float supportRate)
     {
         if (panelRoot == null)
         {
@@ -41,15 +41,15 @@ public class MiniSettlementUI : MonoBehaviour
             supportRateText.text = $"支持率：{supportRate:P0}";
 
         if (supporterCountText != null)
-            supporterCountText.text = $"支持者：{playerSupporters} / {totalVoters}";
+            supporterCountText.gameObject.SetActive(false);
 
         if (rewardMPText != null)
-            rewardMPText.text = $"資金回補：+{rewardMP} MP";
+            rewardMPText.gameObject.SetActive(false);
     }
 
-    public IEnumerator ShowSettlementThenContinue(float supportRate, int playerSupporters, int totalVoters, int rewardMP, System.Action onComplete)
+    public IEnumerator ShowSettlementThenContinue(float supportRate, System.Action onComplete)
     {
-        ShowSettlement(supportRate, playerSupporters, totalVoters, rewardMP);
+        ShowSettlement(supportRate);
 
         yield return new WaitForSecondsRealtime(displayDuration);
 

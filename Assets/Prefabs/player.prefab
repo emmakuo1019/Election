@@ -26,13 +26,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 249711924873670320}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.21563734, y: -0, z: -0, w: 0.97647357}
-  m_LocalPosition: {x: 0, y: 27.615389, z: -55.84616}
+  m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0, y: 33.5, z: -60.3}
   m_LocalScale: {x: 7.6923084, y: 7.6923084, z: 7.6923084}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 791982393808381288}
-  m_LocalEulerAnglesHint: {x: 24.906, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 20, y: 0, z: 0}
 --- !u!114 &998358957010087563
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -127,13 +127,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5352781791523953572}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.08715578, y: 0, z: 0, w: 0.9961947}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 791982393808381288}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -10, y: 0, z: 0}
 --- !u!33 &3428415994707766147
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -235,7 +235,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5403555500550337343}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.08715578, y: 0, z: 0, w: 0.9961947}
   m_LocalPosition: {x: 0, y: 1.48, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
@@ -244,7 +244,7 @@ Transform:
   - {fileID: 3194468659857429607}
   - {fileID: 7249639539393358112}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 10, y: 0, z: 0}
 --- !u!212 &2547561403663121926
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -355,7 +355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21bbf7ec8fb094e4289684cc6284719f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 8
+  moveSpeed: 45
   dashSpeed: 20
   dashDuration: 0.2
   dashCooldown: 1
@@ -375,13 +375,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  attackRange: 8
+  attackRange: 20
   attackAngle: 60
   attackInfluence: 1
   attackCooldown: 0
   convertChance: 0.3
   darkVoterConvertChance: 0.8
-  speechMPCost: 1
   attackRangeMesh: {fileID: 4360986305226485520}
   voterLayer:
     serializedVersion: 2
@@ -528,8 +527,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9152536651902869562}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.21563734, y: 0, z: 0, w: 0.97647357}
-  m_LocalPosition: {x: -2.4, y: 8.263847, z: -25.71154}
+  m_LocalRotation: {x: 0.08715569, y: 0, z: 0, w: 0.9961948}
+  m_LocalPosition: {x: -2.4, y: 33.794304, z: -79.12034}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

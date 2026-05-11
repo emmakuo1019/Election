@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 3962820855032073483}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.16, y: 0.34, z: 0.379}
+  m_LocalPosition: {x: 0.16, y: 5.94, z: 1.22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -41,14 +41,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3962820855032073483}
   serializedVersion: 8
-  lengthInSec: 0.5
-  simulationSpeed: 1
+  lengthInSec: 0.14
+  simulationSpeed: 0.79
   stopAction: 0
   cullingMode: 0
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 1
-  looping: 0
+  looping: 1
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -116,7 +116,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.2
+      scalar: 0.24
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -169,7 +169,7 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 3
+      scalar: 8.16
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -287,7 +287,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.42
+      scalar: 1.06
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -4902,7 +4902,7 @@ GameObject:
   - component: {fileID: 4693748593575835549}
   - component: {fileID: 2774184649760543316}
   m_Layer: 6
-  m_Name: Voter-Normal
+  m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4917,8 +4917,8 @@ Transform:
   m_GameObject: {fileID: 4628284427397550804}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.08, y: -0.05, z: 0}
-  m_LocalScale: {x: 0.37, y: 0.37, z: 0.37}
+  m_LocalPosition: {x: -0.08, y: 4.35, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
@@ -4989,7 +4989,7 @@ GameObject:
   - component: {fileID: 3909163827661493348}
   - component: {fileID: 4798280922386667136}
   m_Layer: 6
-  m_Name: UI
+  m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5004,8 +5004,8 @@ Transform:
   m_GameObject: {fileID: 4860688840932149779}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.42, y: 4.285385, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0.42, y: 9.91, z: 1}
+  m_LocalScale: {x: 3.6251, y: 3.6251, z: 3.6251}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
@@ -5078,7 +5078,7 @@ GameObject:
   - component: {fileID: 5396591549920925665}
   - component: {fileID: 4672302401026481900}
   - component: {fileID: 1022887108545879583}
-  - component: {fileID: 2651321641688485047}
+  - component: {fileID: 612300225728602005}
   m_Layer: 6
   m_Name: Voter
   m_TagString: Voter
@@ -5149,7 +5149,7 @@ MonoBehaviour:
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
   opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}
-  darkUiColor: {r: 0.8679245, g: 0.7372131, b: 0, a: 1}
+  darkUiColor: {r: 0.7924528, g: 0.6300862, b: 0, a: 1}
   normalUiSprite: {fileID: 21300000, guid: 9d8e68bb729df4efa8fe0097cc21ace3, type: 3}
   darkUiSprite: {fileID: 21300000, guid: 0aa026f8a673d4ac6bd3fe01f2c98bba, type: 3}
   colorTransitionDuration: 0.8
@@ -5197,7 +5197,7 @@ NavMeshAgent:
   m_BaseOffset: 3.25
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!136 &2651321641688485047
+--- !u!136 &612300225728602005
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5216,7 +5216,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.92332697
-  m_Height: 6.3925447
+  m_Radius: 2.6221685
+  m_Height: 17.556559
   m_Direction: 1
-  m_Center: {x: 0.31513953, y: -0.06842661, z: 0}
+  m_Center: {x: 0.8787937, y: 4.1881533, z: 0}

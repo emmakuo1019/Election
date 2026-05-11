@@ -70,8 +70,6 @@ public class BattleFlowController : MonoBehaviour
             return;
         }
 
-        VoteManager.Instance?.ResetVotes();
-
         CurrentState = BattleState.Fighting;
         levelTimer?.StartTimer();
     }
