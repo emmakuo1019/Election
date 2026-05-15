@@ -6,25 +6,32 @@ public class RewardPanelController : MonoBehaviour
     [SerializeField] private GameObject rewardPanel;
 
     private bool isShowing = false;
+    private RewardPanelUI rewardPanelUI;
 
     private void Start()
     {
         if (rewardPanel != null)
         {
             rewardPanel.SetActive(false);
+            rewardPanelUI = rewardPanel.GetComponent<RewardPanelUI>();
         }
     }
 
     public void ShowRewardPanel()
     {
+        ShowRewardPanel(0f, 0, 0, 0, false);
+    }
+
+    public void ShowRewardPanel(float supportRate, int supporterCount, int totalVoters, int rewardMP, bool canClaimReward)
+    {
         if (isShowing) return;
         isShowing = true;
-
-        //Debug.Log("顯示 Reward Panel");
 
         if (rewardPanel != null)
         {
             rewardPanel.SetActive(true);
+            rewardPanelUI ??= rewardPanel.GetComponent<RewardPanelUI>();
+            rewardPanelUI?.ConfigureSettlement(supportRate, supporterCount, totalVoters, rewardMP, canClaimReward);
         }
     }
 

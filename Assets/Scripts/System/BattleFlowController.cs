@@ -1,6 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
-
 public class BattleFlowController : MonoBehaviour
 {
     public static BattleFlowController Instance { get; private set; }
@@ -76,10 +74,12 @@ public class BattleFlowController : MonoBehaviour
 
     private void OnBattleTimeEnd()
     {
+        bool isLastRoomInBlock = BlockProgressManager.HasBlockProgress() && BlockProgressManager.IsLastRoomInBlock();
         int playerVotes = VoteManager.Instance != null ? VoteManager.Instance.PlayerVotes : 0;
         int opponentVotes = VoteManager.Instance != null ? VoteManager.Instance.OpponentVotes : 0;
+        bool canClaimReward = playerVotes > opponentVotes;
 
-        if (playerVotes > opponentVotes)
+        if (!isLastRoomInBlock)
         {
             CurrentState = BattleState.Completed;
 
@@ -90,50 +90,37 @@ public class BattleFlowController : MonoBehaviour
 
             if (roomClearFlowController != null)
             {
-                roomClearFlowController.OnRoomCleared(showRewardPanel: true);
+                roomClearFlowController.OnRoomCleared(canClaimReward);
             }
             else
             {
                 Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
             }
+
+            return;
+        }
+
+        CurrentState = canClaimReward ? BattleState.Completed : BattleState.Failed;
+
+        if (isLastRoomInBlock && !canClaimReward)
+        {
+            BlockProgressManager.SetNextSceneOverride("endGamePanel");
+            BlockProgressManager.FailCurrentBlock();
+        }
+
+        if (roomClearFlowController == null)
+        {
+            roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
+        }
+
+        if (roomClearFlowController != null)
+        {
+            roomClearFlowController.OnRoomCleared(canClaimReward);
         }
         else
         {
-            if (IsFirstBlockFinalRoom())
-            {
-                CurrentState = BattleState.Failed;
-                Time.timeScale = 1f;
-                SceneManager.LoadScene("endGamePanel");
-                return;
-            }
-
-            CurrentState = BattleState.Failed;
-
-            if (roomClearFlowController == null)
-            {
-                roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
-            }
-
-            if (roomClearFlowController != null)
-            {
-                roomClearFlowController.OnRoomCleared(showRewardPanel: false);
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
-            }
+            Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
         }
-    }
-
-    private bool IsFirstBlockFinalRoom()
-    {
-        if (CampaignProgressManager.GetCompletedBlockCount() != 0)
-        {
-            return false;
-        }
-
-        RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        return roomExitController != null && roomExitController.IsFinalRoomExit && BlockProgressManager.IsLastRoomInBlock();
     }
 
     public void OnRewardSelected()

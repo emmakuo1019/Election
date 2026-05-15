@@ -75,19 +75,14 @@ public class MapNodeButton : MonoBehaviour
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(nodeData.targetSceneName))
+        string firstRoomScene = BlockProgressManager.StartRandomBlock();
+        if (!Application.CanStreamedLevelBeLoaded(firstRoomScene))
         {
-            Debug.LogWarning($"MapNodeButton：{nodeData.nodeID} 沒有設定 targetSceneName");
+            Debug.LogWarning($"MapNodeButton：無法載入場景 {firstRoomScene}");
             return;
         }
 
-        if (!Application.CanStreamedLevelBeLoaded(nodeData.targetSceneName))
-        {
-            Debug.LogWarning($"MapNodeButton：無法載入場景 {nodeData.targetSceneName}");
-            return;
-        }
-
-        Debug.Log($"🗺️ 進入節點：{nodeData.nodeID} → 場景：{nodeData.targetSceneName}");
-        SceneManager.LoadScene(nodeData.targetSceneName);
+        Debug.Log($"🗺️ 進入節點：{nodeData.nodeID} → 場景：{firstRoomScene}");
+        SceneManager.LoadScene(firstRoomScene);
     }
 }

@@ -75,13 +75,20 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void OpenPanel()
     {
+        Time.timeScale = 0f;
         panel.SetActive(true);
         RefreshUI();
     }
 
     public void ClosePanel()
     {
+        if (PlayerSkillManager.HasPendingMapSkillSelection() && !PlayerSkillManager.HasSavedPartySkill())
+        {
+            return;
+        }
+
         panel.SetActive(false);
+        Time.timeScale = 1f;
     }
 
     private void OnPartySkillSelectionRequested()

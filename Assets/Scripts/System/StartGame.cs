@@ -44,7 +44,8 @@ public class StartGame : MonoBehaviour
     
     private void OpenUpgradePanel()
     {
-        SceneManager.LoadScene("TestMVP");
+        string firstRoomScene = BlockProgressManager.StartRandomBlock();
+        SceneManager.LoadScene(firstRoomScene);
     }
     
     //調整自適應性UI
@@ -75,4 +76,3 @@ public class StartGame : MonoBehaviour
     }*/
     
 }
-

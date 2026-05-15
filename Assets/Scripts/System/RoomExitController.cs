@@ -15,9 +15,6 @@ public class RoomExitController : MonoBehaviour
     [Header("是否為區塊最後一房出口")]
     [SerializeField] private bool isFinalRoomExit = false;
 
-    [Header("這個區塊對應的大地圖節點（第三房出口才需要）")]
-    [SerializeField] private MapNodeData currentMapNode;
-
     [Header("是否只觸發一次")]
     [SerializeField] private bool triggerOnlyOnce = true;
 
@@ -83,30 +80,25 @@ public class RoomExitController : MonoBehaviour
 
         Time.timeScale = 1f;
 
-        if (isFinalRoomExit)
+        string nextSceneName = targetSceneName;
+        string managedNextScene = BlockProgressManager.GetSceneAfterRoomExit();
+        if (!string.IsNullOrWhiteSpace(managedNextScene))
         {
-            bool isFirstCompletedBlock = CampaignProgressManager.GetCompletedBlockCount() == 0;
-            CampaignProgressManager.AddCompletedBlock();
-            BlockProgressManager.ClearBlockProgress();
-
-            if (isFirstCompletedBlock)
-            {
-                PlayerSkillManager.MarkPendingMapSkillSelection();
-            }
+            nextSceneName = managedNextScene;
         }
 
-        if (string.IsNullOrEmpty(targetSceneName))
+        if (string.IsNullOrEmpty(nextSceneName))
         {
             Debug.LogWarning("RoomExitController：targetSceneName 沒有設定");
             return;
         }
 
-        if (!Application.CanStreamedLevelBeLoaded(targetSceneName))
+        if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
         {
-            Debug.LogWarning("RoomExitController：無法載入場景：" + targetSceneName);
+            Debug.LogWarning("RoomExitController：無法載入場景：" + nextSceneName);
             return;
         }
 
-        SceneManager.LoadScene(targetSceneName);
+        SceneManager.LoadScene(nextSceneName);
     }
 }

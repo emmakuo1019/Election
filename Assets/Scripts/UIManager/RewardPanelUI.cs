@@ -4,6 +4,14 @@ using UnityEngine.UI;
 
 public class RewardPanelUI : MonoBehaviour
 {
+    [Header("結算資訊")]
+    [SerializeField] private Text supportRateText;
+    [SerializeField] private Text supporterCountText;
+    [SerializeField] private Text rewardMPText;
+
+    [Header("操作")]
+    [SerializeField] private Button continueButton;
+
     public Button rewardBtn01, rewardBtn02, rewardBtn03;
     public RewardPanelController rewardPanelController;
     public PolicyCardManager policyCardManager;
@@ -13,9 +21,12 @@ public class RewardPanelUI : MonoBehaviour
     private Text rewardBtn02Text;
     private Text rewardBtn03Text;
     private bool isProcessingSelection;
+    private bool canClaimReward;
+    private bool hasSelectedReward;
 
     void Awake()
     {
+        EnsureSettlementUIReferences();
         CacheTextReferences();
         BindButtons();
     }
@@ -23,7 +34,7 @@ public class RewardPanelUI : MonoBehaviour
     private void OnEnable()
     {
         isProcessingSelection = false;
-        RefreshRewardChoices();
+        hasSelectedReward = false;
     }
 
     private void CacheTextReferences()
@@ -52,12 +63,43 @@ public class RewardPanelUI : MonoBehaviour
             rewardBtn03.onClick.RemoveAllListeners();
             rewardBtn03.onClick.AddListener(() => OnRewardClicked(2));
         }
+
+        if (continueButton != null)
+        {
+            continueButton.onClick.RemoveAllListeners();
+            continueButton.onClick.AddListener(OnContinueClicked);
+        }
+    }
+
+    public void ConfigureSettlement(float supportRate, int supporterCount, int totalVoters, int rewardMP, bool canClaimReward)
+    {
+        EnsureSettlementUIReferences();
+        CacheTextReferences();
+        this.canClaimReward = canClaimReward;
+        hasSelectedReward = false;
+        isProcessingSelection = false;
+
+        if (supportRateText != null)
+        {
+            supportRateText.text = $"支持率：{supportRate:P0}";
+        }
+
+        if (supporterCountText != null)
+        {
+            supporterCountText.text = $"支持者：{supporterCount}/{Mathf.Max(totalVoters, 0)}";
+        }
+
+        if (rewardMPText != null)
+        {
+            rewardMPText.text = $"回補 MP：+{rewardMP}";
+        }
+
+        RefreshRewardChoices();
+        UpdateInteractionState();
     }
 
     public void RefreshRewardChoices()
     {
-        CacheTextReferences();
-
         if (policyCardManager == null)
         {
             policyCardManager = FindFirstObjectByType<PolicyCardManager>();
@@ -68,6 +110,7 @@ public class RewardPanelUI : MonoBehaviour
             Debug.LogWarning("RewardPanelUI：找不到 PolicyCardManager，無法刷新獎勵卡");
             SetFallbackTexts("無卡片資料");
             SetButtonsInteractable(false);
+            SetContinueInteractable(true);
             return;
         }
 
@@ -79,20 +122,20 @@ public class RewardPanelUI : MonoBehaviour
             Debug.LogWarning("RewardPanelUI：可用政策卡不足 3 張");
             SetFallbackTexts("卡片不足");
             SetButtonsInteractable(false);
+            SetContinueInteractable(true);
             return;
         }
 
         SetButtonText(rewardBtn01Text, FormatCardLabel(currentCards[0]));
         SetButtonText(rewardBtn02Text, FormatCardLabel(currentCards[1]));
         SetButtonText(rewardBtn03Text, FormatCardLabel(currentCards[2]));
-        SetButtonsInteractable(true);
 
         Debug.Log("RewardPanelUI：已刷新三張政策卡");
     }
 
-    void OnRewardClicked(int index)
+    private void OnRewardClicked(int index)
     {
-        if (isProcessingSelection)
+        if (isProcessingSelection || !canClaimReward || hasSelectedReward)
         {
             return;
         }
@@ -111,35 +154,14 @@ public class RewardPanelUI : MonoBehaviour
         }
 
         isProcessingSelection = true;
-        SetButtonsInteractable(false);
 
         Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
 
         PolicyEffectRuntimeManager.Instance?.ApplyCard(selectedCard);
-
-        if (rewardPanelController != null)
-        {
-            rewardPanelController.HideRewardPanel();
-        }
-
         BattleFlowController.Instance?.OnRewardSelected();
-
-        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
-
-        if (roomClearFlowController != null)
-        {
-            roomClearFlowController.OnRewardSelected();
-        }
-        else
-        {
-            Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，改用出口控制器收尾");
-
-            RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-            if (roomExitController != null)
-            {
-                roomExitController.UnlockExit();
-            }
-        }
+        hasSelectedReward = true;
+        isProcessingSelection = false;
+        UpdateInteractionState();
     }
 
     private void SetFallbackTexts(string fallbackText)
@@ -154,6 +176,14 @@ public class RewardPanelUI : MonoBehaviour
         if (rewardBtn01 != null) rewardBtn01.interactable = interactable;
         if (rewardBtn02 != null) rewardBtn02.interactable = interactable;
         if (rewardBtn03 != null) rewardBtn03.interactable = interactable;
+    }
+
+    private void SetContinueInteractable(bool interactable)
+    {
+        if (continueButton != null)
+        {
+            continueButton.interactable = interactable;
+        }
     }
 
     private string FormatCardLabel(PolicyCardData card)
@@ -180,5 +210,134 @@ public class RewardPanelUI : MonoBehaviour
         }
 
         Debug.LogWarning("RewardPanelUI：按鈕文字元件未找到，無法更新卡片名稱");
+    }
+
+    private void UpdateInteractionState()
+    {
+        bool rewardButtonsEnabled = canClaimReward && !hasSelectedReward;
+        bool continueEnabled = !canClaimReward || hasSelectedReward;
+
+        SetButtonsInteractable(rewardButtonsEnabled);
+        SetContinueInteractable(continueEnabled);
+    }
+
+    private void OnContinueClicked()
+    {
+        if (canClaimReward && !hasSelectedReward)
+        {
+            return;
+        }
+
+        rewardPanelController?.HideRewardPanel();
+
+        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
+        if (roomClearFlowController != null)
+        {
+            roomClearFlowController.OnContinuePressed();
+            return;
+        }
+
+        Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，改用出口控制器收尾");
+        RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        roomExitController?.UnlockExit();
+    }
+
+    private void EnsureSettlementUIReferences()
+    {
+        supportRateText ??= FindTextInChildren("SupportRateText");
+        supporterCountText ??= FindTextInChildren("SupporterCountText");
+        rewardMPText ??= FindTextInChildren("RewardMPText");
+        continueButton ??= FindButtonInChildren("ContinueButton");
+
+        if (supportRateText == null)
+        {
+            supportRateText = CreateAutoText("SupportRateText", new Vector2(0f, 150f));
+        }
+
+        if (supporterCountText == null)
+        {
+            supporterCountText = CreateAutoText("SupporterCountText", new Vector2(0f, 110f));
+        }
+
+        if (rewardMPText == null)
+        {
+            rewardMPText = CreateAutoText("RewardMPText", new Vector2(0f, 70f));
+        }
+
+        if (continueButton == null)
+        {
+            continueButton = CreateAutoContinueButton();
+        }
+    }
+
+    private Text FindTextInChildren(string objectName)
+    {
+        Transform child = transform.Find(objectName);
+        return child != null ? child.GetComponent<Text>() : null;
+    }
+
+    private Button FindButtonInChildren(string objectName)
+    {
+        Transform child = transform.Find(objectName);
+        return child != null ? child.GetComponent<Button>() : null;
+    }
+
+    private Text CreateAutoText(string objectName, Vector2 anchoredPosition)
+    {
+        GameObject textObject = new GameObject(objectName, typeof(RectTransform), typeof(Text));
+        textObject.transform.SetParent(transform, false);
+
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = anchoredPosition;
+        rectTransform.sizeDelta = new Vector2(420f, 36f);
+
+        Text text = textObject.GetComponent<Text>();
+        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.fontSize = 24;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.black;
+        return text;
+    }
+
+    private Button CreateAutoContinueButton()
+    {
+        GameObject buttonObject = new GameObject(
+            "ContinueButton",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button)
+        );
+        buttonObject.transform.SetParent(transform, false);
+
+        RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = new Vector2(0f, -170f);
+        rectTransform.sizeDelta = new Vector2(220f, 60f);
+
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = new Color(0.93f, 0.82f, 0.44f, 1f);
+
+        GameObject labelObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
+        labelObject.transform.SetParent(buttonObject.transform, false);
+
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        Text label = labelObject.GetComponent<Text>();
+        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = 26;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = Color.black;
+        label.text = "繼續";
+
+        return buttonObject.GetComponent<Button>();
     }
 }

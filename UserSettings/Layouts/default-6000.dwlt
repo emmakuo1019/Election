@@ -1063,9 +1063,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 4.2017527, y: 3.3815734, z: -4.877743}
+    m_Target: {x: 0.12198444, y: 1.7663448, z: 2.517904}
     speed: 2
-    m_Value: {x: 4.2017527, y: 3.3815734, z: -4.877743}
+    m_Value: {x: 1.1312618, y: 6.9887657, z: 5.1299086}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1111,13 +1111,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.13180894, y: -0.03761579, z: 0.0058102, w: -0.99062127}
+    m_Target: {x: -0.24182267, y: -0.122275524, z: 0.03137591, w: -0.96217155}
     speed: 2
-    m_Value: {x: -0.13180894, y: -0.03761579, z: 0.0058101993, w: -0.9906212}
+    m_Value: {x: -0.14204814, y: -0.058330704, z: 0.009100644, w: -0.98818845}
   m_Size:
-    m_Target: 58.534737
+    m_Target: 13.384526
     speed: 2
-    m_Value: 58.534737
+    m_Value: 9.341946
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1411,7 +1411,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs/Voters
+    - Assets/Prefabs
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1430,7 +1430,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: a2b70000
     m_LastClickedID: 47010
-    m_ExpandedIDs: 000000009ab900009cb900009eb90000a0b90000a2b90000a4b90000a6b90000a8b90000aab90000
+    m_ExpandedIDs: 
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1459,7 +1459,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000009ab900009cb900009eb90000a0b90000a2b90000a4b90000a6b90000a8b90000aab90000
+    m_ExpandedIDs: 
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

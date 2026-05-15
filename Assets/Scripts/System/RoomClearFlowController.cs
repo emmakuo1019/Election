@@ -1,16 +1,9 @@
 using UnityEngine;
-using System.Collections;
 
 public class RoomClearFlowController : MonoBehaviour
 {
-    [Header("這個房間結束後是否顯示選情快報")]
-    [SerializeField] private bool needMiniSettlement = true;
-
     [Header("房間選情結算器")]
     [SerializeField] private RoomResultCalculator roomResultCalculator;
-
-    [Header("迷你結算 UI（可選）")]
-    [SerializeField] private MiniSettlementUI miniSettlementUI;
 
     [Header("房間出口控制器")]
     [SerializeField] private RoomExitController roomExitController;
@@ -19,65 +12,19 @@ public class RoomClearFlowController : MonoBehaviour
     [SerializeField] private RewardPanelController rewardPanelController;
 
     private bool isResolvingRoomClear = false;
-    private bool shouldShowRewardPanel = true;
 
-    public void OnRoomCleared(bool showRewardPanel = true)
+    public void OnRoomCleared(bool canClaimReward)
     {
         if (isResolvingRoomClear)
         {
             return;
         }
 
-        shouldShowRewardPanel = showRewardPanel;
-
-        StartCoroutine(RoomClearFlowRoutine());
-    }
-
-    private IEnumerator RoomClearFlowRoutine()
-    {
         isResolvingRoomClear = true;
         PauseGameplayForSettlement();
         ForceAllVotersExit();
 
-        float supportRate = 0f;
-
-        // 只有需要顯示選情快報的房間，才做這套流程（前兩房）
-        if (needMiniSettlement && roomResultCalculator != null)
-        {
-            supportRate = roomResultCalculator.GetGlobalSupportRate();
-            roomResultCalculator.CalculateAndRewardMP();
-        }
-
-        // 前兩房顯示選情快報
-        if (needMiniSettlement)
-        {
-            if (miniSettlementUI == null)
-            {
-                miniSettlementUI = FindFirstObjectByType<MiniSettlementUI>(FindObjectsInactive.Include);
-            }
-
-            if (miniSettlementUI != null)
-            {
-                yield return StartCoroutine(
-                    miniSettlementUI.ShowSettlementThenContinue(
-                        supportRate,
-                        null
-                    )
-                );
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ needMiniSettlement = true，但找不到 MiniSettlementUI");
-            }
-        }
-
-        if (needMiniSettlement && shouldShowRewardPanel)
-        {
-            ShowRewardPanel();
-            yield break;
-        }
-
-        OpenExitAndFinish();
+        ShowRewardPanel(canClaimReward);
     }
 
     private void PauseGameplayForSettlement()
@@ -85,12 +32,12 @@ public class RoomClearFlowController : MonoBehaviour
         LevelTimer.Instance?.PauseTimer();
     }
 
-    public void OnRewardSelected()
+    public void OnContinuePressed()
     {
         OpenExitAndFinish();
     }
 
-    private void ShowRewardPanel()
+    private void ShowRewardPanel(bool canClaimReward)
     {
         if (rewardPanelController == null)
         {
@@ -104,7 +51,18 @@ public class RoomClearFlowController : MonoBehaviour
             return;
         }
 
-        rewardPanelController.ShowRewardPanel();
+        float supportRate = roomResultCalculator != null ? roomResultCalculator.GetGlobalSupportRate() : 0f;
+        int totalVoters = roomResultCalculator != null ? roomResultCalculator.GetTotalVoters() : 0;
+        int playerSupporters = roomResultCalculator != null ? roomResultCalculator.GetPlayerSupporters() : 0;
+        int rewardMP = roomResultCalculator != null ? roomResultCalculator.CalculateAndRewardMP() : 0;
+
+        rewardPanelController.ShowRewardPanel(
+            supportRate,
+            playerSupporters,
+            totalVoters,
+            rewardMP,
+            canClaimReward
+        );
     }
 
     private void OpenExitAndFinish()
