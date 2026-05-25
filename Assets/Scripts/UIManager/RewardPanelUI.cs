@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class RewardPanelUI : MonoBehaviour
 {
+    private const string FallbackFontName = "LegacyRuntime.ttf";
+
     [Header("結算資訊")]
     [SerializeField] private Text supportRateText;
     [SerializeField] private Text supporterCountText;
@@ -295,7 +297,7 @@ public class RewardPanelUI : MonoBehaviour
         rectTransform.sizeDelta = new Vector2(420f, 36f);
 
         Text text = textObject.GetComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = LoadFallbackFont();
         text.fontSize = 24;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
@@ -332,12 +334,17 @@ public class RewardPanelUI : MonoBehaviour
         labelRect.offsetMax = Vector2.zero;
 
         Text label = labelObject.GetComponent<Text>();
-        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.font = LoadFallbackFont();
         label.fontSize = 26;
         label.alignment = TextAnchor.MiddleCenter;
         label.color = Color.black;
         label.text = "繼續";
 
         return buttonObject.GetComponent<Button>();
+    }
+
+    private Font LoadFallbackFont()
+    {
+        return Resources.GetBuiltinResource<Font>(FallbackFontName);
     }
 }

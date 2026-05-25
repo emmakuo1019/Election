@@ -10,21 +10,18 @@ public class PlayerSkillManager : MonoBehaviour
     {
         None,              // 未選擇
         PolicyDebate,      // 政策論述
-        EmotionalStirring  // 煽動情緒
+        Dogeza            // 悲情土下座
     }
 
     [Header("輸入")]
     [SerializeField] private InputActionReference speechAction;
     [SerializeField] private InputActionReference partyAction;
-    [SerializeField] private InputActionReference partySelectAction; // 長按E
 
     [Header("技能狀態")]
     [SerializeField] private PartySkillType selectedPartySkill = PartySkillType.None;
 
     [Header("技能引用")]
     [SerializeField] private PlayerAttack speechAttack;
-    [SerializeField] private PartySkillAttack partySkillAttack;
-
     // 長按時間
     private float holdDuration = 1f;
     private float holdTimer = 0f;
@@ -48,17 +45,11 @@ public class PlayerSkillManager : MonoBehaviour
         if (partyAction != null)
             partyAction.action.performed += OnPartyInput;
 
-        if (partySelectAction != null)
-        {
-            partySelectAction.action.started += OnPartySelectStarted;
-            partySelectAction.action.canceled += OnPartySelectCanceled;
-        }
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
         }
 
-        InitializeLoadedSkill();
     }
 
     private void OnDisable()
@@ -69,11 +60,6 @@ public class PlayerSkillManager : MonoBehaviour
         if (partyAction != null)
             partyAction.action.performed -= OnPartyInput;
 
-        if (partySelectAction != null)
-        {
-            partySelectAction.action.started -= OnPartySelectStarted;
-            partySelectAction.action.canceled -= OnPartySelectCanceled;
-        }
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
@@ -247,13 +233,4 @@ public class PlayerSkillManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    private void InitializeLoadedSkill()
-    {
-        if (selectedPartySkill == PartySkillType.None || partySkillAttack == null)
-        {
-            return;
-        }
-
-        partySkillAttack.Initialize(selectedPartySkill);
-    }
 }

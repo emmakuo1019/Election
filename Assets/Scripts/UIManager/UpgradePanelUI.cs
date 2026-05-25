@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class UpgradePanelUI : MonoBehaviour
@@ -15,7 +16,8 @@ public class UpgradePanelUI : MonoBehaviour
 
     [Header("UI - 技能選擇")]
     [SerializeField] private Button policyDebateButton;
-    [SerializeField] private Button emotionalStirringButton;
+    [FormerlySerializedAs("emotionalStirringButton")]
+    [SerializeField] private Button dogezaButton;
 
     public bool IsOpen => panel != null && panel.activeSelf;
 
@@ -27,7 +29,10 @@ public class UpgradePanelUI : MonoBehaviour
 
         closeButton.onClick.AddListener(ClosePanel);
         policyDebateButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
-        emotionalStirringButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.EmotionalStirring));
+        dogezaButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.Dogeza));
+
+        SetButtonLabel(policyDebateButton, "暈眩對手");
+        SetButtonLabel(dogezaButton, "悲情土下座");
 
         playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
         RefreshUI();
@@ -41,8 +46,8 @@ public class UpgradePanelUI : MonoBehaviour
         if (policyDebateButton != null)
             policyDebateButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
 
-        if (emotionalStirringButton != null)
-            emotionalStirringButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.EmotionalStirring));
+        if (dogezaButton != null)
+            dogezaButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.Dogeza));
 
         if (playerSkillManager != null)
             playerSkillManager.OnPartySkillSelectionRequested -= OnPartySkillSelectionRequested;
@@ -65,7 +70,7 @@ public class UpgradePanelUI : MonoBehaviour
         }
 
         if (closeButton == null || partyStatusText == null ||
-            policyDebateButton == null || emotionalStirringButton == null)
+            policyDebateButton == null || dogezaButton == null)
         {
             Debug.LogError("❌ UpgradePanelUI 的 UI 元件有未指定項目！");
             enabled = false;
@@ -112,10 +117,10 @@ public class UpgradePanelUI : MonoBehaviour
 
         partyStatusText.text = hasPartySkill
             ? $"✅ 已選擇技能: {GetSkillDisplayName(playerSkillManager.SelectedPartySkill)}"
-            : "請從下方二選一：暈眩對手 / 增加攻擊範圍";
+            : "請從下方二選一：暈眩對手 / 悲情土下座";
 
         policyDebateButton.interactable = !hasPartySkill;
-        emotionalStirringButton.interactable = !hasPartySkill;
+        dogezaButton.interactable = !hasPartySkill;
     }
 
     private void SetButtonLabel(Button button, string label)
@@ -137,7 +142,7 @@ public class UpgradePanelUI : MonoBehaviour
         return skillType switch
         {
             PlayerSkillManager.PartySkillType.PolicyDebate => "暈眩對手",
-            PlayerSkillManager.PartySkillType.EmotionalStirring => "增加攻擊範圍",
+            PlayerSkillManager.PartySkillType.Dogeza => "悲情土下座",
             _ => "未選擇"
         };
     }

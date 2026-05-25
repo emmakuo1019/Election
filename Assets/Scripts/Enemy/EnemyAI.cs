@@ -275,7 +275,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
             if (voter == null) continue;
 
             VoterData voterData = voter.Data;
-            if (voterData != null && voterData.voterType == VoterType.Dark)
+            if (voterData != null && voterData.HasDarkAttribute)
                 continue;
 
             if (!IsValidTarget(voter))

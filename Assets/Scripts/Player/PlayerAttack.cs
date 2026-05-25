@@ -21,6 +21,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
+    private PlayerController playerController;
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
@@ -43,6 +44,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
+        if (characterAnimator == null)
+        {
+            characterAnimator = GetComponentInChildren<Animator>();
+        }
+
+        playerController = GetComponent<PlayerController>();
         baseAttackRange = attackRange;
         currentAttackRange = attackRange;
         currentAttackCooldown = attackCooldown;
@@ -54,6 +61,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             attackAction.action.performed += OnAttackInput;
 
         RefreshAttackStats();
+        SyncAttackRangeMeshRotation();
 
         if (PolicyEffectRuntimeManager.HasInstance)
         {
@@ -63,6 +71,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        }
+
+        if (playerController != null)
+        {
+            playerController.OnDirectionChanged += OnDirectionChanged;
         }
     }
 
@@ -80,6 +93,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
         }
+
+        if (playerController != null)
+        {
+            playerController.OnDirectionChanged -= OnDirectionChanged;
+        }
     }
 
     private void OnGameEnd()
@@ -96,6 +114,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     void Start()
     {
+        SyncAttackRangeMeshRotation();
         if (attackRangeMesh != null)
             attackRangeMesh.ShowIdle();
     }
@@ -161,10 +180,16 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         lastAttackTime = Time.time;
 
         OnAttackPerformed?.Invoke();
-        characterAnimator?.SetTrigger(HashAttack);
+
+        if (characterAnimator != null)
+        {
+            characterAnimator.SetTrigger(HashAttack);
+        }
+
         attackRangeMesh?.Show();
 
-        Vector3 attackDir = transform.forward;
+        Vector3 attackDir = GetAttackDirection();
+        SyncAttackRangeMeshRotation(attackDir);
         bool hitAny = false;
 
         int hitCount = Physics.OverlapSphereNonAlloc(
@@ -179,22 +204,33 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             Collider hit = hitBuffer[i];
             if (hit == null) continue;
 
-            if (hit.TryGetComponent<VoterLogic>(out var voter))
+            VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
+            if (voter == null)
             {
-                VoterData voterData = voter.Data;
-                if (voterData != null && voterData.voterType == VoterType.Dark)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
+            VoterData voterData = voter.Data;
+            if (voterData != null && voterData.HasDarkAttribute)
+            {
+                continue;
+            }
 
-                if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
-                {
-                    voter.OnInfluence(attackInfluence, false, transform.position);
-                    TryConvert(voterData);
-                    hitAny = true;
-                }
+            Vector3 toTarget = voter.transform.position - transform.position;
+            toTarget.y = 0f;
+
+            if (toTarget.sqrMagnitude <= 0.0001f)
+            {
+                continue;
+            }
+
+            Vector3 dirToTarget = toTarget.normalized;
+
+            if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
+            {
+                voter.OnInfluence(attackInfluence, false, transform.position);
+                TryConvert(voterData);
+                hitAny = true;
             }
         }
 
@@ -202,6 +238,36 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         {
             impulseSource?.GenerateImpulse();
         }
+    }
+
+    private Vector3 GetAttackDirection()
+    {
+        if (playerController != null && playerController.LastMoveDirection.sqrMagnitude > 0.001f)
+        {
+            return playerController.LastMoveDirection.normalized;
+        }
+
+        return transform.forward;
+    }
+
+    private void OnDirectionChanged(Vector3 direction)
+    {
+        SyncAttackRangeMeshRotation(direction);
+    }
+
+    private void SyncAttackRangeMeshRotation()
+    {
+        SyncAttackRangeMeshRotation(GetAttackDirection());
+    }
+
+    private void SyncAttackRangeMeshRotation(Vector3 direction)
+    {
+        if (attackRangeMesh == null || direction.sqrMagnitude <= 0.001f)
+        {
+            return;
+        }
+
+        attackRangeMesh.transform.rotation = Quaternion.LookRotation(direction.normalized);
     }
     
     public void TryConvert(VoterData voter)
@@ -214,7 +280,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             ? effects.GetModifiedConvertChance(convertChance)
             : convertChance;
 
-        if (voter.voterType == VoterType.Dark)
+        if (voter.HasDarkAttribute)
             chance = effects != null
                 ? effects.GetModifiedConvertChance(darkVoterConvertChance)
                 : darkVoterConvertChance;

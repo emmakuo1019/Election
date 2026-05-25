@@ -12,9 +12,4 @@ public class VoterConfig : ScriptableObject
     public int startingPosition = 0;    // -5 (玩家陣營) ↔ +5 (對手陣營)
     public const int MIN_POS = -5;
     public const int MAX_POS = 5;
-
-    [Header("屬性與標籤")]
-    public VoterTag tag = VoterTag.Normal;
-    public VoterType voterType = VoterType.Normal;
-    public bool isDieHard = false;
 }

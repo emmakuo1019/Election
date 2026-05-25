@@ -8,6 +8,7 @@ using Random = UnityEngine.Random;
 public class VoterLogic : MonoBehaviour
 {
     private const float ExitArrivalThreshold = 0.05f;
+    private const float NavMeshSnapDistance = 3f;
 
     [Header("隨機移動")]
     public float wanderRadius = 6f;
@@ -41,11 +42,13 @@ public class VoterLogic : MonoBehaviour
     private bool isGameActive = true;
     private bool isExitingAfterBattle;
     private Coroutine wanderCoroutine;
+    private Coroutine dogezaStunCoroutine;
     private Transform playerTransform;
     private float nextDarkRefreshTime;
     private float lastHitAnimationTriggerTime = float.NegativeInfinity;
     private Vector3 exitDestination;
     private readonly Collider[] spreadHitBuffer = new Collider[32];
+    private bool hasUsableNavMeshAgent = true;
 
     public VoterData Data => data;
 
@@ -64,6 +67,7 @@ public class VoterLogic : MonoBehaviour
             agent.speed = data != null ? data.MoveSpeed : moveSpeed;
             agent.angularSpeed = 0f;
             agent.updateRotation = false;
+            hasUsableNavMeshAgent = TryInitializeNavMeshAgent();
         }
     }
 
@@ -85,7 +89,10 @@ public class VoterLogic : MonoBehaviour
 
     void Start()
     {
-        wanderCoroutine = StartCoroutine(WanderRoutine());
+        if (hasUsableNavMeshAgent)
+        {
+            wanderCoroutine = StartCoroutine(WanderRoutine());
+        }
     }
 
     private void Update()
@@ -96,8 +103,14 @@ public class VoterLogic : MonoBehaviour
             return;
         }
 
-        if (!isGameActive || data == null || agent == null || !agent.isOnNavMesh)
+        if (!isGameActive || data == null || agent == null || !hasUsableNavMeshAgent || !agent.isOnNavMesh)
         {
+            return;
+        }
+
+        if (isFrozenByHitStop)
+        {
+            agent.isStopped = true;
             return;
         }
 
@@ -117,6 +130,69 @@ public class VoterLogic : MonoBehaviour
         {
             agent.speed = data != null ? data.MoveSpeed : moveSpeed;
         }
+    }
+
+    private bool TryInitializeNavMeshAgent()
+    {
+        if (agent == null)
+        {
+            return false;
+        }
+
+        if (agent.isOnNavMesh)
+        {
+            return true;
+        }
+
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
+        {
+            bool previousEnabled = agent.enabled;
+            agent.enabled = false;
+            transform.position = hit.position;
+            agent.enabled = previousEnabled;
+
+            if (agent.isOnNavMesh)
+            {
+                return true;
+            }
+        }
+
+        Debug.LogWarning($"[VoterLogic] {name} 找不到可用 NavMesh，已停用 NavMeshAgent。");
+        agent.enabled = false;
+        return false;
+    }
+
+    public bool ReceiveDogeza(float stunTime, float convertChance)
+    {
+        if (!isGameActive || data == null)
+        {
+            Debug.LogWarning("[VoterLogic] 無法處理悲情土下座，選民未處於可互動狀態。");
+            return false;
+        }
+
+        if (data.HasColdAttribute)
+        {
+            data.ConvertColdIdentityToEmotion();
+            ApplyDogezaStun(stunTime);
+            Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：冷感 -> 情緒，暈眩 {stunTime:F2} 秒。");
+            return true;
+        }
+
+        if (data.EmotionLabelCount <= 0)
+        {
+            Debug.Log($"[VoterLogic] {name} 不受悲情土下座影響。");
+            return false;
+        }
+
+        if (Random.value < Mathf.Clamp01(convertChance))
+        {
+            ForceConvertToPlayer();
+            Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：情緒選民轉化成功。");
+            return true;
+        }
+
+        Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：情緒選民轉化失敗。");
+        return false;
     }
 
     private void OnGameEnd()
@@ -179,10 +255,9 @@ public class VoterLogic : MonoBehaviour
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default, bool allowSpread = true)
     {
         if (!isGameActive) return;
+        if (data == null) return;
 
-        if (data.Tag == VoterTag.cold && !isSkill) return;
-
-        int finalAmount = (data.Tag == VoterTag.emotion) ? amount * 2 : amount;
+        int finalAmount = amount * Mathf.Max(1, 1 + data.EmotionLabelCount);
 
         data.currentPosition = Mathf.Clamp(
             data.currentPosition + finalAmount,
@@ -194,7 +269,7 @@ public class VoterLogic : MonoBehaviour
         OnPositionChanged?.Invoke(data.currentPosition);
         TriggerHitAnimation();
 
-        if (!isKnockedBack && attackerPosition != default)
+        if (hasUsableNavMeshAgent && !isKnockedBack && attackerPosition != default)
         {
             Vector3 dir = (transform.position - attackerPosition).normalized;
             dir.y = 0f;
@@ -316,7 +391,7 @@ public class VoterLogic : MonoBehaviour
 
             if (!isGameActive) yield break;
 
-            if (!isKnockedBack && !data.ShouldFollowPlayer && agent.isOnNavMesh)
+            if (!isKnockedBack && !isFrozenByHitStop && !data.ShouldFollowPlayer && agent.isOnNavMesh)
             {
                 Vector3 dest = SampleRandomNavMeshPoint();
                 if (dest != Vector3.zero)
@@ -391,7 +466,7 @@ public class VoterLogic : MonoBehaviour
 
     private IEnumerator KnockbackRoutine(Vector3 direction)
     {
-        if (!isGameActive) yield break;
+        if (!isGameActive || agent == null || !hasUsableNavMeshAgent) yield break;
 
         isKnockedBack = true;
         if (agent.isOnNavMesh) agent.isStopped = true;
@@ -418,5 +493,52 @@ public class VoterLogic : MonoBehaviour
             agent.isStopped = false;
 
         isKnockedBack = false;
+    }
+
+    private void ForceConvertToPlayer()
+    {
+        int requiredInfluence = VoterConfig.MAX_POS - data.currentPosition;
+        if (requiredInfluence <= 0)
+        {
+            return;
+        }
+
+        OnInfluence(requiredInfluence, true, transform.position);
+    }
+
+    private void ApplyDogezaStun(float stunTime)
+    {
+        if (stunTime <= 0f)
+        {
+            return;
+        }
+
+        if (dogezaStunCoroutine != null)
+        {
+            StopCoroutine(dogezaStunCoroutine);
+        }
+
+        dogezaStunCoroutine = StartCoroutine(DogezaStunRoutine(stunTime));
+    }
+
+    private IEnumerator DogezaStunRoutine(float stunTime)
+    {
+        isFrozenByHitStop = true;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        yield return new WaitForSeconds(stunTime);
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+        }
+
+        isFrozenByHitStop = false;
+        dogezaStunCoroutine = null;
     }
 }

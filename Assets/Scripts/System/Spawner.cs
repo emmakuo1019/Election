@@ -1,38 +1,14 @@
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 public class Spawner : MonoBehaviour
 {
-    [SerializeField] private VoterConfig[] voterConfigs;
+    [Header("Prefab")]
     public GameObject voterPrefab;
     public SocialAtmosphereManager climateManager;
 
-    private const string DefaultVoterConfigFolder = "Assets/Data/Voter";
+    [Header("屬性機率")]
+    [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
 
-#if UNITY_EDITOR
-    private void Reset()
-    {
-        AutoPopulateVoterConfigs();
-    }
-
-    private void OnValidate()
-    {
-        if (voterConfigs == null || voterConfigs.Length == 0)
-        {
-            AutoPopulateVoterConfigs();
-        }
-    }
-#endif
-
-    void Start()
-    {
-    }
-
-    void Update()
-    {
-    }
     public void SpawnVoter(Vector3 pos)
     {
         GameObject obj = Instantiate(voterPrefab, pos, Quaternion.identity);
@@ -40,22 +16,12 @@ public class Spawner : MonoBehaviour
         VoterData data = obj.GetComponent<VoterData>();
         if (data == null)
         {
-            Debug.LogWarning("生成的選民缺少 VoterData，無法套用深色選民類型。");
+            Debug.LogWarning("生成的選民缺少 VoterData，無法初始化新標籤邏輯。");
             return;
         }
 
-        VoterConfig randomConfig = GetRandomVoterConfig();
-        if (randomConfig != null)
-        {
-            data.AssignConfig(randomConfig);
-        }
-
-        if (data.Config == null || data.Config.voterType != VoterType.Dark)
-        {
-            float rate = climateManager != null ? climateManager.GetDarkVoterRate() : 0f;
-            VoterType type = Random.value < rate ? VoterType.Dark : VoterType.Normal;
-            data.ApplyType(type);
-        }
+        data.InitializeFromConfig();
+        data.ConfigureIdentity(GetRandomLabel(), GetRandomLabel(), GetRandomAttribute());
 
         if (obj.TryGetComponent<VoterLogic>(out var voterLogic))
         {
@@ -68,41 +34,26 @@ public class Spawner : MonoBehaviour
         }
     }
 
-    private VoterConfig GetRandomVoterConfig()
+    private VoterLabel GetRandomLabel()
     {
-        EnsureVoterConfigsLoaded();
-
-        if (voterConfigs == null || voterConfigs.Length == 0)
-        {
-            return null;
-        }
-
-        return voterConfigs[Random.Range(0, voterConfigs.Length)];
+        return Random.value < 0.5f ? VoterLabel.Rational : VoterLabel.Emotion;
     }
 
-    private void EnsureVoterConfigsLoaded()
+    private VoterAttribute GetRandomAttribute()
     {
-        if (voterConfigs != null && voterConfigs.Length > 0)
+        float darkChance = climateManager != null ? climateManager.GetDarkVoterRate() : 0f;
+        float roll = Random.value;
+
+        if (roll < darkChance)
         {
-            return;
+            return VoterAttribute.Dark;
         }
 
-#if UNITY_EDITOR
-        AutoPopulateVoterConfigs();
-#endif
-    }
-
-#if UNITY_EDITOR
-    private void AutoPopulateVoterConfigs()
-    {
-        string[] guids = AssetDatabase.FindAssets("t:VoterConfig", new[] { DefaultVoterConfigFolder });
-        voterConfigs = new VoterConfig[guids.Length];
-
-        for (int i = 0; i < guids.Length; i++)
+        if (roll < darkChance + coldAttributeChance)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-            voterConfigs[i] = AssetDatabase.LoadAssetAtPath<VoterConfig>(path);
+            return VoterAttribute.Cold;
         }
+
+        return VoterAttribute.None;
     }
-#endif
 }

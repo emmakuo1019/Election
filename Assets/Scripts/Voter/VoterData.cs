@@ -1,12 +1,16 @@
 using UnityEngine;
 
-public enum VoterTag { Normal, emotion, cold, good}
-public enum CampaignRoute { Rational, Party }
+public enum VoterLabel
+{
+    Rational,
+    Emotion
+}
 
-public enum VoterType 
-{ 
-    Normal, 
-    Dark 
+public enum VoterAttribute
+{
+    None,
+    Cold,
+    Dark
 }
 
 public class VoterData : MonoBehaviour
@@ -15,13 +19,17 @@ public class VoterData : MonoBehaviour
     public const int EnemySideSign = -1;
     public const int NeutralSideSign = 0;
 
-    public event System.Action<VoterType> OnTypeChanged;
+    public event System.Action OnIdentityChanged;
 
     [Header("設定")]
     [SerializeField] private VoterConfig config;
 
-    [Header("類型")]
-    public VoterType voterType = VoterType.Normal;
+    [Header("標籤")]
+    [SerializeField] private VoterLabel primaryLabel = VoterLabel.Rational;
+    [SerializeField] private VoterLabel secondaryLabel = VoterLabel.Rational;
+
+    [Header("屬性")]
+    [SerializeField] private VoterAttribute voterAttribute = VoterAttribute.None;
 
     [Header("基礎數值")]
     [SerializeField] private float normalMoveSpeed = 1.2f;
@@ -29,7 +37,6 @@ public class VoterData : MonoBehaviour
 
     [Header("立場資料")]
     [Tooltip("-5 = 敵方完全支持，+5 = 玩家完全支持。")]
-    [SerializeField] private VoterTag fallbackTag = VoterTag.Normal;
     public int currentPosition;
     public int convertedSide;
 
@@ -38,12 +45,18 @@ public class VoterData : MonoBehaviour
     [Range(0f, 1f)] public float loyalty = 1f;
 
     public VoterConfig Config => config;
-    public VoterTag Tag => config != null ? config.tag : fallbackTag;
+    public VoterLabel PrimaryLabel => primaryLabel;
+    public VoterLabel SecondaryLabel => secondaryLabel;
+    public VoterAttribute Attribute => voterAttribute;
+    public int EmotionLabelCount => (primaryLabel == VoterLabel.Emotion ? 1 : 0) + (secondaryLabel == VoterLabel.Emotion ? 1 : 0);
+    public int RationalLabelCount => 2 - EmotionLabelCount;
+    public bool HasColdAttribute => voterAttribute == VoterAttribute.Cold;
+    public bool HasDarkAttribute => voterAttribute == VoterAttribute.Dark;
     public float MoveSpeed
     {
         get
         {
-            float baseSpeed = voterType == VoterType.Dark ? darkMoveSpeed : normalMoveSpeed;
+            float baseSpeed = HasDarkAttribute ? darkMoveSpeed : normalMoveSpeed;
             float multiplier = Application.isPlaying && PolicyEffectRuntimeManager.HasInstance
                 ? PolicyEffectRuntimeManager.Instance.GlobalNpcSpeedMultiplier
                 : 1f;
@@ -53,7 +66,7 @@ public class VoterData : MonoBehaviour
     }
     public bool IsPlayerAligned => convertedSide == PlayerSideSign;
     public bool IsEnemyAligned => convertedSide == EnemySideSign;
-    public bool ShouldFollowPlayer => voterType == VoterType.Dark && IsPlayerAligned;
+    public bool ShouldFollowPlayer => HasDarkAttribute && IsPlayerAligned;
 
     private void Awake()
     {
@@ -70,14 +83,9 @@ public class VoterData : MonoBehaviour
 
     public void InitializeFromConfig()
     {
-        if (config == null)
-        {
-            return;
-        }
-
-        currentPosition = Mathf.Clamp(config.startingPosition, VoterConfig.MIN_POS, VoterConfig.MAX_POS);
-        fallbackTag = config.tag;
-        voterType = config.voterType;
+        currentPosition = config != null
+            ? Mathf.Clamp(config.startingPosition, VoterConfig.MIN_POS, VoterConfig.MAX_POS)
+            : 0;
         convertedSide = EvaluateSideFromPosition();
         isConverted = convertedSide != NeutralSideSign;
         loyalty = 1f;
@@ -94,15 +102,33 @@ public class VoterData : MonoBehaviour
         InitializeFromConfig();
     }
 
-    public void ApplyType(VoterType type)
+    public void ConfigureIdentity(VoterLabel firstLabel, VoterLabel secondLabel, VoterAttribute attribute)
     {
-        if (voterType == type)
+        primaryLabel = firstLabel;
+        secondaryLabel = secondLabel;
+        voterAttribute = attribute;
+        OnIdentityChanged?.Invoke();
+    }
+
+    public void ConvertColdIdentityToEmotion()
+    {
+        if (voterAttribute != VoterAttribute.Cold)
         {
             return;
         }
 
-        voterType = type;
-        OnTypeChanged?.Invoke(voterType);
+        voterAttribute = VoterAttribute.None;
+
+        if (primaryLabel != VoterLabel.Emotion)
+        {
+            primaryLabel = VoterLabel.Emotion;
+        }
+        else
+        {
+            secondaryLabel = VoterLabel.Emotion;
+        }
+
+        OnIdentityChanged?.Invoke();
     }
 
     public int EvaluateSideFromPosition()

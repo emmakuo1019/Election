@@ -1,32 +1,12 @@
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 public class BattleSceneController : MonoBehaviour
 {
     [Header("場景初始化")]
-    [SerializeField] private bool initializeVoterTypesOnStart = true;
+    [SerializeField] private bool initializeVoterIdentityOnStart = true;
     [SerializeField] private SocialAtmosphereManager socialAtmosphereManager;
     [SerializeField] private BattleFlowController battleFlowController;
-    [SerializeField] private VoterConfig[] voterConfigs;
-
-    private const string DefaultVoterConfigFolder = "Assets/Data/Voter";
-
-#if UNITY_EDITOR
-    private void Reset()
-    {
-        AutoPopulateVoterConfigs();
-    }
-
-    private void OnValidate()
-    {
-        if (voterConfigs == null || voterConfigs.Length == 0)
-        {
-            AutoPopulateVoterConfigs();
-        }
-    }
-#endif
+    [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
 
     private void Start()
     {
@@ -40,7 +20,7 @@ public class BattleSceneController : MonoBehaviour
             battleFlowController = FindFirstObjectByType<BattleFlowController>();
         }
 
-        if (initializeVoterTypesOnStart)
+        if (initializeVoterIdentityOnStart)
         {
             InitializeSceneVoters();
         }
@@ -61,23 +41,12 @@ public class BattleSceneController : MonoBehaviour
 
     private void InitializeSceneVoters()
     {
-        float darkRate = socialAtmosphereManager != null ? socialAtmosphereManager.GetDarkVoterRate() : 0.1f;
-        EnsureVoterConfigsLoaded();
         VoterData[] voters = FindObjectsByType<VoterData>(FindObjectsSortMode.None);
 
         foreach (VoterData voter in voters)
         {
-            VoterConfig randomConfig = GetRandomVoterConfig();
-            if (randomConfig != null)
-            {
-                voter.AssignConfig(randomConfig);
-            }
-
-            if (voter.Config == null || voter.Config.voterType != VoterType.Dark)
-            {
-                VoterType type = Random.value < darkRate ? VoterType.Dark : VoterType.Normal;
-                voter.ApplyType(type);
-            }
+            voter.InitializeFromConfig();
+            voter.ConfigureIdentity(GetRandomLabel(), GetRandomLabel(), GetRandomAttribute());
 
             if (voter.TryGetComponent<VoterLogic>(out var logic))
             {
@@ -90,42 +59,29 @@ public class BattleSceneController : MonoBehaviour
             }
         }
 
-        Debug.Log($"🗳️ [BattleSceneController] 已初始化 {voters.Length} 位選民，深色選民機率 {darkRate:P0}");
+        Debug.Log($"🗳️ [BattleSceneController] 已初始化 {voters.Length} 位選民的新標籤與屬性。");
     }
 
-    private VoterConfig GetRandomVoterConfig()
+    private VoterLabel GetRandomLabel()
     {
-        if (voterConfigs == null || voterConfigs.Length == 0)
+        return Random.value < 0.5f ? VoterLabel.Rational : VoterLabel.Emotion;
+    }
+
+    private VoterAttribute GetRandomAttribute()
+    {
+        float darkChance = socialAtmosphereManager != null ? socialAtmosphereManager.GetDarkVoterRate() : 0.1f;
+        float roll = Random.value;
+
+        if (roll < darkChance)
         {
-            return null;
+            return VoterAttribute.Dark;
         }
 
-        return voterConfigs[Random.Range(0, voterConfigs.Length)];
-    }
-
-    private void EnsureVoterConfigsLoaded()
-    {
-        if (voterConfigs != null && voterConfigs.Length > 0)
+        if (roll < darkChance + coldAttributeChance)
         {
-            return;
+            return VoterAttribute.Cold;
         }
 
-#if UNITY_EDITOR
-        AutoPopulateVoterConfigs();
-#endif
+        return VoterAttribute.None;
     }
-
-#if UNITY_EDITOR
-    private void AutoPopulateVoterConfigs()
-    {
-        string[] guids = AssetDatabase.FindAssets("t:VoterConfig", new[] { DefaultVoterConfigFolder });
-        voterConfigs = new VoterConfig[guids.Length];
-
-        for (int i = 0; i < guids.Length; i++)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-            voterConfigs[i] = AssetDatabase.LoadAssetAtPath<VoterConfig>(path);
-        }
-    }
-#endif
 }

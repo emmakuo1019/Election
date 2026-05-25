@@ -1,65 +1,66 @@
 using System.Collections;
 using UnityEngine;
-using TMPro;
+using UnityEngine.Serialization;
 
 public class VoterVisuals : MonoBehaviour
 {
     [Header("渲染元件")]
     public SpriteRenderer bodyRenderer;
-    public SpriteRenderer bubbleOutline;
+    [FormerlySerializedAs("bubbleOutline")]
+    public SpriteRenderer headRenderer;
 
-    [Header("選民外觀")]
-    public Sprite normalBodySprite;
-    public Sprite emotionBodySprite;
-    public Sprite coldBodySprite;
-    public Sprite goodBodySprite;
-    public Sprite darkBodySprite;
+    [Header("標籤頭像")]
+    [FormerlySerializedAs("rationalRationalHeadSprite")]
+    public Sprite rationalHeadSprite;
+    [FormerlySerializedAs("emotionEmotionHeadSprite")]
+    public Sprite emotionHeadSprite;
 
     [Header("色彩設定")]
     public Color neutralColor;
     public Color playerColor;
     public Color opponentColor;
-    public Color darkUiColor = new(1f, 0.9f, 0.35f, 1f);
-
-    [Header("UI 圖樣")]
-    public Sprite normalUiSprite;
-    public Sprite darkUiSprite;
 
     [Header("顏色過渡")]
     public float colorTransitionDuration = 0.8f;
 
-    private Coroutine colorCoroutine;
-    private VoterLogic logic;
-    private VoterData data;
-    
     [Header("打擊特效")]
     public ParticleSystem voteParticles;
 
-    void Awake()
+    private Coroutine colorCoroutine;
+    private VoterLogic logic;
+    private VoterData data;
+
+    private void Awake()
     {
         logic = GetComponent<VoterLogic>();
         data = GetComponent<VoterData>();
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
-        logic.OnPositionChanged += UpdateBubbleVisual;
+        if (logic != null)
+        {
+            logic.OnPositionChanged += UpdateBubbleVisual;
+        }
 
         if (data != null)
         {
-            data.OnTypeChanged += OnTypeChanged;
+            data.OnIdentityChanged += OnIdentityChanged;
         }
 
         ApplyCurrentVisualState();
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
-        logic.OnPositionChanged -= UpdateBubbleVisual;
+        if (logic != null)
+        {
+            logic.OnPositionChanged -= UpdateBubbleVisual;
+        }
 
         if (data != null)
         {
-            data.OnTypeChanged -= OnTypeChanged;
+            data.OnIdentityChanged -= OnIdentityChanged;
         }
     }
 
@@ -71,137 +72,99 @@ public class VoterVisuals : MonoBehaviour
         }
 
         ApplyBodySprite();
-        ApplyUiSprite();
+        ApplyHeadSprite();
         UpdateBubbleVisual(data.currentPosition);
     }
-    
-    // 依據立場值緩慢插值更新外框顏色。由 OnPositionChanged event 驅動。
+
     private void UpdateBubbleVisual(int position)
     {
-        Color targetColor = ResolveUiColor(position);
+        if (headRenderer == null && bodyRenderer == null)
+        {
+            return;
+        }
+
+        Color targetHeadColor = ResolveHeadColor(position);
         Color targetBodyColor = ResolveBodyColor(position);
 
         if (colorCoroutine != null)
+        {
             StopCoroutine(colorCoroutine);
+        }
 
-        colorCoroutine = StartCoroutine(LerpColorRoutine(targetColor, targetBodyColor));
+        colorCoroutine = StartCoroutine(LerpColorRoutine(targetHeadColor, targetBodyColor));
         voteParticles?.Play();
     }
 
-    private void OnTypeChanged(VoterType _)
+    private void OnIdentityChanged()
     {
         ApplyCurrentVisualState();
     }
 
-    private void ApplyUiSprite()
+    private void ApplyHeadSprite()
     {
-        if (bubbleOutline == null || data == null)
+        if (headRenderer == null)
         {
             return;
         }
 
-        bubbleOutline.sprite = data.voterType == VoterType.Dark && darkUiSprite != null
-            ? darkUiSprite
-            : normalUiSprite;
+        Sprite targetSprite = ResolveHeadSprite();
+        if (targetSprite != null)
+        {
+            headRenderer.sprite = targetSprite;
+        }
     }
 
     private void ApplyBodySprite()
     {
-        if (bodyRenderer == null || data == null)
-        {
-            return;
-        }
-
-        Sprite targetSprite = ResolveBodySprite();
-        if (targetSprite != null)
-        {
-            bodyRenderer.sprite = targetSprite;
-        }
+        // 身體之後再接隨機精靈圖，這版先保留 prefab 既有 sprite。
     }
 
-    private Sprite ResolveBodySprite()
+    private Sprite ResolveHeadSprite()
     {
-        if (data.voterType == VoterType.Dark && darkBodySprite != null)
+        if (data == null)
         {
-            return darkBodySprite;
+            return null;
         }
 
-        return data.Tag switch
-        {
-            VoterTag.emotion when emotionBodySprite != null => emotionBodySprite,
-            VoterTag.cold when coldBodySprite != null => coldBodySprite,
-            VoterTag.good when goodBodySprite != null => goodBodySprite,
-            _ => normalBodySprite != null ? normalBodySprite : darkBodySprite
-        };
+        return data.PrimaryLabel == VoterLabel.Emotion
+            ? emotionHeadSprite
+            : rationalHeadSprite;
     }
 
-    private Color ResolveUiColor(int position)
+    private Color ResolveHeadColor(int position)
     {
-        if (data != null && data.voterType == VoterType.Dark)
-        {
-            if (data.IsPlayerAligned)
-            {
-                return playerColor;
-            }
-
-            if (data.IsEnemyAligned)
-            {
-                return opponentColor;
-            }
-
-            return darkUiColor;
-        }
-
         if (position == 0)
         {
             return neutralColor;
         }
 
-        return ResolveConvertedColor(position);
-    }
-
-    private Color ResolveBodyColor(int position)
-    {
-        if (data != null && data.voterType == VoterType.Dark)
-        {
-            if (data.IsPlayerAligned)
-            {
-                return playerColor;
-            }
-
-            if (data.IsEnemyAligned)
-            {
-                return opponentColor;
-            }
-        }
-
-        return neutralColor;
-    }
-
-    private Color ResolveConvertedColor(int position)
-    {
         float maxAbsPosition = Mathf.Max(Mathf.Abs(VoterConfig.MIN_POS), Mathf.Abs(VoterConfig.MAX_POS));
         float intensity = maxAbsPosition > 0f
             ? Mathf.Clamp01(Mathf.Abs(position) / maxAbsPosition)
             : 0f;
-        Color sideColor = (position < 0) ? opponentColor : playerColor;
+        Color sideColor = position < 0 ? opponentColor : playerColor;
         return Color.Lerp(neutralColor, sideColor, intensity);
     }
 
-    private IEnumerator LerpColorRoutine(Color targetColor, Color targetBodyColor)
+    private Color ResolveBodyColor(int position)
     {
-        Color startColor = bubbleOutline != null ? bubbleOutline.color : Color.white;
+        return ResolveHeadColor(position);
+    }
+
+    private IEnumerator LerpColorRoutine(Color targetHeadColor, Color targetBodyColor)
+    {
+        Color startHeadColor = headRenderer != null ? headRenderer.color : Color.white;
         Color startBodyColor = bodyRenderer != null ? bodyRenderer.color : Color.white;
-        float elapsed    = 0f;
+        float elapsed = 0f;
 
         while (elapsed < colorTransitionDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / colorTransitionDuration;
 
-            if (bubbleOutline != null)
+            if (headRenderer != null)
             {
-                bubbleOutline.color = Color.Lerp(startColor, targetColor, t);
+                headRenderer.color = Color.Lerp(startHeadColor, targetHeadColor, t);
             }
 
             if (bodyRenderer != null)
@@ -212,9 +175,9 @@ public class VoterVisuals : MonoBehaviour
             yield return null;
         }
 
-        if (bubbleOutline != null)
+        if (headRenderer != null)
         {
-            bubbleOutline.color = targetColor;
+            headRenderer.color = targetHeadColor;
         }
 
         if (bodyRenderer != null)
@@ -224,5 +187,4 @@ public class VoterVisuals : MonoBehaviour
 
         colorCoroutine = null;
     }
-    
 }

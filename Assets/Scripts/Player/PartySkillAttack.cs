@@ -3,7 +3,7 @@ using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
-/// 技能執行器：暈眩對手 / 擴大普通攻擊範圍
+/// 技能執行器：暈眩對手 / 悲情土下座
 /// </summary>
 public class PartySkillAttack : MonoBehaviour, IAttackSource
 {
@@ -13,12 +13,10 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
     [SerializeField] private float stunDuration = 2f;
     [SerializeField] private float stunCooldown = 5f;
 
-    [Header("技能設定 - 攻擊範圍提升")]
-    [SerializeField] private float rangeBoostDisplayRange = 3.5f;
-    [SerializeField] private float rangeBoostDisplayAngle = 360f;
-    [SerializeField] private float rangeBoostMultiplier = 1.5f;
-    [SerializeField] private float rangeBoostDuration = 6f;
-    [SerializeField] private float rangeBoostCooldown = 6f;
+    [Header("技能設定 - 悲情土下座")]
+    [SerializeField] private float dogezaDisplayRange = 1.5f;
+    [SerializeField] private float dogezaDisplayAngle = 360f;
+    [SerializeField] private DogezaSkill dogezaSkill;
 
     [Header("顯示")]
     [SerializeField] private AttackRangeMesh attackRangeMesh;
@@ -29,8 +27,6 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
     private PlayerController playerController;
-    private PlayerAttack playerAttack;
-
     public event Action<float, float> OnAttackShapeChanged;
 
     private static readonly int HashPartyAttack = Animator.StringToHash("partyAttack");
@@ -45,7 +41,14 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
         playerController = GetComponent<PlayerController>();
-        playerAttack = GetComponent<PlayerAttack>();
+
+        if (dogezaSkill == null)
+        {
+            dogezaSkill = ScriptableObject.CreateInstance<DogezaSkill>();
+            dogezaSkill.skillName = "悲情土下座";
+            dogezaSkill.baseCooldown = 5f;
+            dogezaSkill.animationTriggerName = "partyAttack";
+        }
     }
 
     void Start()
@@ -61,7 +64,7 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             return currentSkill switch
             {
                 PlayerSkillManager.PartySkillType.PolicyDebate => stunRange,
-                PlayerSkillManager.PartySkillType.EmotionalStirring => rangeBoostDisplayRange,
+                PlayerSkillManager.PartySkillType.Dogeza => dogezaDisplayRange,
                 _ => 0f
             };
         }
@@ -74,7 +77,7 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             return currentSkill switch
             {
                 PlayerSkillManager.PartySkillType.PolicyDebate => stunAngle,
-                PlayerSkillManager.PartySkillType.EmotionalStirring => rangeBoostDisplayAngle,
+                PlayerSkillManager.PartySkillType.Dogeza => dogezaDisplayAngle,
                 _ => 0f
             };
         }
@@ -101,9 +104,12 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             return;
         }
 
-        float cooldown = currentSkill == PlayerSkillManager.PartySkillType.PolicyDebate
-            ? stunCooldown
-            : rangeBoostCooldown;
+        float cooldown = currentSkill switch
+        {
+            PlayerSkillManager.PartySkillType.PolicyDebate => stunCooldown,
+            PlayerSkillManager.PartySkillType.Dogeza when dogezaSkill != null => dogezaSkill.baseCooldown,
+            _ => 0f
+        };
 
         if (Time.time < lastSkillTime + cooldown)
         {
@@ -119,8 +125,8 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
                 PerformStunSkill();
                 break;
 
-            case PlayerSkillManager.PartySkillType.EmotionalStirring:
-                PerformRangeBoostSkill();
+            case PlayerSkillManager.PartySkillType.Dogeza:
+                PerformDogezaSkill();
                 break;
         }
     }
@@ -167,15 +173,20 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
         }
     }
 
-    private void PerformRangeBoostSkill()
+    private void PerformDogezaSkill()
     {
-        Debug.Log("📣 [PartySkill] 執行: 增加攻擊範圍");
+        if (dogezaSkill == null)
+        {
+            Debug.LogWarning("⚠️ [PartySkill] DogezaSkill 未指定");
+            return;
+        }
+
+        Debug.Log("🙇 [PartySkill] 執行: 悲情土下座");
 
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
-        playerAttack?.ApplyTemporaryRangeBoost(rangeBoostMultiplier, rangeBoostDuration);
+        dogezaSkill.Execute(gameObject);
         impulseSource?.GenerateImpulse();
-        Debug.Log($"📏 普通攻擊範圍提升 x{rangeBoostMultiplier:F1}，持續 {rangeBoostDuration:F1} 秒");
     }
 
     private Vector3 GetAttackDirection()
