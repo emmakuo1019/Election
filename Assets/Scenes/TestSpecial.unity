@@ -1830,7 +1830,6 @@ MonoBehaviour:
   lockedVisual: {fileID: 1619751926}
   unlockedVisual: {fileID: 261591297}
   targetSceneName: MapScene
-  isFinalRoomExit: 1
   triggerOnlyOnce: 1
   unlockOnStart: 1
   voterExitTarget: {fileID: 0}

@@ -9407,7 +9407,6 @@ MonoBehaviour:
   lockedVisual: {fileID: 694632986}
   unlockedVisual: {fileID: 276061200}
   targetSceneName: endGamePanel
-  isFinalRoomExit: 1
   triggerOnlyOnce: 1
   unlockOnStart: 0
   voterExitTarget: {fileID: 0}

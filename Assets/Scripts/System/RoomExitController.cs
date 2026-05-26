@@ -12,9 +12,6 @@ public class RoomExitController : MonoBehaviour
     [Header("出口目標場景")]
     [SerializeField] private string targetSceneName;
 
-    [Header("是否為區塊最後一房出口")]
-    [SerializeField] private bool isFinalRoomExit = false;
-
     [Header("是否只觸發一次")]
     [SerializeField] private bool triggerOnlyOnce = true;
 
@@ -28,7 +25,6 @@ public class RoomExitController : MonoBehaviour
     private bool isUnlocked = false;
     private bool hasTriggered = false;
 
-    public bool IsFinalRoomExit => isFinalRoomExit;
     public string TargetSceneName => targetSceneName;
 
     public Vector3 GetVoterExitPosition()
@@ -55,6 +51,7 @@ public class RoomExitController : MonoBehaviour
     public void UnlockExit()
     {
         isUnlocked = true;
+        hasTriggered = false;
         UpdateVisual();
     }
 
@@ -76,8 +73,20 @@ public class RoomExitController : MonoBehaviour
         if (triggerOnlyOnce && hasTriggered) return;
         if (!other.CompareTag("Player")) return;
 
-        hasTriggered = true;
+        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
+        if (roomClearFlowController != null && roomClearFlowController.HasPendingSettlement())
+        {
+            hasTriggered = true;
+            roomClearFlowController.ShowSettlementAtExit();
+            return;
+        }
 
+        hasTriggered = true;
+        ProceedToNextScene();
+    }
+
+    public void ProceedToNextScene()
+    {
         Time.timeScale = 1f;
 
         string nextSceneName = targetSceneName;

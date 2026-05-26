@@ -241,7 +241,7 @@ public class RewardPanelUI : MonoBehaviour
 
         Debug.LogWarning("RewardPanelUI：找不到 RoomClearFlowController，改用出口控制器收尾");
         RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        roomExitController?.UnlockExit();
+        roomExitController?.ProceedToNextScene();
     }
 
     private void EnsureSettlementUIReferences()

@@ -51,6 +51,7 @@ public class VoterLogic : MonoBehaviour
     private bool hasUsableNavMeshAgent = true;
 
     public VoterData Data => data;
+    public bool CanReceiveSkillEffect => isGameActive && data != null;
 
     void Awake()
     {
@@ -164,35 +165,23 @@ public class VoterLogic : MonoBehaviour
 
     public bool ReceiveDogeza(float stunTime, float convertChance)
     {
-        if (!isGameActive || data == null)
+        return ApplySkillEffect(new DogezaVoterEffect(stunTime, convertChance));
+    }
+
+    public bool ApplySkillEffect(IVoterSkillEffect effect)
+    {
+        if (!CanReceiveSkillEffect)
         {
-            Debug.LogWarning("[VoterLogic] 無法處理悲情土下座，選民未處於可互動狀態。");
+            Debug.LogWarning("[VoterLogic] 無法處理技能效果，選民未處於可互動狀態。");
             return false;
         }
 
-        if (data.HasColdAttribute)
+        if (effect == null)
         {
-            data.ConvertColdIdentityToEmotion();
-            ApplyDogezaStun(stunTime);
-            Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：冷感 -> 情緒，暈眩 {stunTime:F2} 秒。");
-            return true;
-        }
-
-        if (data.EmotionLabelCount <= 0)
-        {
-            Debug.Log($"[VoterLogic] {name} 不受悲情土下座影響。");
             return false;
         }
 
-        if (Random.value < Mathf.Clamp01(convertChance))
-        {
-            ForceConvertToPlayer();
-            Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：情緒選民轉化成功。");
-            return true;
-        }
-
-        Debug.Log($"[VoterLogic] {name} 受到悲情土下座影響：情緒選民轉化失敗。");
-        return false;
+        return effect.ApplyTo(this);
     }
 
     private void OnGameEnd()
@@ -495,7 +484,7 @@ public class VoterLogic : MonoBehaviour
         isKnockedBack = false;
     }
 
-    private void ForceConvertToPlayer()
+    public void ForceConvertToPlayer()
     {
         int requiredInfluence = VoterConfig.MAX_POS - data.currentPosition;
         if (requiredInfluence <= 0)
@@ -506,7 +495,7 @@ public class VoterLogic : MonoBehaviour
         OnInfluence(requiredInfluence, true, transform.position);
     }
 
-    private void ApplyDogezaStun(float stunTime)
+    public void ApplyTimedStun(float stunTime)
     {
         if (stunTime <= 0f)
         {
@@ -519,6 +508,11 @@ public class VoterLogic : MonoBehaviour
         }
 
         dogezaStunCoroutine = StartCoroutine(DogezaStunRoutine(stunTime));
+    }
+
+    public void ConvertColdIdentityToEmotion()
+    {
+        data?.ConvertColdIdentityToEmotion();
     }
 
     private IEnumerator DogezaStunRoutine(float stunTime)

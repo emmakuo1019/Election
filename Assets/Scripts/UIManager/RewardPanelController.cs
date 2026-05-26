@@ -26,6 +26,7 @@ public class RewardPanelController : MonoBehaviour
     {
         if (isShowing) return;
         isShowing = true;
+        Time.timeScale = 0f;
 
         if (rewardPanel != null)
         {
@@ -39,6 +40,7 @@ public class RewardPanelController : MonoBehaviour
     {
         if (!isShowing) return;
         isShowing = false;
+        Time.timeScale = 1f;
 
         //Debug.Log("關閉 Reward Panel");
 

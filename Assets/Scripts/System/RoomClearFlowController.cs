@@ -12,6 +12,12 @@ public class RoomClearFlowController : MonoBehaviour
     [SerializeField] private RewardPanelController rewardPanelController;
 
     private bool isResolvingRoomClear = false;
+    private bool hasPendingSettlement = false;
+    private bool canClaimReward;
+    private float pendingSupportRate;
+    private int pendingTotalVoters;
+    private int pendingPlayerSupporters;
+    private int pendingRewardMP;
 
     public void OnRoomCleared(bool canClaimReward)
     {
@@ -21,10 +27,33 @@ public class RoomClearFlowController : MonoBehaviour
         }
 
         isResolvingRoomClear = true;
+        this.canClaimReward = canClaimReward;
+
         PauseGameplayForSettlement();
         ForceAllVotersExit();
+        CacheSettlementData();
+        UnlockExitForSettlement();
+    }
 
-        ShowRewardPanel(canClaimReward);
+    public bool HasPendingSettlement()
+    {
+        return hasPendingSettlement;
+    }
+
+    public void ShowSettlementAtExit()
+    {
+        if (!isResolvingRoomClear || !hasPendingSettlement)
+        {
+            return;
+        }
+
+        ShowRewardPanel();
+    }
+
+    public void OnContinuePressed()
+    {
+        hasPendingSettlement = false;
+        ProceedToNextScene();
     }
 
     private void PauseGameplayForSettlement()
@@ -32,40 +61,15 @@ public class RoomClearFlowController : MonoBehaviour
         LevelTimer.Instance?.PauseTimer();
     }
 
-    public void OnContinuePressed()
+    private void CacheSettlementData()
     {
-        OpenExitAndFinish();
+        pendingSupportRate = roomResultCalculator != null ? roomResultCalculator.GetGlobalSupportRate() : 0f;
+        pendingTotalVoters = roomResultCalculator != null ? roomResultCalculator.GetTotalVoters() : 0;
+        pendingPlayerSupporters = roomResultCalculator != null ? roomResultCalculator.GetPlayerSupporters() : 0;
+        pendingRewardMP = roomResultCalculator != null ? roomResultCalculator.CalculateAndRewardMP() : 0;
     }
 
-    private void ShowRewardPanel(bool canClaimReward)
-    {
-        if (rewardPanelController == null)
-        {
-            rewardPanelController = FindFirstObjectByType<RewardPanelController>(FindObjectsInactive.Include);
-        }
-
-        if (rewardPanelController == null)
-        {
-            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RewardPanelController，直接開啟出口");
-            OpenExitAndFinish();
-            return;
-        }
-
-        float supportRate = roomResultCalculator != null ? roomResultCalculator.GetGlobalSupportRate() : 0f;
-        int totalVoters = roomResultCalculator != null ? roomResultCalculator.GetTotalVoters() : 0;
-        int playerSupporters = roomResultCalculator != null ? roomResultCalculator.GetPlayerSupporters() : 0;
-        int rewardMP = roomResultCalculator != null ? roomResultCalculator.CalculateAndRewardMP() : 0;
-
-        rewardPanelController.ShowRewardPanel(
-            supportRate,
-            playerSupporters,
-            totalVoters,
-            rewardMP,
-            canClaimReward
-        );
-    }
-
-    private void OpenExitAndFinish()
+    private void UnlockExitForSettlement()
     {
         PlayerController playerController = FindFirstObjectByType<PlayerController>();
         playerController?.EnableMovementOnly();
@@ -81,7 +85,47 @@ public class RoomClearFlowController : MonoBehaviour
             return;
         }
 
+        hasPendingSettlement = true;
         roomExitController.UnlockExit();
+    }
+
+    private void ShowRewardPanel()
+    {
+        if (rewardPanelController == null)
+        {
+            rewardPanelController = FindFirstObjectByType<RewardPanelController>(FindObjectsInactive.Include);
+        }
+
+        if (rewardPanelController == null)
+        {
+            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RewardPanelController，直接前往下一場景");
+            ProceedToNextScene();
+            return;
+        }
+
+        rewardPanelController.ShowRewardPanel(
+            pendingSupportRate,
+            pendingPlayerSupporters,
+            pendingTotalVoters,
+            pendingRewardMP,
+            canClaimReward
+        );
+    }
+
+    private void ProceedToNextScene()
+    {
+        if (roomExitController == null)
+        {
+            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        }
+
+        if (roomExitController == null)
+        {
+            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RoomExitController，無法前往下一場景");
+            return;
+        }
+
+        roomExitController.ProceedToNextScene();
         isResolvingRoomClear = false;
     }
 

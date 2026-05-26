@@ -21,6 +21,56 @@ public class DogezaSkill : PartySkillData
 
     public int MpCost => mpCost;
 
+    public override bool CanExecute(GameObject caster, out string failureReason)
+    {
+        failureReason = string.Empty;
+
+        if (caster == null)
+        {
+            failureReason = "[DogezaSkill] caster 為空，無法執行技能。";
+            return false;
+        }
+
+        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
+            ? PlayerMPSystem.Instance
+            : caster.GetComponent<PlayerMPSystem>();
+        if (mpSystem == null)
+        {
+            failureReason = "[DogezaSkill] 找不到 PlayerMPSystem，無法確認 MP。";
+            return false;
+        }
+
+        if (!mpSystem.HasEnoughMP(mpCost))
+        {
+            failureReason = "⚠️ MP 不足，無法施放政黨技能。";
+            return false;
+        }
+
+        return true;
+    }
+
+    public override bool TryConsumeResources(GameObject caster, out string failureReason)
+    {
+        failureReason = string.Empty;
+
+        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
+            ? PlayerMPSystem.Instance
+            : caster != null ? caster.GetComponent<PlayerMPSystem>() : null;
+        if (mpSystem == null)
+        {
+            failureReason = "[DogezaSkill] 找不到 PlayerMPSystem，無法扣除 MP。";
+            return false;
+        }
+
+        if (!mpSystem.UseMP(mpCost))
+        {
+            failureReason = "[DogezaSkill] MP 不足，無法施放悲情土下座。";
+            return false;
+        }
+
+        return true;
+    }
+
     public override void Execute(GameObject caster)
     {
         Debug.Log("[DogezaSkill] Execute() 被呼叫。");
@@ -32,21 +82,6 @@ public class DogezaSkill : PartySkillData
         }
 
         PlaySkillAnimation(caster);
-
-        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
-            ? PlayerMPSystem.Instance
-            : caster.GetComponent<PlayerMPSystem>();
-        if (mpSystem == null)
-        {
-            Debug.LogWarning("[DogezaSkill] 找不到 PlayerMPSystem，無法扣除 MP。");
-            return;
-        }
-
-        if (!mpSystem.UseMP(mpCost))
-        {
-            Debug.LogWarning("[DogezaSkill] MP 不足，無法施放悲情土下座。");
-            return;
-        }
 
         PlaySkillEffect(caster);
 
@@ -206,7 +241,7 @@ public class DogezaSkill : PartySkillData
             }
 
             hitVoters.Add(voterLogic);
-            if (voterLogic.ReceiveDogeza(stunTime, convertChance))
+            if (voterLogic.ApplySkillEffect(new DogezaVoterEffect(stunTime, convertChance)))
             {
                 hasHitVoter = true;
             }

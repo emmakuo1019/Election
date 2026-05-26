@@ -184,8 +184,24 @@ public class PlayerSkillManager : MonoBehaviour
             return;
         }
 
-        if (!HasEnoughResourcesForCurrentSkill())
+        if (!currentPartySkill.CanExecute(gameObject, out string executeFailureReason))
         {
+            if (!string.IsNullOrWhiteSpace(executeFailureReason))
+            {
+                Debug.LogWarning(executeFailureReason);
+            }
+
+            Debug.Log("[PlayerSkillManager] 中止施放：技能前置條件未滿足。");
+            return;
+        }
+
+        if (!currentPartySkill.TryConsumeResources(gameObject, out string resourceFailureReason))
+        {
+            if (!string.IsNullOrWhiteSpace(resourceFailureReason))
+            {
+                Debug.LogWarning(resourceFailureReason);
+            }
+
             Debug.Log("[PlayerSkillManager] 中止施放：資源不足或資源系統不存在。");
             return;
         }
@@ -193,27 +209,6 @@ public class PlayerSkillManager : MonoBehaviour
         Debug.Log($"[PlayerSkillManager] 開始執行技能：{currentPartySkill.skillName}");
         currentPartySkill.Execute(gameObject);
         lastPartySkillUseTime = Time.time;
-    }
-
-    private bool HasEnoughResourcesForCurrentSkill()
-    {
-        if (currentPartySkill is DogezaSkill dogezaSkill)
-        {
-            PlayerMPSystem mpSystem = PlayerMPSystem.Instance;
-            if (mpSystem == null)
-            {
-                Debug.LogWarning("⚠️ 找不到 PlayerMPSystem，無法確認技能資源。");
-                return false;
-            }
-
-            if (!mpSystem.HasEnoughMP(dogezaSkill.MpCost))
-            {
-                Debug.LogWarning("⚠️ MP 不足，無法施放政黨技能。");
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public static void SetEquippedPartySkill(PartySkillData skillData)
