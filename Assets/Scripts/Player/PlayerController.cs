@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     [Header("Input System")]
     public InputActionReference moveAction;
     public InputActionReference dashAction;
+    public InputActionReference partySkillAction;
 
     [Header("Animation")]
     public Animator characterAnimator;
@@ -29,6 +30,7 @@ public class PlayerController : MonoBehaviour
     private static readonly int HashDash     = Animator.StringToHash("dash");
 
     private CharacterController charCon;
+    private PlayerSkillManager skillManager;
     private Vector3 movement;
     private bool    canDash = true;
     private bool    isGameplayActive = true;
@@ -37,11 +39,20 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         charCon = GetComponent<CharacterController>();
+        skillManager = GetComponent<PlayerSkillManager>();
     }
 
     private void OnEnable()
     {
-        dashAction.action.performed += OnDashInput;
+        if (dashAction != null)
+        {
+            dashAction.action.performed += OnDashInput;
+        }
+
+        if (partySkillAction != null)
+        {
+            partySkillAction.action.performed += OnPartySkillInput;
+        }
 
         if (LevelTimer.Instance != null)
         {
@@ -51,7 +62,15 @@ public class PlayerController : MonoBehaviour
 
     private void OnDisable()
     {
-        dashAction.action.performed -= OnDashInput;
+        if (dashAction != null)
+        {
+            dashAction.action.performed -= OnDashInput;
+        }
+
+        if (partySkillAction != null)
+        {
+            partySkillAction.action.performed -= OnPartySkillInput;
+        }
 
         if (LevelTimer.Instance != null)
         {
@@ -67,12 +86,30 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        if (partySkillAction == null && Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
+        {
+            Debug.Log("[PlayerController] 透過備援路徑偵測到 J 鍵輸入。");
+            OnPartySkillInput(default);
+        }
+
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            Debug.Log("[PlayerController] 透過 Input.GetKeyDown(KeyCode.J) 偵測到 J 鍵輸入。");
+            OnPartySkillInput(default);
+        }
+
         if (IsDashing) return;
         HandleMovement();
     }
 
     private void HandleMovement()
     {
+        if (moveAction == null)
+        {
+            characterAnimator?.SetBool(HashIsMoving, false);
+            return;
+        }
+
         Vector2 moveInput = moveAction.action.ReadValue<Vector2>();
         movement = new Vector3(moveInput.x, 0f, moveInput.y);
 
@@ -99,6 +136,25 @@ public class PlayerController : MonoBehaviour
         {
             dashCoroutine = StartCoroutine(DashRoutine());
         }
+    }
+
+    private void OnPartySkillInput(InputAction.CallbackContext context)
+    {
+        if (!isGameplayActive)
+        {
+            Debug.Log("[PlayerController] 偵測到政黨技能輸入，但玩家目前不可操作。");
+            return;
+        }
+
+        Debug.Log("[PlayerController] 偵測到政黨技能輸入，準備呼叫 PlayerSkillManager.UsePartySkill()");
+
+        if (skillManager == null)
+        {
+            Debug.LogWarning("⚠️ PlayerSkillManager 未設定，無法施放政黨技能。");
+            return;
+        }
+
+        skillManager.UsePartySkill();
     }
 
     private void OnGameEnd()

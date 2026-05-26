@@ -5,6 +5,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "DogezaSkill", menuName = "Skills/Party/Dogeza Skill")]
 public class DogezaSkill : PartySkillData
 {
+    [Header("特效")]
+    [SerializeField] private GameObject skillEffectPrefab;
+    [SerializeField] private Vector3 effectSpawnOffset;
+    [SerializeField] private bool useCasterRotation = true;
+
+    [Header("技能數值")]
     [SerializeField] private int mpCost = 10;
     [SerializeField] private int hpCost = 5;
     [SerializeField] private float dashDuration = 0.3f;
@@ -13,13 +19,19 @@ public class DogezaSkill : PartySkillData
     [SerializeField] private float convertChance = 0.5f;
     [SerializeField] private float voterDetectionRadius = 1.5f;
 
+    public int MpCost => mpCost;
+
     public override void Execute(GameObject caster)
     {
+        Debug.Log("[DogezaSkill] Execute() 被呼叫。");
+
         if (caster == null)
         {
             Debug.LogWarning("[DogezaSkill] caster 為空，無法執行技能。");
             return;
         }
+
+        PlaySkillAnimation(caster);
 
         PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
             ? PlayerMPSystem.Instance
@@ -36,6 +48,10 @@ public class DogezaSkill : PartySkillData
             return;
         }
 
+        PlaySkillEffect(caster);
+
+        Debug.Log("[DogezaSkill] MP 扣除成功，準備啟動衝刺 Coroutine。");
+
         MonoBehaviour coroutineHost = caster.GetComponent<PlayerSkillManager>();
         if (coroutineHost == null)
         {
@@ -49,6 +65,74 @@ public class DogezaSkill : PartySkillData
         }
 
         coroutineHost.StartCoroutine(DogezaDashRoutine(caster));
+    }
+
+    private void PlaySkillAnimation(GameObject caster)
+    {
+        Animator animator = caster.GetComponent<Animator>();
+        if (animator == null)
+        {
+            animator = caster.GetComponentInChildren<Animator>();
+        }
+
+        if (animator == null)
+        {
+            Debug.LogWarning("[DogezaSkill] caster 身上找不到 Animator，略過技能動作播放。");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(animationTriggerName))
+        {
+            Debug.LogWarning("[DogezaSkill] animationTriggerName 為空，無法播放技能動作。");
+            return;
+        }
+
+        if (!HasTriggerParameter(animator, animationTriggerName))
+        {
+            Debug.LogWarning($"[DogezaSkill] Animator 缺少 Trigger 參數：{animationTriggerName}");
+            return;
+        }
+
+        animator.ResetTrigger(animationTriggerName);
+        animator.SetTrigger(animationTriggerName);
+        Debug.Log($"[DogezaSkill] 透過 Trigger 播放技能動作：{animationTriggerName}");
+    }
+
+    private static bool HasTriggerParameter(Animator animator, string parameterName)
+    {
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.type == AnimatorControllerParameterType.Trigger && parameter.name == parameterName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void PlaySkillEffect(GameObject caster)
+    {
+        if (skillEffectPrefab == null)
+        {
+            return;
+        }
+
+        Quaternion effectRotation = useCasterRotation ? caster.transform.rotation : Quaternion.identity;
+        Vector3 effectPosition = caster.transform.TransformPoint(effectSpawnOffset);
+        GameObject effectInstance = PoolManager.Instance.Get(skillEffectPrefab, effectPosition, effectRotation);
+        if (effectInstance == null)
+        {
+            return;
+        }
+
+        FollowTargetWhileActive followTarget = effectInstance.GetComponent<FollowTargetWhileActive>();
+        if (followTarget == null)
+        {
+            followTarget = effectInstance.AddComponent<FollowTargetWhileActive>();
+        }
+
+        followTarget.Bind(caster.transform, effectSpawnOffset, useCasterRotation);
     }
 
     private IEnumerator DogezaDashRoutine(GameObject caster)
@@ -86,6 +170,8 @@ public class DogezaSkill : PartySkillData
             elapsedTime += Time.deltaTime;
             yield return null;
         }
+
+        Debug.Log($"[DogezaSkill] 衝刺結束，hasHitVoter = {hasHitVoter}");
 
         if (hasHitVoter && PolicyEffectRuntimeManager.HasInstance)
         {

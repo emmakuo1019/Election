@@ -12,7 +12,7 @@ public class MapSkillSelectionPrompt : MonoBehaviour
             return;
         }
 
-        if (!PlayerSkillManager.HasPendingMapSkillSelection() || PlayerSkillManager.HasSavedPartySkill())
+        if (!PlayerSkillManager.HasPendingMapSkillSelection())
         {
             return;
         }

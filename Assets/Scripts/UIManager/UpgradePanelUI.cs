@@ -10,6 +10,10 @@ public class UpgradePanelUI : MonoBehaviour
     [Header("資料來源")]
     [SerializeField] private PlayerSkillManager playerSkillManager;
 
+    [Header("技能資料")]
+    [SerializeField] private PartySkillData policyDebateSkill;
+    [SerializeField] private PartySkillData dogezaSkill;
+
     [Header("UI - 主面板")]
     [SerializeField] private Button closeButton;
     [SerializeField] private Text partyStatusText;
@@ -23,18 +27,23 @@ public class UpgradePanelUI : MonoBehaviour
 
     private void Start()
     {
+        ResolveReferences();
         ValidateReferences();
+        EnsureDefaultSkills();
 
         panel.SetActive(false);
 
         closeButton.onClick.AddListener(ClosePanel);
-        policyDebateButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
-        dogezaButton.onClick.AddListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.Dogeza));
+        policyDebateButton.onClick.AddListener(() => OnSelectPartySkill(policyDebateSkill));
+        dogezaButton.onClick.AddListener(() => OnSelectPartySkill(dogezaSkill));
 
         SetButtonLabel(policyDebateButton, "暈眩對手");
         SetButtonLabel(dogezaButton, "悲情土下座");
 
-        playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
+        if (playerSkillManager != null)
+        {
+            playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
+        }
         RefreshUI();
     }
 
@@ -44,13 +53,33 @@ public class UpgradePanelUI : MonoBehaviour
             closeButton.onClick.RemoveListener(ClosePanel);
 
         if (policyDebateButton != null)
-            policyDebateButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.PolicyDebate));
+            policyDebateButton.onClick.RemoveListener(() => OnSelectPartySkill(policyDebateSkill));
 
         if (dogezaButton != null)
-            dogezaButton.onClick.RemoveListener(() => OnSelectPartySkill(PlayerSkillManager.PartySkillType.Dogeza));
+            dogezaButton.onClick.RemoveListener(() => OnSelectPartySkill(dogezaSkill));
 
         if (playerSkillManager != null)
             playerSkillManager.OnPartySkillSelectionRequested -= OnPartySkillSelectionRequested;
+    }
+
+    private void ResolveReferences()
+    {
+        if (playerSkillManager == null)
+        {
+            playerSkillManager = FindFirstObjectByType<PlayerSkillManager>(FindObjectsInactive.Include);
+        }
+    }
+
+    private void EnsureDefaultSkills()
+    {
+        if (dogezaSkill == null)
+        {
+            DogezaSkill runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkill>();
+            runtimeDogezaSkill.skillName = "悲情土下座";
+            runtimeDogezaSkill.baseCooldown = 5f;
+            runtimeDogezaSkill.animationTriggerName = "Begging";
+            dogezaSkill = runtimeDogezaSkill;
+        }
     }
 
     private void ValidateReferences()
@@ -58,13 +87,6 @@ public class UpgradePanelUI : MonoBehaviour
         if (panel == null)
         {
             Debug.LogError("❌ panel 未指定！");
-            enabled = false;
-            return;
-        }
-
-        if (playerSkillManager == null)
-        {
-            Debug.LogError("❌ playerSkillManager 未指定！");
             enabled = false;
             return;
         }
@@ -87,7 +109,11 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void ClosePanel()
     {
-        if (PlayerSkillManager.HasPendingMapSkillSelection() && !PlayerSkillManager.HasSavedPartySkill())
+        bool hasPartySkill = playerSkillManager != null
+            ? playerSkillManager.HasPartySkill
+            : PlayerSkillManager.HasEquippedPartySkill;
+
+        if (PlayerSkillManager.HasPendingMapSkillSelection() && !hasPartySkill)
         {
             return;
         }
@@ -104,19 +130,39 @@ public class UpgradePanelUI : MonoBehaviour
         }
     }
 
-    private void OnSelectPartySkill(PlayerSkillManager.PartySkillType skillType)
+    private void OnSelectPartySkill(PartySkillData skillData)
     {
-        playerSkillManager.SelectPartySkill(skillType);
+        if (skillData == null)
+        {
+            Debug.LogWarning("⚠️ 尚未指定技能資料，無法裝備。");
+            return;
+        }
+
+        if (playerSkillManager != null)
+        {
+            playerSkillManager.EquipPartySkill(skillData);
+        }
+        else
+        {
+            PlayerSkillManager.SetEquippedPartySkill(skillData);
+        }
+
+        ClosePanel();
         RefreshUI();
-        Debug.Log($"✅ 政黨技能已選擇: {skillType}");
+        Debug.Log($"✅ 政黨技能已選擇: {skillData.skillName}");
     }
 
     public void RefreshUI()
     {
-        bool hasPartySkill = playerSkillManager.HasPartySkill;
+        bool hasPartySkill = playerSkillManager != null
+            ? playerSkillManager.HasPartySkill
+            : PlayerSkillManager.HasEquippedPartySkill;
+        PartySkillData equippedSkill = playerSkillManager != null
+            ? playerSkillManager.CurrentPartySkill
+            : PlayerSkillManager.EquippedPartySkill;
 
         partyStatusText.text = hasPartySkill
-            ? $"✅ 已選擇技能: {GetSkillDisplayName(playerSkillManager.SelectedPartySkill)}"
+            ? $"✅ 已選擇技能: {GetSkillDisplayName(equippedSkill)}"
             : "請從下方二選一：暈眩對手 / 悲情土下座";
 
         policyDebateButton.interactable = !hasPartySkill;
@@ -137,13 +183,10 @@ public class UpgradePanelUI : MonoBehaviour
         }
     }
 
-    private string GetSkillDisplayName(PlayerSkillManager.PartySkillType skillType)
+    private string GetSkillDisplayName(PartySkillData skillData)
     {
-        return skillType switch
-        {
-            PlayerSkillManager.PartySkillType.PolicyDebate => "暈眩對手",
-            PlayerSkillManager.PartySkillType.Dogeza => "悲情土下座",
-            _ => "未選擇"
-        };
+        return skillData != null && !string.IsNullOrWhiteSpace(skillData.skillName)
+            ? skillData.skillName
+            : "未選擇";
     }
 }

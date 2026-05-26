@@ -3,80 +3,83 @@ using UnityEngine.InputSystem;
 
 public class PlayerSkillManager : MonoBehaviour
 {
-    private const string SavedPartySkillKey = "SavedPartySkill";
     private const string PendingMapSkillSelectionKey = "PendingMapSkillSelection";
-
-    public enum PartySkillType
-    {
-        None,              // 未選擇
-        PolicyDebate,      // 政策論述
-        Dogeza            // 悲情土下座
-    }
+    private static PartySkillData equippedPartySkill;
 
     [Header("輸入")]
     [SerializeField] private InputActionReference speechAction;
-    [SerializeField] private InputActionReference partyAction;
+    [SerializeField] private InputActionReference partySelectAction;
 
-    [Header("技能狀態")]
-    [SerializeField] private PartySkillType selectedPartySkill = PartySkillType.None;
-
-    [Header("技能引用")]
+    [Header("技能")]
     [SerializeField] private PlayerAttack speechAttack;
-    // 長按時間
-    private float holdDuration = 1f;
-    private float holdTimer = 0f;
-    private bool isHolding = false;
+    [SerializeField] private PartySkillData currentPartySkill;
+
+    [Header("選單")]
+    [SerializeField] private float holdDuration = 1f;
+
+    private float holdTimer;
+    private float lastPartySkillUseTime = float.NegativeInfinity;
+    private bool isHolding;
+    private bool isGameActive = true;
+
+    public delegate void PartySkillSelectionDelegate();
+    public event PartySkillSelectionDelegate OnPartySkillSelectionRequested;
 
     public bool SpeechUnlocked => true;
-    public PartySkillType SelectedPartySkill => selectedPartySkill;
-    public bool HasPartySkill => selectedPartySkill != PartySkillType.None;
-    private bool isGameActive = true;
+    public bool HasPartySkill => currentPartySkill != null;
+    public PartySkillData CurrentPartySkill => currentPartySkill;
+    public static bool HasEquippedPartySkill => equippedPartySkill != null;
+    public static PartySkillData EquippedPartySkill => equippedPartySkill;
+    public float HoldProgress => isHolding ? Mathf.Clamp01(holdTimer / holdDuration) : 0f;
 
     private void Awake()
     {
-        selectedPartySkill = LoadSavedPartySkill();
+        if (currentPartySkill == null && equippedPartySkill != null)
+        {
+            currentPartySkill = equippedPartySkill;
+        }
     }
 
     private void OnEnable()
     {
         if (speechAction != null)
+        {
             speechAction.action.performed += OnSpeechInput;
+        }
 
-        if (partyAction != null)
-            partyAction.action.performed += OnPartyInput;
+        if (partySelectAction != null)
+        {
+            partySelectAction.action.started += OnPartySelectStarted;
+            partySelectAction.action.canceled += OnPartySelectCanceled;
+        }
 
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
         }
-
     }
 
     private void OnDisable()
     {
         if (speechAction != null)
+        {
             speechAction.action.performed -= OnSpeechInput;
+        }
 
-        if (partyAction != null)
-            partyAction.action.performed -= OnPartyInput;
+        if (partySelectAction != null)
+        {
+            partySelectAction.action.started -= OnPartySelectStarted;
+            partySelectAction.action.canceled -= OnPartySelectCanceled;
+        }
 
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
         }
     }
-    
-    private void OnGameEnd()
-    {
-        isGameActive = false;
-        isHolding = false;
-        holdTimer = 0f;
-        Debug.Log("🛑 [PlayerSkillManager] 遊戲結束，技能禁用");
-    }
 
     private void Update()
     {
-        // 長按計時
         if (isHolding)
         {
             holdTimer += Time.deltaTime;
@@ -86,11 +89,6 @@ public class PlayerSkillManager : MonoBehaviour
     private void OnSpeechInput(InputAction.CallbackContext context)
     {
         UseSpeech();
-    }
-
-    private void OnPartyInput(InputAction.CallbackContext context)
-    {
-        UsePartySkill();
     }
 
     private void OnPartySelectStarted(InputAction.CallbackContext context)
@@ -103,8 +101,6 @@ public class PlayerSkillManager : MonoBehaviour
     {
         if (holdTimer >= holdDuration && !HasPartySkill)
         {
-            Debug.Log("[PlayerSkillManager] 長按E達到時間！打開技能選擇面板");
-            // 觸發事件，通知 UpgradePanelUI 打開選擇面板
             OnPartySkillSelectionRequested?.Invoke();
         }
 
@@ -112,32 +108,38 @@ public class PlayerSkillManager : MonoBehaviour
         holdTimer = 0f;
     }
 
-    public void UnlockSpeech() { }
-
-    public void SelectPartySkill(PartySkillType skillType)
+    private void OnGameEnd()
     {
-        if (selectedPartySkill != PartySkillType.None)
-        {
-            Debug.LogWarning("⚠️ 已選擇其他政黨技能，無法更換");
-            return;
-        }
+        isGameActive = false;
+        isHolding = false;
+        holdTimer = 0f;
+    }
 
-        selectedPartySkill = skillType;
-        SavePartySkill(skillType);
-        ClearPendingMapSkillSelection();
-        Debug.Log($"✅ 已解鎖政黨技能: {skillType}");
+    public void EquipPartySkill(PartySkillData skillData)
+    {
+        SetEquippedPartySkill(skillData);
+        currentPartySkill = equippedPartySkill;
+        lastPartySkillUseTime = float.NegativeInfinity;
+    }
 
-        if (partySkillAttack != null)
-        {
-            partySkillAttack.Initialize(skillType);
-        }
+    public void ClearPartySkill()
+    {
+        currentPartySkill = null;
+        equippedPartySkill = null;
+        lastPartySkillUseTime = float.NegativeInfinity;
+    }
+
+    public void UnlockSpeech()
+    {
     }
 
     public void UseSpeech()
     {
         if (!isGameActive)
+        {
             return;
-        // 檢查場景
+        }
+
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中使用技能！");
@@ -155,69 +157,80 @@ public class PlayerSkillManager : MonoBehaviour
 
     public void UsePartySkill()
     {
+        Debug.Log($"[PlayerSkillManager] UsePartySkill() 被呼叫，currentPartySkill = {(currentPartySkill != null ? currentPartySkill.skillName : "null")}");
+
         if (!isGameActive)
+        {
+            Debug.Log("[PlayerSkillManager] 中止施放：遊戲目前不可操作。");
             return;
-        // 檢查場景
+        }
+
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中使用技能！");
             return;
         }
 
-        if (!HasPartySkill)
+        if (currentPartySkill == null)
         {
-            Debug.LogWarning("⚠️ 政黨技能未選擇");
+            Debug.LogWarning("⚠️ 尚未裝備政黨技能");
             return;
         }
 
-        if (partySkillAttack == null)
+        if (Time.time < lastPartySkillUseTime + currentPartySkill.baseCooldown)
         {
-            Debug.LogWarning("⚠️ partySkillAttack 未設定");
+            float remainingCooldown = lastPartySkillUseTime + currentPartySkill.baseCooldown - Time.time;
+            Debug.LogWarning($"⏳ 技能冷卻中... {remainingCooldown:F1} 秒");
             return;
         }
-        partySkillAttack.PerformPartySkill();
-    }
-    // 事件：通知 UI 打開技能選擇
-    public delegate void PartySkillSelectionDelegate();
-    public event PartySkillSelectionDelegate OnPartySkillSelectionRequested;
-    public float HoldProgress => isHolding ? Mathf.Clamp01(holdTimer / holdDuration) : 0f;
 
-    public static bool HasSavedPartySkill()
-    {
-        return LoadSavedPartySkill() != PartySkillType.None;
-    }
-
-    public static PartySkillType LoadSavedPartySkill()
-    {
-        int savedValue = PlayerPrefs.GetInt(SavedPartySkillKey, (int)PartySkillType.None);
-        if (!System.Enum.IsDefined(typeof(PartySkillType), savedValue))
+        if (!HasEnoughResourcesForCurrentSkill())
         {
-            return PartySkillType.None;
+            Debug.Log("[PlayerSkillManager] 中止施放：資源不足或資源系統不存在。");
+            return;
         }
 
-        return (PartySkillType)savedValue;
+        Debug.Log($"[PlayerSkillManager] 開始執行技能：{currentPartySkill.skillName}");
+        currentPartySkill.Execute(gameObject);
+        lastPartySkillUseTime = Time.time;
     }
 
-    public static void SavePartySkill(PartySkillType skillType)
+    private bool HasEnoughResourcesForCurrentSkill()
     {
-        PlayerPrefs.SetInt(SavedPartySkillKey, (int)skillType);
-        PlayerPrefs.Save();
+        if (currentPartySkill is DogezaSkill dogezaSkill)
+        {
+            PlayerMPSystem mpSystem = PlayerMPSystem.Instance;
+            if (mpSystem == null)
+            {
+                Debug.LogWarning("⚠️ 找不到 PlayerMPSystem，無法確認技能資源。");
+                return false;
+            }
+
+            if (!mpSystem.HasEnoughMP(dogezaSkill.MpCost))
+            {
+                Debug.LogWarning("⚠️ MP 不足，無法施放政黨技能。");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static void SetEquippedPartySkill(PartySkillData skillData)
+    {
+        equippedPartySkill = skillData;
+        ClearPendingMapSkillSelection();
     }
 
     public static void ResetSavedPartySkill()
     {
-        PlayerPrefs.DeleteKey(SavedPartySkillKey);
+        equippedPartySkill = null;
         PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
         PlayerPrefs.Save();
     }
 
     public static void MarkPendingMapSkillSelection()
     {
-        if (HasSavedPartySkill())
-        {
-            return;
-        }
-
         PlayerPrefs.SetInt(PendingMapSkillSelectionKey, 1);
         PlayerPrefs.Save();
     }
@@ -232,5 +245,4 @@ public class PlayerSkillManager : MonoBehaviour
         PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
         PlayerPrefs.Save();
     }
-
 }

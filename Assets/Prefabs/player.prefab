@@ -391,11 +391,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speechAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  partyAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   partySelectAction: {fileID: 0}
-  selectedPartySkill: 0
   speechAttack: {fileID: 8545510738008723634}
-  partySkillAttack: {fileID: 0}
+  currentPartySkill: {fileID: 0}
+  holdDuration: 1
 --- !u!114 &3641732488253732350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,6 +413,7 @@ MonoBehaviour:
   dashCooldown: 1
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   dashAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  partySkillAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   characterAnimator: {fileID: 2099242401305552249}
 --- !u!114 &8545510738008723634
 MonoBehaviour:

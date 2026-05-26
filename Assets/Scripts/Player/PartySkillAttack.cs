@@ -3,91 +3,47 @@ using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
-/// 技能執行器：暈眩對手 / 悲情土下座
+/// 舊政黨技能執行器的相容包裝。
+/// 新系統主流程已由 PlayerSkillManager 直接呼叫 PartySkillData.Execute(...)。
+/// 這個元件保留給既有 prefab / 介面引用使用，避免編譯錯誤與 Inspector 遺失欄位。
 /// </summary>
 public class PartySkillAttack : MonoBehaviour, IAttackSource
 {
-    [Header("技能設定 - 暈眩對手")]
-    [SerializeField] private float stunRange = 6f;
-    [SerializeField] private float stunAngle = 120f;
-    [SerializeField] private float stunDuration = 2f;
-    [SerializeField] private float stunCooldown = 5f;
-
-    [Header("技能設定 - 悲情土下座")]
-    [SerializeField] private float dogezaDisplayRange = 1.5f;
-    [SerializeField] private float dogezaDisplayAngle = 360f;
-    [SerializeField] private DogezaSkill dogezaSkill;
+    [Header("技能資料")]
+    [SerializeField] private PartySkillData partySkillData;
 
     [Header("顯示")]
     [SerializeField] private AttackRangeMesh attackRangeMesh;
-
-    [Header("Layer")]
-    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] private float displayRange = 1.5f;
+    [SerializeField] private float displayAngle = 360f;
 
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
-    private PlayerController playerController;
+    private float lastSkillTime = float.NegativeInfinity;
+
     public event Action<float, float> OnAttackShapeChanged;
 
+    public float AttackRange => displayRange;
+    public float AttackAngle => displayAngle;
+
     private static readonly int HashPartyAttack = Animator.StringToHash("partyAttack");
-    private const int HitBufferSize = 128;
 
-    private PlayerSkillManager.PartySkillType currentSkill = PlayerSkillManager.PartySkillType.None;
-    private float lastSkillTime = -999f;
-    private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
-
-    void Awake()
+    private void Awake()
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
         characterAnimator = GetComponent<Animator>();
-        playerController = GetComponent<PlayerController>();
-
-        if (dogezaSkill == null)
-        {
-            dogezaSkill = ScriptableObject.CreateInstance<DogezaSkill>();
-            dogezaSkill.skillName = "悲情土下座";
-            dogezaSkill.baseCooldown = 5f;
-            dogezaSkill.animationTriggerName = "partyAttack";
-        }
     }
 
-    void Start()
+    private void Start()
     {
-        if (attackRangeMesh != null)
-            attackRangeMesh.ShowIdle();
+        attackRangeMesh?.ShowIdle();
+        OnAttackShapeChanged?.Invoke(AttackRange, AttackAngle);
     }
 
-    public float AttackRange
+    public void SetSkill(PartySkillData skillData)
     {
-        get
-        {
-            return currentSkill switch
-            {
-                PlayerSkillManager.PartySkillType.PolicyDebate => stunRange,
-                PlayerSkillManager.PartySkillType.Dogeza => dogezaDisplayRange,
-                _ => 0f
-            };
-        }
-    }
-
-    public float AttackAngle
-    {
-        get
-        {
-            return currentSkill switch
-            {
-                PlayerSkillManager.PartySkillType.PolicyDebate => stunAngle,
-                PlayerSkillManager.PartySkillType.Dogeza => dogezaDisplayAngle,
-                _ => 0f
-            };
-        }
-    }
-
-    public void Initialize(PlayerSkillManager.PartySkillType skillType)
-    {
-        currentSkill = skillType;
-        UpdateAttackShape();
-        Debug.Log($"[PartySkill] 初始化技能: {skillType}");
+        partySkillData = skillData;
+        OnAttackShapeChanged?.Invoke(AttackRange, AttackAngle);
     }
 
     public void PerformPartySkill()
@@ -98,107 +54,23 @@ public class PartySkillAttack : MonoBehaviour, IAttackSource
             return;
         }
 
-        if (currentSkill == PlayerSkillManager.PartySkillType.None)
+        if (partySkillData == null)
         {
-            Debug.LogWarning("⚠️ 政黨技能未初始化");
+            Debug.LogWarning("⚠️ PartySkillData 未指定");
             return;
         }
 
-        float cooldown = currentSkill switch
+        if (Time.time < lastSkillTime + partySkillData.baseCooldown)
         {
-            PlayerSkillManager.PartySkillType.PolicyDebate => stunCooldown,
-            PlayerSkillManager.PartySkillType.Dogeza when dogezaSkill != null => dogezaSkill.baseCooldown,
-            _ => 0f
-        };
-
-        if (Time.time < lastSkillTime + cooldown)
-        {
-            Debug.LogWarning($"⏳ 技能冷卻中... {(lastSkillTime + cooldown - Time.time):F1} 秒");
+            float remainingCooldown = lastSkillTime + partySkillData.baseCooldown - Time.time;
+            Debug.LogWarning($"⏳ 技能冷卻中... {remainingCooldown:F1} 秒");
             return;
         }
-
-        lastSkillTime = Time.time;
-
-        switch (currentSkill)
-        {
-            case PlayerSkillManager.PartySkillType.PolicyDebate:
-                PerformStunSkill();
-                break;
-
-            case PlayerSkillManager.PartySkillType.Dogeza:
-                PerformDogezaSkill();
-                break;
-        }
-    }
-
-    private void PerformStunSkill()
-    {
-        Debug.Log("🛑 [PartySkill] 執行: 暈眩對手");
 
         characterAnimator?.SetTrigger(HashPartyAttack);
         attackRangeMesh?.Show();
-
-        Vector3 attackDir = GetAttackDirection();
-        int stunCount = 0;
-
-        int overlapCount = Physics.OverlapSphereNonAlloc(
-            transform.position,
-            stunRange,
-            hitBuffer,
-            enemyLayer
-        );
-
-        for (int i = 0; i < overlapCount; i++)
-        {
-            Collider hit = hitBuffer[i];
-            if (hit == null) continue;
-
-            EnemyAI enemy = hit.GetComponentInParent<EnemyAI>();
-            if (enemy != null)
-            {
-                Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
-
-                if (Vector3.Angle(attackDir, dirToTarget) < stunAngle / 2f)
-                {
-                    enemy.ApplyStun(stunDuration);
-                    stunCount++;
-                }
-            }
-        }
-
-        if (stunCount > 0)
-        {
-            impulseSource?.GenerateImpulse();
-            Debug.Log($"🛑 暈眩了 {stunCount} 名對手，持續 {stunDuration:F1} 秒");
-        }
-    }
-
-    private void PerformDogezaSkill()
-    {
-        if (dogezaSkill == null)
-        {
-            Debug.LogWarning("⚠️ [PartySkill] DogezaSkill 未指定");
-            return;
-        }
-
-        Debug.Log("🙇 [PartySkill] 執行: 悲情土下座");
-
-        characterAnimator?.SetTrigger(HashPartyAttack);
-        attackRangeMesh?.Show();
-        dogezaSkill.Execute(gameObject);
+        partySkillData.Execute(gameObject);
         impulseSource?.GenerateImpulse();
-    }
-
-    private Vector3 GetAttackDirection()
-    {
-        if (playerController != null && playerController.LastMoveDirection != Vector3.zero)
-            return playerController.LastMoveDirection;
-
-        return transform.forward;
-    }
-
-    private void UpdateAttackShape()
-    {
-        OnAttackShapeChanged?.Invoke(AttackRange, AttackAngle);
+        lastSkillTime = Time.time;
     }
 }
