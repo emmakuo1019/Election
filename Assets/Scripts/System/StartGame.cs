@@ -44,7 +44,7 @@ public class StartGame : MonoBehaviour
     
     private void OpenUpgradePanel()
     {
-        string firstRoomScene = BlockProgressManager.StartRandomBlock();
+        string firstRoomScene = BlockProgressManager.StartNextCampaignBlock();
         SceneManager.LoadScene(firstRoomScene);
     }
     

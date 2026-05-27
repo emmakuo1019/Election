@@ -15,12 +15,6 @@ void Start()
     VoteManager.Instance?.ResetToDefaultVotes();
     backBtn.onClick.AddListener(backBtnOnClick);
 
-    MapProgressManager mapProgressManager = FindFirstObjectByType<MapProgressManager>();
-    if (mapProgressManager != null)
-    {
-        mapProgressManager.ResetMapProgress();
-    }
-
     void backBtnOnClick()
     {
         SceneManager.LoadScene("S0");

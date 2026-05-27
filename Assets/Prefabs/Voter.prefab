@@ -4916,13 +4916,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4628284427397550804}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.839, z: 0}
-  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
+  m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0, y: 0.706, z: 0}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 20, y: 0, z: 0}
 --- !u!212 &2774184649760543316
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4967,7 +4967,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 89003e5b9b17140da90d1ea417f877c8, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2e4186de1428e46c5be10d960d777915, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5003,13 +5003,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4860688840932149779}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.049, y: 1.419, z: -0.1}
+  m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0.037, y: 1.558, z: 0.24}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 20, y: 0, z: 0}
 --- !u!212 &4798280922386667136
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5054,12 +5054,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: df54559a4b5f547169fe9659e9d683a1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 408278bd2142845a7b4f64b3854f95e0, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1.88, y: 1.15}
+  m_Size: {x: 8.7, y: 8.2}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -5141,8 +5141,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bodyRenderer: {fileID: 2774184649760543316}
   headRenderer: {fileID: 4798280922386667136}
-  rationalHeadSprite: {fileID: -2413806693520163455, guid: df54559a4b5f547169fe9659e9d683a1, type: 3}
-  emotionHeadSprite: {fileID: 7482667652216324306, guid: 7714d37de507540389e11b38c5e5eafd, type: 3}
+  rationalHeadSprite: {fileID: 21300000, guid: 408278bd2142845a7b4f64b3854f95e0, type: 3}
+  emotionHeadSprite: {fileID: 21300000, guid: a68de2eb09a7843a49792d60d444845e, type: 3}
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
   opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}

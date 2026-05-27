@@ -163,11 +163,6 @@ public class VoterLogic : MonoBehaviour
         return false;
     }
 
-    public bool ReceiveDogeza(float stunTime, float convertChance)
-    {
-        return ApplySkillEffect(new DogezaVoterEffect(stunTime, convertChance));
-    }
-
     public bool ApplySkillEffect(IVoterSkillEffect effect)
     {
         if (!CanReceiveSkillEffect)

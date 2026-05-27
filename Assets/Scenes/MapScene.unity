@@ -317,27 +317,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a055bd6394646be8e4b43c312ac482, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeData: {fileID: 203025293}
+  routeType: 1
+  blockOrder: 4
   button: {fileID: 203025289}
   lockedVisual: {fileID: 1912848551}
   availableVisual: {fileID: 1007246720}
   completedVisual: {fileID: 416514065}
   availableScaleMultiplier: 1.08
---- !u!114 &203025293
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 203025287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae6d9523abd684e59af22d7c9c88036c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  nodeID: D
-  targetSceneName: TestSmallBoss
-  nextNodes: []
 --- !u!1 &223229328
 GameObject:
   m_ObjectHideFlags: 0
@@ -1199,28 +1185,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a055bd6394646be8e4b43c312ac482, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeData: {fileID: 659561006}
+  routeType: 0
+  blockOrder: 1
   button: {fileID: 659561002}
   lockedVisual: {fileID: 1159028330}
   availableVisual: {fileID: 236298701}
   completedVisual: {fileID: 223229328}
   availableScaleMultiplier: 1.08
---- !u!114 &659561006
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 659561000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae6d9523abd684e59af22d7c9c88036c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  nodeID: A
-  targetSceneName: TestMVP
-  nextNodes:
-  - {fileID: 1150900788}
 --- !u!1 &828921997
 GameObject:
   m_ObjectHideFlags: 0
@@ -1569,28 +1540,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a055bd6394646be8e4b43c312ac482, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeData: {fileID: 1150900788}
+  routeType: 0
+  blockOrder: 2
   button: {fileID: 1150900784}
   lockedVisual: {fileID: 609662396}
   availableVisual: {fileID: 450044175}
   completedVisual: {fileID: 828921997}
   availableScaleMultiplier: 1.08
---- !u!114 &1150900788
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1150900782}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae6d9523abd684e59af22d7c9c88036c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  nodeID: B
-  targetSceneName: TestSpecial
-  nextNodes:
-  - {fileID: 1881754081}
 --- !u!1 &1159028330
 GameObject:
   m_ObjectHideFlags: 0
@@ -1683,21 +1639,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1160376814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1160376813}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8e2d9301eeeb40b5a783be2f3e6f632, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bossButton: {fileID: 203025289}
-  lockedVisual: {fileID: 0}
-  unlockedVisual: {fileID: 0}
 --- !u!4 &1160376815
 Transform:
   m_ObjectHideFlags: 0
@@ -2438,28 +2379,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a055bd6394646be8e4b43c312ac482, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodeData: {fileID: 1881754081}
+  routeType: 0
+  blockOrder: 3
   button: {fileID: 1881754077}
   lockedVisual: {fileID: 1671132933}
   availableVisual: {fileID: 352902521}
   completedVisual: {fileID: 291439691}
   availableScaleMultiplier: 1.08
---- !u!114 &1881754081
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1881754075}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae6d9523abd684e59af22d7c9c88036c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  nodeID: C
-  targetSceneName: TestSpecial
-  nextNodes:
-  - {fileID: 203025293}
 --- !u!1 &1912848551
 GameObject:
   m_ObjectHideFlags: 0

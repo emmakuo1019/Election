@@ -3,6 +3,8 @@ using UnityEngine;
 public static class CampaignProgressManager
 {
     private const string COMPLETED_BLOCKS_KEY = "CompletedBlocksCount";
+    private const int StandardBlockCount = 3;
+    private const int BossStageIndex = 4;
 
     public static void ResetCampaign()
     {
@@ -27,8 +29,40 @@ public static class CampaignProgressManager
         return PlayerPrefs.GetInt(COMPLETED_BLOCKS_KEY, 0);
     }
 
-    public static bool IsBossUnlocked()
+    public static int GetTotalBlockCount()
     {
-        return GetCompletedBlockCount() >= 3;
+        return StandardBlockCount;
+    }
+
+    public static int GetNextBlockIndex()
+    {
+        return Mathf.Clamp(GetCompletedBlockCount() + 1, 1, StandardBlockCount);
+    }
+
+    public static bool IsBlockCompleted(int blockIndex)
+    {
+        int normalizedBlockIndex = NormalizeStandardBlockIndex(blockIndex);
+        return GetCompletedBlockCount() >= normalizedBlockIndex;
+    }
+
+    public static bool CanEnterBlock(int blockIndex)
+    {
+        int normalizedBlockIndex = NormalizeStandardBlockIndex(blockIndex);
+        return GetCompletedBlockCount() == normalizedBlockIndex - 1;
+    }
+
+    public static bool CanEnterBossStage()
+    {
+        return GetCompletedBlockCount() >= StandardBlockCount;
+    }
+
+    public static int GetBossStageIndex()
+    {
+        return BossStageIndex;
+    }
+
+    private static int NormalizeStandardBlockIndex(int blockIndex)
+    {
+        return Mathf.Clamp(blockIndex, 1, StandardBlockCount);
     }
 }

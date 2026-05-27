@@ -6,19 +6,21 @@ public static class BlockProgressManager
     private const string MAX_ROOM_KEY = "CurrentBlockMaxRooms";
     private const string ROOM_SEQUENCE_KEY = "CurrentBlockRoomSequence";
     private const string NEXT_SCENE_OVERRIDE_KEY = "CurrentBlockNextSceneOverride";
+    private const string CURRENT_BLOCK_INDEX_KEY = "CurrentBlockIndex";
     private const int DefaultBlockRoomCount = 5;
     private const string NormalRoomSceneName = "TestMVP";
     private const string SpecialRoomSceneName = "TestSpecial";
     private const string MapSceneName = "MapScene";
     private const float SpecialRoomChance = 0.2f;
 
-    public static void InitBlock(int maxRooms)
+    public static void InitBlock(int maxRooms, int blockIndex)
     {
         PlayerPrefs.SetInt(ROOM_COUNT_KEY, 0);
         PlayerPrefs.SetInt(MAX_ROOM_KEY, maxRooms);
+        PlayerPrefs.SetInt(CURRENT_BLOCK_INDEX_KEY, Mathf.Max(1, blockIndex));
         PlayerPrefs.Save();
 
-        Debug.Log("初始化區塊，總房數：" + maxRooms);
+        Debug.Log($"初始化區塊 {Mathf.Max(1, blockIndex)}，總房數：{maxRooms}");
     }
 
     public static void EnterNextRoom()
@@ -41,20 +43,32 @@ public static class BlockProgressManager
         return PlayerPrefs.HasKey(MAX_ROOM_KEY);
     }
 
+    public static int GetCurrentBlockIndex()
+    {
+        return PlayerPrefs.GetInt(CURRENT_BLOCK_INDEX_KEY, 1);
+    }
+
     public static int GetMaxRooms()
     {
         return PlayerPrefs.GetInt(MAX_ROOM_KEY, DefaultBlockRoomCount);
     }
 
-    public static string StartRandomBlock(int maxRooms = DefaultBlockRoomCount)
+    public static string StartRandomBlock(int blockIndex, int maxRooms = DefaultBlockRoomCount)
     {
+        int safeBlockIndex = Mathf.Clamp(blockIndex, 1, CampaignProgressManager.GetTotalBlockCount());
         int safeMaxRooms = Mathf.Max(1, maxRooms);
 
-        InitBlock(safeMaxRooms);
-        SaveRoomSequence(GenerateRoomSequence(safeMaxRooms));
+        InitBlock(safeMaxRooms, safeBlockIndex);
+        SaveRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
         EnterNextRoom();
 
         return GetCurrentRoomSceneName();
+    }
+
+    public static string StartNextCampaignBlock(int maxRooms = DefaultBlockRoomCount)
+    {
+        int nextBlockIndex = CampaignProgressManager.GetNextBlockIndex();
+        return StartRandomBlock(nextBlockIndex, maxRooms);
     }
 
     public static string GetCurrentRoomSceneName()
@@ -131,6 +145,7 @@ public static class BlockProgressManager
         PlayerPrefs.DeleteKey(MAX_ROOM_KEY);
         PlayerPrefs.DeleteKey(ROOM_SEQUENCE_KEY);
         PlayerPrefs.DeleteKey(NEXT_SCENE_OVERRIDE_KEY);
+        PlayerPrefs.DeleteKey(CURRENT_BLOCK_INDEX_KEY);
         PlayerPrefs.Save();
 
         Debug.Log("已清除區塊進度");
@@ -150,7 +165,7 @@ public static class BlockProgressManager
         PlayerPrefs.Save();
     }
 
-    private static string[] GenerateRoomSequence(int maxRooms)
+    private static string[] GenerateRoomSequence(int blockIndex, int maxRooms)
     {
         string[] roomSequence = new string[maxRooms];
 

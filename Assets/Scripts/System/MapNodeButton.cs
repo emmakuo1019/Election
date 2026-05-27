@@ -4,8 +4,19 @@ using UnityEngine.UI;
 
 public class MapNodeButton : MonoBehaviour
 {
-    [Header("節點資料")]
-    [SerializeField] private MapNodeData nodeData;
+    private const string BossSceneName = "TestSmallBoss";
+
+    public enum RouteType
+    {
+        StandardBlock,
+        BossStage
+    }
+
+    [Header("路線類型")]
+    [SerializeField] private RouteType routeType = RouteType.StandardBlock;
+
+    [Header("線性區塊順序")]
+    [SerializeField] private int blockOrder = 1;
 
     [Header("按鈕（可選）")]
     [SerializeField] private Button button;
@@ -28,20 +39,8 @@ public class MapNodeButton : MonoBehaviour
 
     public void RefreshState()
     {
-        if (nodeData == null)
-        {
-            Debug.LogWarning($"{name}：MapNodeButton 沒有指定 nodeData");
-            return;
-        }
-
-        if (MapProgressManager.Instance == null)
-        {
-            Debug.LogWarning("MapProgressManager 尚未存在");
-            return;
-        }
-
-        bool isCompleted = MapProgressManager.Instance.IsNodeCompleted(nodeData.nodeID);
-        bool isAvailable = MapProgressManager.Instance.CanEnterNode(nodeData.nodeID);
+        bool isCompleted = IsCompleted();
+        bool isAvailable = IsAvailable();
 
         if (button != null)
         {
@@ -57,32 +56,53 @@ public class MapNodeButton : MonoBehaviour
 
     public void OnClickNode()
     {
-        if (nodeData == null)
+        if (!IsAvailable())
         {
-            Debug.LogWarning("MapNodeButton：nodeData 為空");
+            Debug.Log($"⛔ 此區塊目前不可進入：{name}");
             return;
         }
 
-        if (MapProgressManager.Instance == null)
+        string targetSceneName = GetTargetSceneName();
+        if (!Application.CanStreamedLevelBeLoaded(targetSceneName))
         {
-            Debug.LogWarning("MapProgressManager 不存在");
+            Debug.LogWarning($"MapNodeButton：無法載入場景 {targetSceneName}");
             return;
         }
 
-        if (!MapProgressManager.Instance.CanEnterNode(nodeData.nodeID))
+        Debug.Log($"🗺️ 進入 {name} → 場景：{targetSceneName}");
+        SceneManager.LoadScene(targetSceneName);
+    }
+
+    private bool IsCompleted()
+    {
+        if (routeType == RouteType.BossStage)
         {
-            Debug.Log($"⛔ 此節點目前不可進入：{nodeData.nodeID}");
-            return;
+            return false;
         }
 
-        string firstRoomScene = BlockProgressManager.StartRandomBlock();
-        if (!Application.CanStreamedLevelBeLoaded(firstRoomScene))
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
+        return CampaignProgressManager.IsBlockCompleted(normalizedBlockOrder);
+    }
+
+    private bool IsAvailable()
+    {
+        if (routeType == RouteType.BossStage)
         {
-            Debug.LogWarning($"MapNodeButton：無法載入場景 {firstRoomScene}");
-            return;
+            return CampaignProgressManager.CanEnterBossStage();
         }
 
-        Debug.Log($"🗺️ 進入節點：{nodeData.nodeID} → 場景：{firstRoomScene}");
-        SceneManager.LoadScene(firstRoomScene);
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
+        return CampaignProgressManager.CanEnterBlock(normalizedBlockOrder);
+    }
+
+    private string GetTargetSceneName()
+    {
+        if (routeType == RouteType.BossStage)
+        {
+            return BossSceneName;
+        }
+
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
+        return BlockProgressManager.StartRandomBlock(normalizedBlockOrder);
     }
 }
