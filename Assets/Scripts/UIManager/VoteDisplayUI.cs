@@ -31,7 +31,6 @@ public class VoteDisplayUI : MonoBehaviour
 
         //if (voteSlider == null || playerVotesText == null || opponentVotesText == null)
         //{
-          //  Debug.LogError("❌ VoteDisplayUI 有 UI 元件未指定！");
             //enabled = false;
             //return;
         //}

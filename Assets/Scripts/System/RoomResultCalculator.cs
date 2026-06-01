@@ -28,11 +28,6 @@ public class RoomResultCalculator : MonoBehaviour
 
         if (showDebugLog)
         {
-            Debug.Log("=== 📊 房間選情結算 ===");
-            Debug.Log($"總選民數：{totalVoters}");
-            Debug.Log($"玩家支持者：{playerSupporters}");
-            Debug.Log($"支持率：{supportRate:P0}");
-            Debug.Log($"回補 MP：+{rewardMP}");
         }
 
         return rewardMP;

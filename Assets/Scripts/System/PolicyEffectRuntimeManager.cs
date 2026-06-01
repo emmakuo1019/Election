@@ -133,11 +133,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         RefreshAllVoterMovement();
         OnEffectsChanged?.Invoke();
 
-        Debug.Log(
-            $"🎴 [PolicyEffect] 套用卡片 {card.cardName} | " +
-            $"範圍 x{AttackRadiusMultiplier:F2}, 轉化率 {ConvertChanceBonus:+0.00;-0.00;0}, " +
-            $"冷卻 {AttackCooldownBonus:+0.00;-0.00;0}, 流失 {LoseControlRate:F2}, " +
-            $"擴散 {SpreadRadius:F1}, NPC 速度 x{GlobalNpcSpeedMultiplier:F2}");
     }
 
     public float GetModifiedAttackRange(float baseRange)

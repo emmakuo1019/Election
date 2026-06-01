@@ -31,7 +31,6 @@ public class SceneContext : MonoBehaviour
             _ => SceneType.Menu
         };
 
-        Debug.Log($"[SceneContext] 場景: {CurrentScene}");
     }
 
     public static bool IsLevelScene() => CurrentScene == SceneType.Level;

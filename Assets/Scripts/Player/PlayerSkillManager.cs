@@ -140,12 +140,6 @@ public class PlayerSkillManager : MonoBehaviour
             return;
         }
 
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning("⚠️ 只能在關卡中使用技能！");
-            return;
-        }
-
         if (speechAttack == null)
         {
             Debug.LogWarning("⚠️ speechAttack 未設定");
@@ -157,17 +151,8 @@ public class PlayerSkillManager : MonoBehaviour
 
     public void UsePartySkill()
     {
-        Debug.Log($"[PlayerSkillManager] UsePartySkill() 被呼叫，currentPartySkill = {(currentPartySkill != null ? currentPartySkill.skillName : "null")}");
-
         if (!isGameActive)
         {
-            Debug.Log("[PlayerSkillManager] 中止施放：遊戲目前不可操作。");
-            return;
-        }
-
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning("⚠️ 只能在關卡中使用技能！");
             return;
         }
 
@@ -190,8 +175,6 @@ public class PlayerSkillManager : MonoBehaviour
             {
                 Debug.LogWarning(executeFailureReason);
             }
-
-            Debug.Log("[PlayerSkillManager] 中止施放：技能前置條件未滿足。");
             return;
         }
 
@@ -201,12 +184,8 @@ public class PlayerSkillManager : MonoBehaviour
             {
                 Debug.LogWarning(resourceFailureReason);
             }
-
-            Debug.Log("[PlayerSkillManager] 中止施放：資源不足或資源系統不存在。");
             return;
         }
-
-        Debug.Log($"[PlayerSkillManager] 開始執行技能：{currentPartySkill.skillName}");
         currentPartySkill.Execute(gameObject);
         lastPartySkillUseTime = Time.time;
     }

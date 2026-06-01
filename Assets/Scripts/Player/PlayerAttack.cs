@@ -103,7 +103,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     private void OnGameEnd()
     {
         isGameActive = false;
-        Debug.Log("🛑 [PlayerAttack] 遊戲結束，攻擊禁用");
     }
 
     private void OnAttackInput(InputAction.CallbackContext context)
@@ -174,7 +173,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
         if (Time.time < lastAttackTime + currentAttackCooldown)
         {
-            Debug.Log($"⏳ 普通攻擊冷卻中... {(lastAttackTime + currentAttackCooldown - Time.time):F1} 秒");
             return;
         }
         lastAttackTime = Time.time;

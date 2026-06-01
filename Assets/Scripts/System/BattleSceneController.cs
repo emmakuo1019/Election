@@ -43,23 +43,32 @@ public class BattleSceneController : MonoBehaviour
     {
         VoterData[] voters = FindObjectsByType<VoterData>(FindObjectsSortMode.None);
 
+        int addedPlayerVotes = 0;
+        int addedOpponentVotes = 0;
+
         foreach (VoterData voter in voters)
         {
             voter.InitializeFromConfig();
             voter.ConfigureIdentity(GetRandomLabel(), GetRandomLabel(), GetRandomAttribute());
 
             if (voter.TryGetComponent<VoterLogic>(out var logic))
-            {
                 logic.RefreshMovementSpeed();
-            }
 
             if (voter.TryGetComponent<VoterVisuals>(out var visuals))
-            {
                 visuals.ApplyCurrentVisualState();
-            }
+
+            if (voter.convertedSide == VoterData.PlayerSideSign) addedPlayerVotes++;
+            else if (voter.convertedSide == VoterData.EnemySideSign) addedOpponentVotes++;
         }
 
-        Debug.Log($"🗳️ [BattleSceneController] 已初始化 {voters.Length} 位選民的新標籤與屬性。");
+        // 將本場選民的初始票數加入跨場景累計
+        if (VoteManager.Instance != null && (addedPlayerVotes > 0 || addedOpponentVotes > 0))
+        {
+            VoteManager.Instance.SetVotes(
+                VoteManager.Instance.PlayerVotes + addedPlayerVotes,
+                VoteManager.Instance.OpponentVotes + addedOpponentVotes
+            );
+        }
     }
 
     private VoterLabel GetRandomLabel()

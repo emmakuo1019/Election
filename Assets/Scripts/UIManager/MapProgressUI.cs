@@ -22,6 +22,5 @@ public class MapProgressUI : MonoBehaviour
         int completed = CampaignProgressManager.GetCompletedBlockCount();
         progressText.text = "已完成區塊：" + completed + " / 3";
 
-        Debug.Log("更新地圖進度 UI：" + completed + " / 3");
     }
 }

@@ -52,7 +52,6 @@ public class SocialAtmosphereManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        Debug.Log("[SocialAtmosphereManager] 初始化完成");
     }
     
     public float GetDarkVoterRate()
@@ -93,7 +92,6 @@ public class SocialAtmosphereManager : MonoBehaviour
 
         if (oldValue != socialAtmosphere)
         {
-            Debug.Log($"🌍 社會風氣: {oldValue} → {socialAtmosphere} | {GetAtmosphereDescription()}");
             OnAtmosphereChanged?.Invoke(oldValue, socialAtmosphere);
         }
     }
@@ -114,7 +112,6 @@ public class SocialAtmosphereManager : MonoBehaviour
     {
         int oldValue = socialAtmosphere;
         socialAtmosphere = 0;
-        Debug.Log("🔄 社會風氣已重置為中立");
         OnAtmosphereChanged?.Invoke(oldValue, socialAtmosphere);
     }
 

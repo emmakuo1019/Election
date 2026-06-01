@@ -132,7 +132,6 @@ public class RewardPanelUI : MonoBehaviour
         SetButtonText(rewardBtn02Text, FormatCardLabel(currentCards[1]));
         SetButtonText(rewardBtn03Text, FormatCardLabel(currentCards[2]));
 
-        Debug.Log("RewardPanelUI：已刷新三張政策卡");
     }
 
     private void OnRewardClicked(int index)
@@ -156,8 +155,6 @@ public class RewardPanelUI : MonoBehaviour
         }
 
         isProcessingSelection = true;
-
-        Debug.Log("玩家選擇了政策卡：" + selectedCard.cardName);
 
         PolicyEffectRuntimeManager.Instance?.ApplyCard(selectedCard);
         BattleFlowController.Instance?.OnRewardSelected();

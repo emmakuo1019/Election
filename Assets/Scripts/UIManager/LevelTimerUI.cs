@@ -59,8 +59,6 @@ public class LevelTimerUI : MonoBehaviour
     {
         if (timerText != null)
             timerText.text = "00:00";
-
-        Debug.Log("⏰ 時間用完！");
     }
 
     private void RefreshTimerDisplay()

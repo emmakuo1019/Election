@@ -20,7 +20,6 @@ public static class BlockProgressManager
         PlayerPrefs.SetInt(CURRENT_BLOCK_INDEX_KEY, Mathf.Max(1, blockIndex));
         PlayerPrefs.Save();
 
-        Debug.Log($"初始化區塊 {Mathf.Max(1, blockIndex)}，總房數：{maxRooms}");
     }
 
     public static void EnterNextRoom()
@@ -30,7 +29,6 @@ public static class BlockProgressManager
         PlayerPrefs.SetInt(ROOM_COUNT_KEY, current);
         PlayerPrefs.Save();
 
-        Debug.Log("目前區塊進度房數：" + current);
     }
 
     public static int GetCurrentRoomCount()
@@ -148,7 +146,6 @@ public static class BlockProgressManager
         PlayerPrefs.DeleteKey(CURRENT_BLOCK_INDEX_KEY);
         PlayerPrefs.Save();
 
-        Debug.Log("已清除區塊進度");
     }
 
     public static void SetNextSceneOverride(string sceneName)

@@ -73,8 +73,6 @@ public class DogezaSkill : PartySkillData
 
     public override void Execute(GameObject caster)
     {
-        Debug.Log("[DogezaSkill] Execute() 被呼叫。");
-
         if (caster == null)
         {
             Debug.LogWarning("[DogezaSkill] caster 為空，無法執行技能。");
@@ -84,9 +82,6 @@ public class DogezaSkill : PartySkillData
         PlaySkillAnimation(caster);
 
         PlaySkillEffect(caster);
-
-        Debug.Log("[DogezaSkill] MP 扣除成功，準備啟動衝刺 Coroutine。");
-
         MonoBehaviour coroutineHost = caster.GetComponent<PlayerSkillManager>();
         if (coroutineHost == null)
         {
@@ -130,7 +125,6 @@ public class DogezaSkill : PartySkillData
 
         animator.ResetTrigger(animationTriggerName);
         animator.SetTrigger(animationTriggerName);
-        Debug.Log($"[DogezaSkill] 透過 Trigger 播放技能動作：{animationTriggerName}");
     }
 
     private static bool HasTriggerParameter(Animator animator, string parameterName)
@@ -206,12 +200,9 @@ public class DogezaSkill : PartySkillData
             yield return null;
         }
 
-        Debug.Log($"[DogezaSkill] 衝刺結束，hasHitVoter = {hasHitVoter}");
-
         if (hasHitVoter && PolicyEffectRuntimeManager.HasInstance)
         {
             PolicyEffectRuntimeManager.Instance.AddIntegrityHp(-hpCost);
-            Debug.Log($"[DogezaSkill] 悲情土下座成功影響選民，扣除誠信值 {hpCost}。");
         }
     }
 

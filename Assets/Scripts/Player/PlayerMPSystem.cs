@@ -43,14 +43,12 @@ public class PlayerMPSystem : MonoBehaviour
 
         if (currentMP < amount)
         {
-            Debug.Log("❌ MP 不足");
             return false;
         }
 
         currentMP -= amount;
         currentMP = Mathf.Clamp(currentMP, 0, maxMP);
 
-        Debug.Log($"💸 消耗 MP：-{amount} | 目前 MP：{currentMP}/{maxMP}");
         NotifyMPChanged();
         return true;
     }
@@ -59,13 +57,8 @@ public class PlayerMPSystem : MonoBehaviour
     {
         if (amount <= 0) return;
 
-        int oldMP = currentMP;
         currentMP += amount;
         currentMP = Mathf.Clamp(currentMP, 0, maxMP);
-
-        int actualRecovered = currentMP - oldMP;
-
-        Debug.Log($"💰 回復 MP：+{actualRecovered} | 目前 MP：{currentMP}/{maxMP}");
         NotifyMPChanged();
     }
 

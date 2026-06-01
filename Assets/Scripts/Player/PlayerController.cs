@@ -88,13 +88,11 @@ public class PlayerController : MonoBehaviour
 
         if (partySkillAction == null && Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
         {
-            Debug.Log("[PlayerController] 透過備援路徑偵測到 J 鍵輸入。");
             OnPartySkillInput(default);
         }
 
         if (Input.GetKeyDown(KeyCode.J))
         {
-            Debug.Log("[PlayerController] 透過 Input.GetKeyDown(KeyCode.J) 偵測到 J 鍵輸入。");
             OnPartySkillInput(default);
         }
 
@@ -142,11 +140,8 @@ public class PlayerController : MonoBehaviour
     {
         if (!isGameplayActive)
         {
-            Debug.Log("[PlayerController] 偵測到政黨技能輸入，但玩家目前不可操作。");
             return;
         }
-
-        Debug.Log("[PlayerController] 偵測到政黨技能輸入，準備呼叫 PlayerSkillManager.UsePartySkill()");
 
         if (skillManager == null)
         {

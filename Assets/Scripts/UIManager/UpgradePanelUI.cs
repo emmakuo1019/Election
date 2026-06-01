@@ -149,7 +149,6 @@ public class UpgradePanelUI : MonoBehaviour
 
         ClosePanel();
         RefreshUI();
-        Debug.Log($"✅ 政黨技能已選擇: {skillData.skillName}");
     }
 
     public void RefreshUI()

@@ -27,7 +27,6 @@ public class StartGame : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("玩家已進入區域！");
             tips.SetActive(true);
             isPlayerNearSwitch = true;
         }
@@ -36,7 +35,6 @@ public class StartGame : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("玩家離開");
             tips.SetActive(false);
             isPlayerNearSwitch = false;
         }
@@ -47,32 +45,5 @@ public class StartGame : MonoBehaviour
         string firstRoomScene = BlockProgressManager.StartNextCampaignBlock();
         SceneManager.LoadScene(firstRoomScene);
     }
-    
-    //調整自適應性UI
-    
-    /*private void ShowInteractionPrompt()
-    {
-        if (interactionPrompt != null)
-        {
-            
-            if (iconKeyboard != null && iconGamepad != null)
-            {
-                switch (GameDB.currentInput)
-                {
-                    case InputHandleHelper.InputMethod.Keyboard:
-                        iconKeyboard.SetActive(true);
-                        iconGamepad.SetActive(false);
-                        break;
-                    case InputHandleHelper.InputMethod.Gamepad:
-                        iconKeyboard.SetActive(false);
-                        iconGamepad.SetActive(true);
-                        break;
-                }
-            }
-
-            interactionPrompt.SetActive(true);
-            Debug.Log("顯示互動提示");
-        }
-    }*/
     
 }

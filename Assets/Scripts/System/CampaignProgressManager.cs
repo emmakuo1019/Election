@@ -11,7 +11,6 @@ public static class CampaignProgressManager
         PlayerPrefs.SetInt(COMPLETED_BLOCKS_KEY, 0);
         PlayerPrefs.Save();
 
-        Debug.Log("已重置整體選區進度");
     }
 
     public static void AddCompletedBlock()
@@ -21,7 +20,6 @@ public static class CampaignProgressManager
         PlayerPrefs.SetInt(COMPLETED_BLOCKS_KEY, current);
         PlayerPrefs.Save();
 
-        Debug.Log("已完成區塊數：" + current);
     }
 
     public static int GetCompletedBlockCount()

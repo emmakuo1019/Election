@@ -58,7 +58,6 @@ public class MapNodeButton : MonoBehaviour
     {
         if (!IsAvailable())
         {
-            Debug.Log($"⛔ 此區塊目前不可進入：{name}");
             return;
         }
 
@@ -68,8 +67,6 @@ public class MapNodeButton : MonoBehaviour
             Debug.LogWarning($"MapNodeButton：無法載入場景 {targetSceneName}");
             return;
         }
-
-        Debug.Log($"🗺️ 進入 {name} → 場景：{targetSceneName}");
         SceneManager.LoadScene(targetSceneName);
     }
 

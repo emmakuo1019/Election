@@ -11,6 +11,7 @@ public class PoolManager : MonoBehaviour
 
     private readonly Dictionary<GameObject, ObjectPool<GameObject>> pools = new Dictionary<GameObject, ObjectPool<GameObject>>();
     private readonly Dictionary<GameObject, GameObject> instanceToPrefab = new Dictionary<GameObject, GameObject>();
+    private readonly Dictionary<GameObject, PooledParticleInstance> instanceToParticleState = new Dictionary<GameObject, PooledParticleInstance>();
 
     public static bool HasInstance => instance != null;
 
@@ -74,16 +75,16 @@ public class PoolManager : MonoBehaviour
 
         if (!instanceToPrefab.TryGetValue(instanceToRelease, out GameObject prefab))
         {
-            Debug.LogWarning($"[PoolManager] 找不到 {instanceToRelease.name} 對應的 prefab 池，改為直接銷毀。");
-            Destroy(instanceToRelease);
+            Debug.LogWarning($"[PoolManager] 找不到 {instanceToRelease.name} 對應的 prefab 池，改為直接回收為 inactive。");
+            PrepareInstanceForRelease(instanceToRelease);
             return;
         }
 
         if (!pools.TryGetValue(prefab, out ObjectPool<GameObject> pool))
         {
-            Debug.LogWarning($"[PoolManager] 找不到 prefab {prefab.name} 對應的池，改為直接銷毀實例。");
+            Debug.LogWarning($"[PoolManager] 找不到 prefab {prefab.name} 對應的池，改為直接回收為 inactive。");
             instanceToPrefab.Remove(instanceToRelease);
-            Destroy(instanceToRelease);
+            PrepareInstanceForRelease(instanceToRelease);
             return;
         }
 
@@ -102,7 +103,7 @@ public class PoolManager : MonoBehaviour
             actionOnGet: null,
             actionOnRelease: PrepareInstanceForRelease,
             actionOnDestroy: DestroyPooledInstance,
-            collectionCheck: true,
+            collectionCheck: false,
             defaultCapacity: defaultCapacity,
             maxSize: maxPoolSize);
 
@@ -115,6 +116,14 @@ public class PoolManager : MonoBehaviour
         GameObject createdInstance = Instantiate(prefab);
         createdInstance.name = prefab.name;
         instanceToPrefab[createdInstance] = prefab;
+        PooledParticleInstance particleState = createdInstance.GetComponent<PooledParticleInstance>();
+        if (particleState == null)
+        {
+            particleState = createdInstance.AddComponent<PooledParticleInstance>();
+        }
+
+        particleState.Cache();
+        instanceToParticleState[createdInstance] = particleState;
         createdInstance.SetActive(false);
 
         return createdInstance;
@@ -125,28 +134,41 @@ public class PoolManager : MonoBehaviour
         if (pooledInstance != null)
         {
             instanceToPrefab.Remove(pooledInstance);
-            Destroy(pooledInstance);
+            instanceToParticleState.Remove(pooledInstance);
+            PrepareInstanceForRelease(pooledInstance);
         }
     }
 
     private void PrepareInstanceForUse(GameObject instanceFromPool)
     {
-        ParticleSystem[] particleSystems = instanceFromPool.GetComponentsInChildren<ParticleSystem>(true);
-        for (int i = 0; i < particleSystems.Length; i++)
+        if (instanceToParticleState.TryGetValue(instanceFromPool, out PooledParticleInstance particleState) && particleState != null)
         {
-            ParticleSystem particleSystem = particleSystems[i];
-            particleSystem.Clear(true);
-            particleSystem.Play(true);
+            particleState.PrepareForUse();
+            return;
+        }
+
+        PooledParticleInstance fallbackState = instanceFromPool.GetComponent<PooledParticleInstance>();
+        if (fallbackState != null)
+        {
+            instanceToParticleState[instanceFromPool] = fallbackState;
+            fallbackState.PrepareForUse();
         }
     }
 
     private void PrepareInstanceForRelease(GameObject instanceFromPool)
     {
-        ParticleSystem[] particleSystems = instanceFromPool.GetComponentsInChildren<ParticleSystem>(true);
-        for (int i = 0; i < particleSystems.Length; i++)
+        if (instanceToParticleState.TryGetValue(instanceFromPool, out PooledParticleInstance particleState) && particleState != null)
         {
-            ParticleSystem particleSystem = particleSystems[i];
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleState.PrepareForRelease();
+            return;
+        }
+
+        PooledParticleInstance fallbackState = instanceFromPool.GetComponent<PooledParticleInstance>();
+        if (fallbackState != null)
+        {
+            instanceToParticleState[instanceFromPool] = fallbackState;
+            fallbackState.PrepareForRelease();
+            return;
         }
 
         instanceFromPool.SetActive(false);

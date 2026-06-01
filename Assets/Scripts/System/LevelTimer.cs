@@ -76,8 +76,6 @@ public class LevelTimer : MonoBehaviour
             OnTimerEnd?.Invoke();
             OnTimeUpFinal?.Invoke();
 
-            Debug.Log("⏰ [LevelTimer] 時間結束！");
-
             // 若場景已由 BattleFlowController 接手結算，就不要在這裡直接跳獎勵，
             // 避免重複顯示或在失敗時仍誤開獎勵面板。
             if (BattleFlowController.Instance == null && rewardPanelController != null)
@@ -91,7 +89,6 @@ public class LevelTimer : MonoBehaviour
     {
         if (isActive)
         {
-            Debug.LogWarning("⚠️ 計時已在進行中");
             return;
         }
 
@@ -119,7 +116,6 @@ public class LevelTimer : MonoBehaviour
     {
         if (!isActive) return;
         isActive = false;
-        Debug.Log("⏸️ [LevelTimer] 計時暫停");
     }
 
     public void ResumeTimer()
@@ -133,7 +129,6 @@ public class LevelTimer : MonoBehaviour
         if (isActive) return;
 
         isActive = true;
-        Debug.Log("▶️ [LevelTimer] 計時繼續");
     }
 
     public string GetFormattedTime()

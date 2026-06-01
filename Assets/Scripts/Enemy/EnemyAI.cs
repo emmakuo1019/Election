@@ -148,7 +148,6 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
         characterAnimator?.SetBool(HashIsMoving, false);
 
-        //Debug.Log("🛑 [EnemyAI] 遊戲結束，敵人停止行動");
     }
 
     public void ApplyStun(float duration)

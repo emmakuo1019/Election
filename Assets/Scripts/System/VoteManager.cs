@@ -37,7 +37,6 @@ public class VoteManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         ResetToDefaultVotes(notifyListeners: false);
-        Debug.Log("[VoteManager] 初始化完成");
     }
 
     public void ApplyAlignmentChange(int oldSideSign, int newSideSign)
@@ -50,7 +49,6 @@ public class VoteManager : MonoBehaviour
         RemoveVoteFromSide(oldSideSign);
         AddVoteToSide(newSideSign);
 
-        Debug.Log($"📊 得票數更新 | 你: {playerVotes} | 對手: {opponentVotes}");
         OnVotesChanged?.Invoke(playerVotes, opponentVotes);
     }
 
@@ -61,7 +59,6 @@ public class VoteManager : MonoBehaviour
 
         if (notifyListeners)
         {
-            Debug.Log($"🔄 得票數已設定 | 你: {playerVotes} | 對手: {opponentVotes}");
             OnVotesChanged?.Invoke(playerVotes, opponentVotes);
         }
     }
