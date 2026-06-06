@@ -6,9 +6,6 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour, IAttackSource
 {
-    [Header("Input")]
-    public InputActionReference attackAction;
-
     [Header("攻擊設定")]
     public float attackRange = 3f;
     public float attackAngle = 60f;
@@ -21,13 +18,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
-    private PlayerController playerController;
+    private PlayerStateMachine playerStateMachine;
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
 
     private static readonly int HashAttack = Animator.StringToHash("attack");
-    private bool isGameActive = true;
     private const int HitBufferSize = 64;
     private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
     private float lastAttackTime = -999f;
@@ -49,7 +45,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             characterAnimator = GetComponentInChildren<Animator>();
         }
 
-        playerController = GetComponent<PlayerController>();
+        playerStateMachine = GetComponent<PlayerStateMachine>();
         baseAttackRange = attackRange;
         currentAttackRange = attackRange;
         currentAttackCooldown = attackCooldown;
@@ -57,58 +53,23 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     void OnEnable()
     {
-        if (attackAction != null)
-            attackAction.action.performed += OnAttackInput;
-
         RefreshAttackStats();
         SyncAttackRangeMeshRotation();
 
         if (PolicyEffectRuntimeManager.HasInstance)
-        {
             PolicyEffectRuntimeManager.Instance.OnEffectsChanged += RefreshAttackStats;
-        }
 
-        if (LevelTimer.Instance != null)
-        {
-            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
-        }
-
-        if (playerController != null)
-        {
-            playerController.OnDirectionChanged += OnDirectionChanged;
-        }
+        if (playerStateMachine != null)
+            playerStateMachine.OnDirectionChanged += OnDirectionChanged;
     }
 
     void OnDisable()
     {
-        if (attackAction != null)
-            attackAction.action.performed -= OnAttackInput;
-
         if (PolicyEffectRuntimeManager.HasInstance)
-        {
             PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= RefreshAttackStats;
-        }
 
-        if (LevelTimer.Instance != null)
-        {
-            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
-        }
-
-        if (playerController != null)
-        {
-            playerController.OnDirectionChanged -= OnDirectionChanged;
-        }
-    }
-
-    private void OnGameEnd()
-    {
-        isGameActive = false;
-    }
-
-    private void OnAttackInput(InputAction.CallbackContext context)
-    {
-        if (!isGameActive) return;
-        PerformSpeech();
+        if (playerStateMachine != null)
+            playerStateMachine.OnDirectionChanged -= OnDirectionChanged;
     }
 
     void Start()
@@ -156,9 +117,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public void PerformSpeech()
     {
-        if (!isGameActive)
-            return;
-
         if (!SceneContext.IsLevelScene())
         {
             Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
@@ -240,10 +198,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private Vector3 GetAttackDirection()
     {
-        if (playerController != null && playerController.LastMoveDirection.sqrMagnitude > 0.001f)
-        {
-            return playerController.LastMoveDirection.normalized;
-        }
+        if (playerStateMachine != null && playerStateMachine.LastMoveDirection.sqrMagnitude > 0.001f)
+            return playerStateMachine.LastMoveDirection.normalized;
 
         return transform.forward;
     }
