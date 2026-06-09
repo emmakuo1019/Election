@@ -1323,6 +1323,10 @@ MonoBehaviour:
   dashCooldown: 1
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   dashAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  attackAction: {fileID: 0}
+  skillJAction: {fileID: 0}
+  skillKAction: {fileID: 0}
+  skillLAction: {fileID: 0}
   characterAnimator: {fileID: 1055314169}
 --- !u!1 &822261281
 GameObject:
@@ -4924,6 +4928,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5.57
+      objectReference: {fileID: 0}
     - target: {fileID: 3641732488253732350, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -4932,7 +4948,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: player
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3641732488253732350, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

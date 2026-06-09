@@ -309,7 +309,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35051ca9be83849cc9272271703a076d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackSourceBehaviour: {fileID: 3641732488253732350}
+  attackSourceBehaviour: {fileID: 0}
   segments: 30
   heightOffset: 0.05
 --- !u!1 &5403555500550337343
@@ -322,9 +322,6 @@ GameObject:
   m_Component:
   - component: {fileID: 791982393808381288}
   - component: {fileID: 4301370479251906322}
-  - component: {fileID: 4772087986091062864}
-  - component: {fileID: 3641732488253732350}
-  - component: {fileID: 8545510738008723634}
   - component: {fileID: 5073905417636021098}
   - component: {fileID: 8606236126724025911}
   - component: {fileID: 7095031572979110621}
@@ -379,66 +376,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.9, z: 0}
---- !u!114 &4772087986091062864
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403555500550337343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd53237be1feb468badbe7bbdd541f8d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speechAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  partySelectAction: {fileID: 0}
-  speechAttack: {fileID: 8545510738008723634}
-  currentPartySkill: {fileID: 0}
-  holdDuration: 1
---- !u!114 &3641732488253732350
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403555500550337343}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21bbf7ec8fb094e4289684cc6284719f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 5
-  dashSpeed: 10
-  dashDuration: 0.2
-  dashCooldown: 1
-  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  dashAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  partySkillAction: {fileID: 7040659881675835329, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  characterAnimator: {fileID: 2099242401305552249}
---- !u!114 &8545510738008723634
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403555500550337343}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: afd866a78abbf44c08a62f3776a06563, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  attackAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  attackRange: 5
-  attackAngle: 60
-  attackInfluence: 1
-  attackCooldown: 0
-  convertChance: 0.3
-  darkVoterConvertChance: 0.8
-  attackRangeMesh: {fileID: 4360986305226485520}
-  voterLayer:
-    serializedVersion: 2
-    m_Bits: 64
 --- !u!114 &5073905417636021098
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -524,6 +461,10 @@ MonoBehaviour:
   dashCooldown: 1
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   dashAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  attackAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  skillJAction: {fileID: -8400323126966058225, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  skillKAction: {fileID: -5498780111090321827, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  skillLAction: {fileID: 4397681794545788971, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   characterAnimator: {fileID: 2099242401305552249}
 --- !u!1 &9152536651902869562
 GameObject:
