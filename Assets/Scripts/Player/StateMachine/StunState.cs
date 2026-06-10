@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class StunState : IPlayerState
+public class StunState : IState
 {
-    private readonly PlayerStateMachine _ctx;
+    private readonly PlayerController _ctx;
     private readonly float _duration;
     private float _endTime;
 
-    public StunState(PlayerStateMachine ctx, float duration)
+    public StunState(PlayerController ctx, float duration)
     {
         _ctx = ctx;
         _duration = duration;
@@ -22,7 +22,11 @@ public class StunState : IPlayerState
     public void Update()
     {
         if (Time.time >= _endTime)
-            _ctx.ChangeState(new IdleState(_ctx));
+            _ctx.StateMachine.ChangeState(new IdleState(_ctx));
+    }
+
+    public void PhysicsUpdate()
+    {
     }
 
     public void Exit()

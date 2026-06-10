@@ -1,14 +1,14 @@
 using UnityEngine;
 
-public class SkillState : IPlayerState
+public class SkillState : IState
 {
     public enum SkillSlot { J, K, L }
 
-    private readonly PlayerStateMachine _ctx;
+    private readonly PlayerController _ctx;
     private readonly SkillSlot _slot;
     private float _endTime;
 
-    public SkillState(PlayerStateMachine ctx, SkillSlot slot)
+    public SkillState(PlayerController ctx, SkillSlot slot)
     {
         _ctx = ctx;
         _slot = slot;
@@ -24,7 +24,11 @@ public class SkillState : IPlayerState
     public void Update()
     {
         if (Time.time >= _endTime)
-            _ctx.ChangeState(new IdleState(_ctx));
+            _ctx.StateMachine.ChangeState(new IdleState(_ctx));
+    }
+
+    public void PhysicsUpdate()
+    {
     }
 
     public void Exit()

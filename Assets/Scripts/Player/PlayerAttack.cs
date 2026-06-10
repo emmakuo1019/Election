@@ -18,7 +18,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
     private Animator characterAnimator;
-    private PlayerStateMachine playerStateMachine;
+    private PlayerController playerController;
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
@@ -45,7 +45,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             characterAnimator = GetComponentInChildren<Animator>();
         }
 
-        playerStateMachine = GetComponent<PlayerStateMachine>();
+        playerController = GetComponent<PlayerController>();
         baseAttackRange = attackRange;
         currentAttackRange = attackRange;
         currentAttackCooldown = attackCooldown;
@@ -59,8 +59,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (PolicyEffectRuntimeManager.HasInstance)
             PolicyEffectRuntimeManager.Instance.OnEffectsChanged += RefreshAttackStats;
 
-        if (playerStateMachine != null)
-            playerStateMachine.OnDirectionChanged += OnDirectionChanged;
+        if (playerController != null)
+            playerController.OnDirectionChanged += OnDirectionChanged;
     }
 
     void OnDisable()
@@ -68,8 +68,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (PolicyEffectRuntimeManager.HasInstance)
             PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= RefreshAttackStats;
 
-        if (playerStateMachine != null)
-            playerStateMachine.OnDirectionChanged -= OnDirectionChanged;
+        if (playerController != null)
+            playerController.OnDirectionChanged -= OnDirectionChanged;
     }
 
     void Start()
@@ -198,8 +198,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private Vector3 GetAttackDirection()
     {
-        if (playerStateMachine != null && playerStateMachine.LastMoveDirection.sqrMagnitude > 0.001f)
-            return playerStateMachine.LastMoveDirection.normalized;
+        if (playerController != null && playerController.LastMoveDirection.sqrMagnitude > 0.001f)
+            return playerController.LastMoveDirection.normalized;
 
         return transform.forward;
     }

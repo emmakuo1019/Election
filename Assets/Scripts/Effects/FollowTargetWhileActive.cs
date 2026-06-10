@@ -5,7 +5,7 @@ public class FollowTargetWhileActive : MonoBehaviour
     private Transform target;
     private Vector3 localOffset;
     private bool matchRotation;
-    private PlayerStateMachine playerStateMachine;
+    private PlayerController playerController;
 
     private void LateUpdate()
     {
@@ -22,7 +22,7 @@ public class FollowTargetWhileActive : MonoBehaviour
         target = null;
         localOffset = Vector3.zero;
         matchRotation = false;
-        playerStateMachine = null;
+        playerController = null;
     }
 
     public void Bind(Transform targetTransform, Vector3 offset, bool followRotation)
@@ -30,14 +30,14 @@ public class FollowTargetWhileActive : MonoBehaviour
         target = targetTransform;
         localOffset = offset;
         matchRotation = followRotation;
-        playerStateMachine = targetTransform != null ? targetTransform.GetComponent<PlayerStateMachine>() : null;
+        playerController = targetTransform != null ? targetTransform.GetComponent<PlayerController>() : null;
         LateUpdate();
     }
 
     private Quaternion GetTargetRotation()
     {
-        if (playerStateMachine != null && playerStateMachine.LastMoveDirection.sqrMagnitude > 0.001f)
-            return Quaternion.LookRotation(playerStateMachine.LastMoveDirection.normalized, Vector3.up);
+        if (playerController != null && playerController.LastMoveDirection.sqrMagnitude > 0.001f)
+            return Quaternion.LookRotation(playerController.LastMoveDirection.normalized, Vector3.up);
 
         return target.rotation;
     }

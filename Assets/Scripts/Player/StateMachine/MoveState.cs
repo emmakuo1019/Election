@@ -1,10 +1,10 @@
 using UnityEngine;
 
-public class MoveState : IPlayerState
+public class MoveState : IState
 {
-    private readonly PlayerStateMachine _ctx;
+    private readonly PlayerController _ctx;
 
-    public MoveState(PlayerStateMachine ctx) => _ctx = ctx;
+    public MoveState(PlayerController ctx) => _ctx = ctx;
 
     public void Enter()
     {
@@ -18,26 +18,26 @@ public class MoveState : IPlayerState
     {
         if (_ctx.SkillInputThisFrame.HasValue)
         {
-            _ctx.ChangeState(new SkillState(_ctx, _ctx.SkillInputThisFrame.Value));
+            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillInputThisFrame.Value));
             return;
         }
 
         if (_ctx.AttackInputThisFrame)
         {
-            _ctx.ChangeState(new AttackState(_ctx));
+            _ctx.StateMachine.ChangeState(new AttackState(_ctx));
             return;
         }
 
         if (_ctx.DashInputThisFrame && _ctx.CanDash)
         {
-            _ctx.ChangeState(new DashState(_ctx));
+            _ctx.StateMachine.ChangeState(new DashState(_ctx));
             return;
         }
 
         Vector2 input = _ctx.MoveInput;
         if (input.sqrMagnitude <= 0.01f)
         {
-            _ctx.ChangeState(new IdleState(_ctx));
+            _ctx.StateMachine.ChangeState(new IdleState(_ctx));
             return;
         }
 
@@ -49,6 +49,10 @@ public class MoveState : IPlayerState
         {
             _ctx.AnimController.PlayWalkAnimation(_ctx.lastFacingDirection);
         }
+    }
+
+    public void PhysicsUpdate()
+    {
     }
 
     public void Exit() { }

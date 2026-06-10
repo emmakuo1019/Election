@@ -173,7 +173,7 @@ public class DogezaSkill : PartySkillData
             yield break;
         }
 
-        PlayerStateMachine playerStateMachine = caster.GetComponent<PlayerStateMachine>();
+        PlayerController playerStateMachine = caster.GetComponent<PlayerController>();
         Vector3 dashDirection = caster.transform.forward;
 
         if (playerStateMachine != null && playerStateMachine.LastMoveDirection.sqrMagnitude > 0.01f)

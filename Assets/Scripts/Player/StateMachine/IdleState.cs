@@ -1,10 +1,10 @@
 using UnityEngine;
 
-public class IdleState : IPlayerState
+public class IdleState : IState
 {
-    private readonly PlayerStateMachine _ctx;
+    private readonly PlayerController _ctx;
 
-    public IdleState(PlayerStateMachine ctx) => _ctx = ctx;
+    public IdleState(PlayerController ctx) => _ctx = ctx;
 
     public void Enter()
     {
@@ -18,24 +18,28 @@ public class IdleState : IPlayerState
     {
         if (_ctx.SkillInputThisFrame.HasValue)
         {
-            _ctx.ChangeState(new SkillState(_ctx, _ctx.SkillInputThisFrame.Value));
+            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillInputThisFrame.Value));
             return;
         }
 
         if (_ctx.AttackInputThisFrame)
         {
-            _ctx.ChangeState(new AttackState(_ctx));
+            _ctx.StateMachine.ChangeState(new AttackState(_ctx));
             return;
         }
 
         if (_ctx.DashInputThisFrame && _ctx.CanDash)
         {
-            _ctx.ChangeState(new DashState(_ctx));
+            _ctx.StateMachine.ChangeState(new DashState(_ctx));
             return;
         }
 
         if (_ctx.MoveInput.sqrMagnitude > 0.01f)
-            _ctx.ChangeState(new MoveState(_ctx));
+            _ctx.StateMachine.ChangeState(new MoveState(_ctx));
+    }
+
+    public void PhysicsUpdate()
+    {
     }
 
     public void Exit() { }

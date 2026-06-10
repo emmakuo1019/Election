@@ -71,7 +71,7 @@ public class RoomClearFlowController : MonoBehaviour
 
     private void UnlockExitForSettlement()
     {
-        PlayerStateMachine playerStateMachine = FindFirstObjectByType<PlayerStateMachine>();
+        PlayerController playerStateMachine = FindFirstObjectByType<PlayerController>();
         playerStateMachine?.ResumeIdle();
 
         if (roomExitController == null)

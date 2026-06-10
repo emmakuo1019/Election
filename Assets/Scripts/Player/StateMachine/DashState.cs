@@ -1,16 +1,15 @@
 using UnityEngine;
 
-public class DashState : IPlayerState
+public class DashState : IState
 {
-    private readonly PlayerStateMachine _ctx;
+    private readonly PlayerController _ctx;
     private float _endTime;
     private Vector3 _dashDir;
 
-    public DashState(PlayerStateMachine ctx) => _ctx = ctx;
+    public DashState(PlayerController ctx) => _ctx = ctx;
 
     public void Enter()
     {
-        // 以目前移動方向衝刺，若站立不動則用面朝方向
         Vector2 input = _ctx.MoveInput;
         _dashDir = input.sqrMagnitude > 0.01f
             ? new Vector3(input.x, 0f, input.y).normalized
@@ -21,7 +20,6 @@ public class DashState : IPlayerState
 
         if (_ctx.AnimController != null)
         {
-            // 將 3D 的衝刺方向轉換為 2D 傳給動畫控制器
             Vector2 dashFacingDir = new Vector2(_dashDir.x, _dashDir.z);
             _ctx.AnimController.PlayDashAnimation(dashFacingDir);
         }
@@ -37,11 +35,14 @@ public class DashState : IPlayerState
             return;
         }
 
-        // 衝刺結束，根據有無輸入回到對應狀態
         if (_ctx.MoveInput.sqrMagnitude > 0.01f)
-            _ctx.ChangeState(new MoveState(_ctx));
+            _ctx.StateMachine.ChangeState(new MoveState(_ctx));
         else
-            _ctx.ChangeState(new IdleState(_ctx));
+            _ctx.StateMachine.ChangeState(new IdleState(_ctx));
+    }
+
+    public void PhysicsUpdate()
+    {
     }
 
     public void Exit()

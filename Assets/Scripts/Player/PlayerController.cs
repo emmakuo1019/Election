@@ -2,8 +2,11 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// 玩家主控制器，負責管理依賴項、輸入，並組合 StateMachine 來處理狀態邏輯。
+/// </summary>
 [RequireComponent(typeof(CharacterController))]
-public class PlayerStateMachine : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
     [Header("移動設定")]
     public float moveSpeed = 5f;
@@ -49,9 +52,12 @@ public class PlayerStateMachine : MonoBehaviour
     public bool CanDash => Time.time >= _dashReadyTime;
     private float _dashReadyTime;
 
-    private IPlayerState _currentState;
-    private string _currentStateName;
     private PlayerSkillManager _skillManager;
+    
+    /// <summary>
+    /// 獨立的狀態機實例。
+    /// </summary>
+    public StateMachine StateMachine { get; private set; }
 
     private void Awake()
     {
@@ -63,8 +69,11 @@ public class PlayerStateMachine : MonoBehaviour
         AnimController = GetComponentInChildren<PlayerAnimationController>();
         if (AnimController == null)
         {
-            Debug.LogWarning("[PlayerStateMachine] 尚未掛載 PlayerAnimationController 腳本，動畫解耦將暫時失效。");
+            Debug.LogWarning("[PlayerController] 尚未掛載 PlayerAnimationController 腳本，動畫解耦將暫時失效。");
         }
+
+        // 實例化狀態機
+        StateMachine = new StateMachine();
     }
 
     private void OnEnable()
@@ -99,27 +108,26 @@ public class PlayerStateMachine : MonoBehaviour
 
     private void Start()
     {
-        ChangeState(new IdleState(this));
+        // 初始化狀態機，給予起始狀態
+        StateMachine.Initialize(new IdleState(this));
     }
 
     private void Update()
     {
         MoveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
 
-        _currentState?.Update();
+        // 呼叫當前狀態的 Update
+        StateMachine.CurrentState?.Update();
 
         DashInputThisFrame   = false;
         AttackInputThisFrame = false;
         SkillInputThisFrame  = null;
     }
 
-    public void ChangeState(IPlayerState newState)
+    private void FixedUpdate()
     {
-        _currentState?.Exit();
-        _currentState = newState;
-        _currentStateName = newState.GetType().Name;
-        Debug.Log($"[PlayerStateMachine] → {_currentStateName}");
-        _currentState.Enter();
+        // 呼叫當前狀態的 PhysicsUpdate
+        StateMachine.CurrentState?.PhysicsUpdate();
     }
 
     public void SetDashCooldown() => _dashReadyTime = Time.time + dashCooldown;
@@ -127,19 +135,17 @@ public class PlayerStateMachine : MonoBehaviour
     // 遊戲結束，停用所有輸入（進入無法轉換的空狀態）
     public void OnGameEnd()
     {
-        _currentState?.Exit();
-        _currentState = null;
-        _currentStateName = "GameEnd";
+        StateMachine.ChangeState(null);
     }
 
     // 房間結算後恢復玩家輸入
-    public void ResumeIdle() => ChangeState(new IdleState(this));
+    public void ResumeIdle() => StateMachine.ChangeState(new IdleState(this));
 
     // 由外部（敵人、技能）呼叫，SkillState 期間有霸體不被打斷
     public void ApplyStun(float duration)
     {
-        if (_currentState is SkillState) return;
-        ChangeState(new StunState(this, duration));
+        if (StateMachine.CurrentState is SkillState) return;
+        StateMachine.ChangeState(new StunState(this, duration));
     }
 
     public float UseSkill(SkillState.SkillSlot slot)
@@ -164,5 +170,5 @@ public class PlayerStateMachine : MonoBehaviour
         return 0f;
     }
 
-    public string CurrentStateName => _currentStateName;
+    public string CurrentStateName => StateMachine.CurrentState?.GetType().Name ?? "None";
 }
