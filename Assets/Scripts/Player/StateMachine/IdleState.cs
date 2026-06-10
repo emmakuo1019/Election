@@ -2,12 +2,17 @@ using UnityEngine;
 
 public class IdleState : IPlayerState
 {
-    private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
     private readonly PlayerStateMachine _ctx;
 
     public IdleState(PlayerStateMachine ctx) => _ctx = ctx;
 
-    public void Enter() => _ctx.characterAnimator?.SetBool(HashIsMoving, false);
+    public void Enter()
+    {
+        if (_ctx.AnimController != null)
+        {
+            _ctx.AnimController.PlayIdleAnimation(_ctx.lastFacingDirection);
+        }
+    }
 
     public void Update()
     {

@@ -2,12 +2,17 @@ using UnityEngine;
 
 public class MoveState : IPlayerState
 {
-    private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
     private readonly PlayerStateMachine _ctx;
 
     public MoveState(PlayerStateMachine ctx) => _ctx = ctx;
 
-    public void Enter() => _ctx.characterAnimator?.SetBool(HashIsMoving, true);
+    public void Enter()
+    {
+        if (_ctx.AnimController != null)
+        {
+            _ctx.AnimController.PlayWalkAnimation(_ctx.lastFacingDirection);
+        }
+    }
 
     public void Update()
     {
@@ -39,6 +44,11 @@ public class MoveState : IPlayerState
         Vector3 move = new Vector3(input.x, 0f, input.y);
         _ctx.LastMoveDirection = move.normalized;
         _ctx.CharCon.Move(move * _ctx.moveSpeed * Time.deltaTime);
+
+        if (_ctx.AnimController != null)
+        {
+            _ctx.AnimController.PlayWalkAnimation(_ctx.lastFacingDirection);
+        }
     }
 
     public void Exit() { }

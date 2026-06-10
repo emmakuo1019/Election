@@ -58,7 +58,8 @@ public class AttackRangeMesh : MonoBehaviour
 
         if (attackSource == null)
         {
-            Debug.LogError("AttackRangeMesh：attackSource 必須實作 IAttackSource");
+            // 暫時註解掉報錯，目前用不到攻擊範圍
+            // Debug.LogError($"AttackRangeMesh [{gameObject.name}]：找不到 IAttackSource！請確認 Inspector 中的 attackSourceBehaviour 是否拖曳了正確的腳本 (例如 PlayerAttack 或 EnemyAI)，或確保其父物件有掛載實作 IAttackSource 的腳本。");
         }
 
         if (attackSourceComponent != null)

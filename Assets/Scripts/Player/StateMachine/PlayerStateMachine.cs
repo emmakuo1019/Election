@@ -24,7 +24,9 @@ public class PlayerStateMachine : MonoBehaviour
 
     public CharacterController CharCon { get; private set; }
     public PlayerAttack PlayerAttack { get; private set; }
+    public PlayerAnimationController AnimController { get; private set; }
     public Vector2 MoveInput { get; private set; }
+    public Vector2 lastFacingDirection => new Vector2(LastMoveDirection.x, LastMoveDirection.z);
 
     public event Action<Vector3> OnDirectionChanged;
     private Vector3 _lastMoveDirection = Vector3.forward;
@@ -56,6 +58,13 @@ public class PlayerStateMachine : MonoBehaviour
         CharCon = GetComponent<CharacterController>();
         PlayerAttack = GetComponent<PlayerAttack>();
         _skillManager = GetComponent<PlayerSkillManager>();
+        
+        // 改為 GetComponentInChildren，允許使用者將腳本掛在父物件或子物件(如 PlayerSprite)上
+        AnimController = GetComponentInChildren<PlayerAnimationController>();
+        if (AnimController == null)
+        {
+            Debug.LogWarning("[PlayerStateMachine] 尚未掛載 PlayerAnimationController 腳本，動畫解耦將暫時失效。");
+        }
     }
 
     private void OnEnable()

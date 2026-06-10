@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class DashState : IPlayerState
 {
-    private static readonly int HashDash = Animator.StringToHash("dash");
-
     private readonly PlayerStateMachine _ctx;
     private float _endTime;
     private Vector3 _dashDir;
@@ -21,7 +19,13 @@ public class DashState : IPlayerState
         _endTime = Time.time + _ctx.dashDuration;
         _ctx.SetDashCooldown();
 
-        _ctx.characterAnimator?.SetTrigger(HashDash);
+        if (_ctx.AnimController != null)
+        {
+            // 將 3D 的衝刺方向轉換為 2D 傳給動畫控制器
+            Vector2 dashFacingDir = new Vector2(_dashDir.x, _dashDir.z);
+            _ctx.AnimController.PlayDashAnimation(dashFacingDir);
+        }
+
         Debug.Log($"[DashState] Enter — 方向: {_dashDir}");
     }
 
