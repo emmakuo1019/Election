@@ -254,7 +254,9 @@ Stun（暈眩）
   └─ 時間到 → 回到 Idle
 ```
 
-狀態類別對應：`IdleState`、`MoveState`、`AttackState`、`SkillState`、`DashState`、`StunState`（均實作 `IPlayerState` 介面）。
+狀態類別對應：`IdleState`、`MoveState`、`AttackState`、`SkillState`、`DashState`、`StunState`。
+以上狀態均實作 `IState` 介面（非繼承 MonoBehaviour），包含 `Enter`、`Update`、`PhysicsUpdate`、`Exit` 生命週期。
+狀態切換邏輯由獨立的純 C# 類別 `StateMachine` 管理，並由 `PlayerController`（負責元件依賴與輸入擷取）在內部進行組合（Composition）與初始化。
 
 ---
 
