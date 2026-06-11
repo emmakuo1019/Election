@@ -20,11 +20,11 @@ public class PlayerAnimationController : MonoBehaviour
     private static readonly int WalkLeftHash = Animator.StringToHash("Male_Move");
     private static readonly int WalkRightHash = Animator.StringToHash("Male_Move");
 
-    // 攻擊動畫四向 (暫時先全部接同一支 Male_Hit 動畫，等美術圖補齊後再改回四方向)
-    private static readonly int AttackUpHash = Animator.StringToHash("Male_Hit");
-    private static readonly int AttackDownHash = Animator.StringToHash("Male_Hit");
-    private static readonly int AttackLeftHash = Animator.StringToHash("Male_Hit");
-    private static readonly int AttackRightHash = Animator.StringToHash("Male_Hit");
+    // 攻擊動畫四向 (暫時先全部接同一支 Male_Attack 動畫，等美術圖補齊後再改回四方向)
+    private static readonly int AttackUpHash = Animator.StringToHash("Male_Attack");
+    private static readonly int AttackDownHash = Animator.StringToHash("Male_Attack");
+    private static readonly int AttackLeftHash = Animator.StringToHash("Male_Attack");
+    private static readonly int AttackRightHash = Animator.StringToHash("Male_Attack");
 
     // 衝刺動畫四向 (暫時先全部接同一支 dash 動畫，等美術圖補齊後再改回四方向)
     private static readonly int DashUpHash = Animator.StringToHash("Male_Dash");

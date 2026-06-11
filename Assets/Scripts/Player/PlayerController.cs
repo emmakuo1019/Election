@@ -48,22 +48,24 @@ public class PlayerController : MonoBehaviour
 
     public bool DashInputThisFrame { get; private set; }
     public bool AttackInputThisFrame { get; private set; }
-    public SkillState.SkillSlot? SkillInputThisFrame { get; private set; }
     public bool CanDash => Time.time >= _dashReadyTime;
     private float _dashReadyTime;
 
-    private PlayerSkillManager _skillManager;
+    public PlayerSkillManager SkillManager { get; private set; }
     
     /// <summary>
     /// 獨立的狀態機實例。
     /// </summary>
     public StateMachine StateMachine { get; private set; }
 
+    // 預先宣告並初始化狀態
+    public AttackState AttackState { get; private set; }
+
     private void Awake()
     {
         CharCon = GetComponent<CharacterController>();
         PlayerAttack = GetComponent<PlayerAttack>();
-        _skillManager = GetComponent<PlayerSkillManager>();
+        SkillManager = GetComponent<PlayerSkillManager>();
         
         // 改為 GetComponentInChildren，允許使用者將腳本掛在父物件或子物件(如 PlayerSprite)上
         AnimController = GetComponentInChildren<PlayerAnimationController>();
@@ -72,8 +74,9 @@ public class PlayerController : MonoBehaviour
             Debug.LogWarning("[PlayerController] 尚未掛載 PlayerAnimationController 腳本，動畫解耦將暫時失效。");
         }
 
-        // 實例化狀態機
+        // 實例化狀態機與各狀態
         StateMachine = new StateMachine();
+        AttackState = new AttackState(this);
     }
 
     private void OnEnable()
@@ -102,9 +105,24 @@ public class PlayerController : MonoBehaviour
 
     private void OnDash(InputAction.CallbackContext _)    => DashInputThisFrame   = true;
     private void OnAttack(InputAction.CallbackContext _)  => AttackInputThisFrame = true;
-    private void OnSkillJ(InputAction.CallbackContext _)  => SkillInputThisFrame  = SkillState.SkillSlot.J;
-    private void OnSkillK(InputAction.CallbackContext _)  => SkillInputThisFrame  = SkillState.SkillSlot.K;
-    private void OnSkillL(InputAction.CallbackContext _)  => SkillInputThisFrame  = SkillState.SkillSlot.L;
+    
+    private void OnSkillJ(InputAction.CallbackContext _)
+    {
+        if (SkillManager != null && SkillManager.baseSkillJ != null && SkillManager.CanCastSkill(SkillManager.baseSkillJ))
+            StateMachine.ChangeState(new SkillState(this, SkillManager.baseSkillJ));
+    }
+
+    private void OnSkillK(InputAction.CallbackContext _)
+    {
+        if (SkillManager != null && SkillManager.skillK != null && SkillManager.CanCastSkill(SkillManager.skillK))
+            StateMachine.ChangeState(new SkillState(this, SkillManager.skillK));
+    }
+
+    private void OnSkillL(InputAction.CallbackContext _)
+    {
+        if (SkillManager != null && SkillManager.skillL != null && SkillManager.CanCastSkill(SkillManager.skillL))
+            StateMachine.ChangeState(new SkillState(this, SkillManager.skillL));
+    }
 
     private void Start()
     {
@@ -121,7 +139,6 @@ public class PlayerController : MonoBehaviour
 
         DashInputThisFrame   = false;
         AttackInputThisFrame = false;
-        SkillInputThisFrame  = null;
     }
 
     private void FixedUpdate()
@@ -148,27 +165,7 @@ public class PlayerController : MonoBehaviour
         StateMachine.ChangeState(new StunState(this, duration));
     }
 
-    public float UseSkill(SkillState.SkillSlot slot)
-    {
-        if (_skillManager == null) return 0f;
 
-        switch (slot)
-        {
-            case SkillState.SkillSlot.J:
-                _skillManager.UseSpeech();
-                return 0.5f;
-            case SkillState.SkillSlot.K:
-            case SkillState.SkillSlot.L:
-                var skill = _skillManager.CurrentPartySkill;
-                if (skill != null)
-                {
-                    _skillManager.UsePartySkill();
-                    return skill.duration;
-                }
-                return 0f;
-        }
-        return 0f;
-    }
 
     public string CurrentStateName => StateMachine.CurrentState?.GetType().Name ?? "None";
 }

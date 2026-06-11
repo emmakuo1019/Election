@@ -17,13 +17,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
     private CinemachineImpulseSource impulseSource;
-    private Animator characterAnimator;
     private PlayerController playerController;
 
     public event Action<float, float> OnAttackShapeChanged;
     public event Action OnAttackPerformed;
 
-    private static readonly int HashAttack = Animator.StringToHash("attack");
     private const int HitBufferSize = 64;
     private readonly Collider[] hitBuffer = new Collider[HitBufferSize];
     private float lastAttackTime = -999f;
@@ -39,12 +37,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     void Awake()
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
-        characterAnimator = GetComponent<Animator>();
-        if (characterAnimator == null)
-        {
-            characterAnimator = GetComponentInChildren<Animator>();
-        }
-
+        
         playerController = GetComponent<PlayerController>();
         baseAttackRange = attackRange;
         currentAttackRange = attackRange;
@@ -115,36 +108,30 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         rangeBoostCoroutine = StartCoroutine(TemporaryRangeBoostRoutine(multiplier, duration));
     }
 
-    public void PerformSpeech()
+    /// <summary>
+    /// 檢查攻擊是否在冷卻中
+    /// </summary>
+    public bool CanAttack()
     {
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！");
-            return;
-        }
+        if (!SceneContext.IsLevelScene()) return false;
+        if (PlayerMPSystem.Instance == null) return false;
+        
+        return Time.time >= lastAttackTime + currentAttackCooldown;
+    }
 
-        if (PlayerMPSystem.Instance == null)
-        {
-            Debug.LogWarning("找不到 PlayerMPSystem，無法施放演說");
-            return;
-        }
+    /// <summary>
+    /// 執行物理攻擊判定與數值處理
+    /// </summary>
+    public void PerformAttack(Vector3 facingDirection)
+    {
+        if (!CanAttack()) return;
 
-        if (Time.time < lastAttackTime + currentAttackCooldown)
-        {
-            return;
-        }
         lastAttackTime = Time.time;
 
         OnAttackPerformed?.Invoke();
-
-        if (characterAnimator != null)
-        {
-            characterAnimator.SetTrigger(HashAttack);
-        }
-
         attackRangeMesh?.Show();
 
-        Vector3 attackDir = GetAttackDirection();
+        Vector3 attackDir = facingDirection.sqrMagnitude > 0.001f ? facingDirection.normalized : transform.forward;
         SyncAttackRangeMeshRotation(attackDir);
         bool hitAny = false;
 

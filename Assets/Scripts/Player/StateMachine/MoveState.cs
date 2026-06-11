@@ -16,15 +16,9 @@ public class MoveState : IState
 
     public void Update()
     {
-        if (_ctx.SkillInputThisFrame.HasValue)
-        {
-            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillInputThisFrame.Value));
-            return;
-        }
-
         if (_ctx.AttackInputThisFrame)
         {
-            _ctx.StateMachine.ChangeState(new AttackState(_ctx));
+            _ctx.StateMachine.ChangeState(_ctx.AttackState);
             return;
         }
 

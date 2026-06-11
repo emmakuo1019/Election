@@ -10,20 +10,28 @@ public class AttackState : IState
 
     public void Enter()
     {
-        // 進入普攻時，重置計時器
-        attackTimer = 0f;
+        // 1. 檢查是否可以攻擊（冷卻限制邏輯）
+        if (_ctx.PlayerAttack == null || !_ctx.PlayerAttack.CanAttack())
+        {
+            // 如果在 CD 中，立刻將計時器設滿，讓 Update 迴圈下一幀直接跳回 Idle
+            attackTimer = attackDuration;
+            return;
+        }
 
-        // 立刻將玩家的移動速度鎖定為 0
+        // 2. 初始化動作
+        attackTimer = 0f;
+        
+        // 鎖定玩家移動
         _ctx.CharCon.Move(Vector3.zero);
 
-        // 使用獨立出來的動畫控制器播放對應方向的攻擊動畫
+        // 3. 播放攻擊動畫
         if (_ctx.AnimController != null)
         {
             _ctx.AnimController.PlayAttackAnimation(_ctx.lastFacingDirection);
         }
 
-        // 執行言語攻擊判定
-        _ctx.PlayerAttack?.PerformSpeech();
+        // 4. 呼叫 PlayerAttack 的物理機制與數值判定
+        _ctx.PlayerAttack.PerformAttack(_ctx.LastMoveDirection);
     }
 
     public void Update()
