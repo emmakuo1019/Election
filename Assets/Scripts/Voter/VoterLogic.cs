@@ -1,13 +1,20 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class VoterLogic : MonoBehaviour
 {
-    private const float ExitArrivalThreshold = 0.05f;
+    public StateMachine StateMachine { get; private set; }
+    
+    public VoterData Data { get; private set; }
+    public NavMeshAgent Agent { get; private set; }
+    public Animator Anim { get; private set; }
+    public Transform PlayerTransform { get; private set; }
+
+    public bool IsGameActive { get; set; } = true;
+    public bool HasUsableNavMeshAgent { get; private set; }
+
     private const float NavMeshSnapDistance = 3f;
 
     [Header("隨機移動")]
@@ -16,60 +23,38 @@ public class VoterLogic : MonoBehaviour
     public float wanderIntervalMax = 5f;
     public float moveSpeed = 1.2f;
 
+    [Header("深色選民追擊")]
+    public float darkApproachStoppingDistance = 1.5f;
+    public float darkDestinationRefreshInterval = 0.25f;
+
     [Header("擊退設定")]
     public float knockbackDistance = 1.2f;
     public float knockbackDuration = 0.25f;
 
-    [Header("深色選民追擊")]
-    [SerializeField] private float darkApproachStoppingDistance = 1.5f;
-    [SerializeField] private float darkDestinationRefreshInterval = 0.25f;
-    [SerializeField] private float hitAnimationTriggerCooldown = 0.08f;
-
-    [Header("倒數結束離場")]
-    [SerializeField] private bool moveToExitWhenBattleEnds = true;
-    [SerializeField] private float exitMoveSpeedMultiplier = 1f;
-
-    private static readonly int HashHit = Animator.StringToHash("hit");
-
     public event Action<int> OnPositionChanged;
 
-    private VoterData data;
-    private NavMeshAgent agent;
-    private Animator anim;
+    public bool CanReceiveSkillEffect => IsGameActive && Data != null;
 
-    private bool isKnockedBack;
-    private bool isFrozenByHitStop;
-    private bool isGameActive = true;
-    private bool isExitingAfterBattle;
-    private Coroutine wanderCoroutine;
-    private Coroutine dogezaStunCoroutine;
-    private Transform playerTransform;
-    private float nextDarkRefreshTime;
-    private float lastHitAnimationTriggerTime = float.NegativeInfinity;
-    private Vector3 exitDestination;
-    private readonly Collider[] spreadHitBuffer = new Collider[32];
-    private bool hasUsableNavMeshAgent = true;
-
-    public VoterData Data => data;
-    public bool CanReceiveSkillEffect => isGameActive && data != null;
-
-    void Awake()
+    private void Awake()
     {
-        data = GetComponent<VoterData>();
-        agent = GetComponent<NavMeshAgent>();
-        anim = GetComponentInChildren<Animator>();
+        Data = GetComponent<VoterData>();
+        Agent = GetComponent<NavMeshAgent>();
+        Anim = GetComponentInChildren<Animator>();
+        
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        playerTransform = playerObject != null ? playerObject.transform : null;
+        PlayerTransform = playerObject != null ? playerObject.transform : null;
 
-        data?.InitializeFromConfig();
+        Data?.InitializeFromConfig();
 
-        if (agent != null)
+        if (Agent != null)
         {
-            agent.speed = data != null ? data.MoveSpeed : moveSpeed;
-            agent.angularSpeed = 0f;
-            agent.updateRotation = false;
-            hasUsableNavMeshAgent = TryInitializeNavMeshAgent();
+            Agent.speed = Data != null ? Data.MoveSpeed : moveSpeed;
+            Agent.angularSpeed = 0f;
+            Agent.updateRotation = false;
+            HasUsableNavMeshAgent = TryInitializeNavMeshAgent();
         }
+
+        StateMachine = new StateMachine();
     }
 
     private void OnEnable()
@@ -88,207 +73,127 @@ public class VoterLogic : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
-        if (hasUsableNavMeshAgent)
+        if (HasUsableNavMeshAgent)
         {
-            wanderCoroutine = StartCoroutine(WanderRoutine());
+            StateMachine.Initialize(new VoterIdleState(this));
         }
     }
 
     private void Update()
     {
-        if (isExitingAfterBattle)
+        if (!IsGameActive || Data == null || Agent == null || !HasUsableNavMeshAgent || !Agent.isOnNavMesh)
         {
-            UpdateExitMovement();
-            return;
-        }
-
-        if (!isGameActive || data == null || agent == null || !hasUsableNavMeshAgent || !agent.isOnNavMesh)
-        {
-            return;
-        }
-
-        if (isFrozenByHitStop)
-        {
-            agent.isStopped = true;
             return;
         }
 
         UpdateLoyaltyDecay();
+        StateMachine.CurrentState?.Update();
+    }
 
-        if (!data.ShouldFollowPlayer || isKnockedBack)
-        {
-            return;
-        }
-
-        UpdateDarkApproach();
+    private void FixedUpdate()
+    {
+        StateMachine.CurrentState?.PhysicsUpdate();
     }
 
     public void RefreshMovementSpeed()
     {
-        if (agent != null)
+        if (Agent != null)
         {
-            agent.speed = data != null ? data.MoveSpeed : moveSpeed;
+            Agent.speed = Data != null ? Data.MoveSpeed : moveSpeed;
         }
-    }
-
-    private bool TryInitializeNavMeshAgent()
-    {
-        if (agent == null)
-        {
-            return false;
-        }
-
-        if (agent.isOnNavMesh)
-        {
-            return true;
-        }
-
-        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
-        {
-            bool previousEnabled = agent.enabled;
-            agent.enabled = false;
-            transform.position = hit.position;
-            agent.enabled = previousEnabled;
-
-            if (agent.isOnNavMesh)
-            {
-                return true;
-            }
-        }
-
-        Debug.LogWarning($"[VoterLogic] {name} 找不到可用 NavMesh，已停用 NavMeshAgent。");
-        agent.enabled = false;
-        return false;
     }
 
     public bool ApplySkillEffect(IVoterSkillEffect effect)
     {
-        if (!CanReceiveSkillEffect)
-        {
-            Debug.LogWarning("[VoterLogic] 無法處理技能效果，選民未處於可互動狀態。");
-            return false;
-        }
-
-        if (effect == null)
-        {
-            return false;
-        }
-
+        if (!CanReceiveSkillEffect) return false;
+        if (effect == null) return false;
         return effect.ApplyTo(this);
     }
 
-    private void OnGameEnd()
+    private bool TryInitializeNavMeshAgent()
     {
-        isGameActive = false;
+        if (Agent == null) return false;
+        if (Agent.isOnNavMesh) return true;
 
-        if (wanderCoroutine != null)
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
         {
-            StopCoroutine(wanderCoroutine);
-            wanderCoroutine = null;
+            bool previousEnabled = Agent.enabled;
+            Agent.enabled = false;
+            transform.position = hit.position;
+            Agent.enabled = previousEnabled;
+
+            if (Agent.isOnNavMesh) return true;
         }
 
-        if (agent != null && agent.isOnNavMesh)
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
-        }
-
-        if (!moveToExitWhenBattleEnds)
-        {
-            return;
-        }
-
-        RoomExitController exitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        if (exitController == null)
-        {
-            return;
-        }
-
-        BeginExitMovement(exitController.GetVoterExitPosition());
+        Debug.LogWarning($"[VoterLogic] {name} 找不到可用 NavMesh，已停用 NavMeshAgent。");
+        Agent.enabled = false;
+        return false;
     }
 
-    public void BeginExitMovement(Vector3 destination)
-    {
-        if (data == null)
-        {
-            return;
-        }
-
-        StopAllCoroutines();
-        wanderCoroutine = null;
-        isKnockedBack = false;
-        isGameActive = false;
-        exitDestination = destination;
-        exitDestination.y = transform.position.y;
-        isExitingAfterBattle = true;
-
-        if (agent != null)
-        {
-            if (agent.isOnNavMesh)
-            {
-                agent.isStopped = true;
-                agent.ResetPath();
-            }
-
-            agent.enabled = false;
-        }
-    }
+    // ==========================================
+    // 外部觸發機制 (Public API)
+    // ==========================================
 
     public void OnInfluence(int amount, bool isSkill, Vector3 attackerPosition = default, bool allowSpread = true)
     {
-        if (!isGameActive) return;
-        if (data == null) return;
+        if (!IsGameActive || Data == null) return;
 
-        int finalAmount = amount * Mathf.Max(1, 1 + data.EmotionLabelCount);
-
-        data.currentPosition = Mathf.Clamp(
-            data.currentPosition + finalAmount,
+        int finalAmount = amount * Mathf.Max(1, 1 + Data.EmotionLabelCount);
+        Data.currentPosition = Mathf.Clamp(
+            Data.currentPosition + finalAmount,
             VoterConfig.MIN_POS,
             VoterConfig.MAX_POS);
 
         UpdateConversionState(allowSpread);
+        OnPositionChanged?.Invoke(Data.currentPosition);
 
-        OnPositionChanged?.Invoke(data.currentPosition);
-        TriggerHitAnimation();
-
-        if (hasUsableNavMeshAgent && !isKnockedBack && attackerPosition != default)
+        if (HasUsableNavMeshAgent && attackerPosition != default)
         {
-            Vector3 dir = (transform.position - attackerPosition).normalized;
-            dir.y = 0f;
-            StartCoroutine(KnockbackRoutine(dir));
+            StateMachine.ChangeState(new VoterHitState(this, attackerPosition));
+        }
+        else
+        {
+            Anim?.SetTrigger("hit");
         }
     }
 
-    private void TriggerHitAnimation()
+    public void ApplyTimedStun(float stunTime)
     {
-        if (anim == null)
-        {
-            return;
-        }
-
-        if (Time.time < lastHitAnimationTriggerTime + hitAnimationTriggerCooldown)
-        {
-            return;
-        }
-
-        lastHitAnimationTriggerTime = Time.time;
-        anim.ResetTrigger(HashHit);
-        anim.SetTrigger(HashHit);
+        if (stunTime <= 0f) return;
+        StateMachine.ChangeState(new VoterStunState(this, stunTime));
     }
+
+    public void TriggerCheer(Vector3 lookTarget = default)
+    {
+        if (!IsGameActive) return;
+        StateMachine.ChangeState(new VoterCheerState(this, lookTarget));
+    }
+
+    // ==========================================
+    // 動畫事件接收口 (Animation Event Receiver)
+    // ==========================================
+    public void TriggerAnimationEnd()
+    {
+        StateMachine.CurrentState?.AnimationFinishTrigger();
+    }
+
+    // ==========================================
+    // 內部資料更新邏輯
+    // ==========================================
 
     private void UpdateConversionState(bool allowSpread)
     {
-        int oldSide = data.convertedSide;
-        int newSide = data.EvaluateSideFromPosition();
+        int oldSide = Data.convertedSide;
+        int newSide = Data.EvaluateSideFromPosition();
 
-        data.convertedSide = newSide;
-        data.isConverted = newSide != VoterData.NeutralSideSign;
+        Data.convertedSide = newSide;
+        Data.isConverted = newSide != VoterData.NeutralSideSign;
 
         if (oldSide != newSide)
         {
-            data.loyalty = 1f;
+            Data.loyalty = 1f;
         }
 
         if (oldSide != newSide)
@@ -309,225 +214,106 @@ public class VoterLogic : MonoBehaviour
 
     public void RevertToNeutral()
     {
-        int oldSide = data.convertedSide;
-        data.currentPosition = 0;
-        data.convertedSide = VoterData.NeutralSideSign;
-        data.isConverted = false;
-        data.loyalty = 1f;
+        int oldSide = Data.convertedSide;
+        Data.currentPosition = 0;
+        Data.convertedSide = VoterData.NeutralSideSign;
+        Data.isConverted = false;
+        Data.loyalty = 1f;
 
         VoteManager.Instance?.ApplyAlignmentChange(oldSide, VoterData.NeutralSideSign);
-        OnPositionChanged?.Invoke(data.currentPosition);
+        OnPositionChanged?.Invoke(Data.currentPosition);
     }
 
     private void UpdateLoyaltyDecay()
     {
         PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
-        if (effects == null || !data.isConverted || effects.LoseControlRate <= 0f)
+        if (effects == null || !Data.isConverted || effects.LoseControlRate <= 0f)
         {
             return;
         }
 
-        data.loyalty = Mathf.Clamp01(data.loyalty - effects.LoseControlRate * Time.deltaTime);
+        Data.loyalty = Mathf.Clamp01(Data.loyalty - effects.LoseControlRate * Time.deltaTime);
 
-        if (data.loyalty <= 0f)
+        if (Data.loyalty <= 0f)
         {
             RevertToNeutral();
         }
     }
 
+    private readonly Collider[] spreadHitBuffer = new Collider[32];
     private void SpreadInfluenceToNearbyVoters()
     {
         PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
-        if (effects == null || effects.SpreadRadius <= 0f)
-        {
-            return;
-        }
+        if (effects == null || effects.SpreadRadius <= 0f) return;
 
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, effects.SpreadRadius, spreadHitBuffer);
         for (int i = 0; i < hitCount; i++)
         {
             Collider hit = spreadHitBuffer[i];
-            if (hit == null)
-            {
-                continue;
-            }
+            if (hit == null) continue;
 
             VoterLogic nearbyVoter = hit.GetComponentInParent<VoterLogic>();
-            if (nearbyVoter == null || nearbyVoter == this || nearbyVoter.Data == null)
-            {
-                continue;
-            }
-
-            if (nearbyVoter.Data.IsPlayerAligned)
-            {
-                continue;
-            }
+            if (nearbyVoter == null || nearbyVoter == this || nearbyVoter.Data == null) continue;
+            if (nearbyVoter.Data.IsPlayerAligned) continue;
 
             nearbyVoter.OnInfluence(1, true, transform.position, false);
         }
     }
 
-    private IEnumerator WanderRoutine()
-    {
-        while (isGameActive)
-        {
-            yield return new WaitForSeconds(Random.Range(wanderIntervalMin, wanderIntervalMax));
-
-            if (!isGameActive) yield break;
-
-            if (!isKnockedBack && !isFrozenByHitStop && !data.ShouldFollowPlayer && agent.isOnNavMesh)
-            {
-                Vector3 dest = SampleRandomNavMeshPoint();
-                if (dest != Vector3.zero)
-                    agent.SetDestination(dest);
-            }
-        }
-    }
-
-    private void UpdateDarkApproach()
-    {
-        if (playerTransform == null)
-        {
-            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-            playerTransform = playerObject != null ? playerObject.transform : null;
-        }
-
-        if (playerTransform == null)
-        {
-            return;
-        }
-
-        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-        if (distanceToPlayer <= darkApproachStoppingDistance)
-        {
-            if (agent.hasPath)
-            {
-                agent.ResetPath();
-            }
-
-            return;
-        }
-
-        if (Time.time < nextDarkRefreshTime)
-        {
-            return;
-        }
-
-        nextDarkRefreshTime = Time.time + darkDestinationRefreshInterval;
-        agent.SetDestination(playerTransform.position);
-    }
-
-    private void UpdateExitMovement()
-    {
-        float speed = Mathf.Max(0.01f, (data != null ? data.MoveSpeed : moveSpeed) * exitMoveSpeedMultiplier);
-        Vector3 nextPosition = Vector3.MoveTowards(transform.position, exitDestination, speed * Time.deltaTime);
-        Vector3 moveDelta = nextPosition - transform.position;
-
-        if (moveDelta.sqrMagnitude > 0.000001f)
-        {
-            transform.position = nextPosition;
-        }
-
-        if ((exitDestination - transform.position).sqrMagnitude <= ExitArrivalThreshold * ExitArrivalThreshold)
-        {
-            transform.position = exitDestination;
-            isExitingAfterBattle = false;
-            enabled = false;
-        }
-    }
-
-    private Vector3 SampleRandomNavMeshPoint()
-    {
-        Vector3 candidate = transform.position + new Vector3(
-            Random.Range(-wanderRadius, wanderRadius),
-            0f,
-            Random.Range(-wanderRadius, wanderRadius));
-
-        return NavMesh.SamplePosition(candidate, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas)
-            ? hit.position
-            : Vector3.zero;
-    }
-
-    private IEnumerator KnockbackRoutine(Vector3 direction)
-    {
-        if (!isGameActive || agent == null || !hasUsableNavMeshAgent) yield break;
-
-        isKnockedBack = true;
-        if (agent.isOnNavMesh) agent.isStopped = true;
-
-        Vector3 startPos = transform.position;
-        Vector3 targetPos = startPos + direction * knockbackDistance;
-
-        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, knockbackDistance, NavMesh.AllAreas))
-            targetPos = hit.position;
-
-        float elapsed = 0f;
-
-        while (elapsed < knockbackDuration)
-        {
-            if (!isGameActive) yield break;
-
-            elapsed += Time.deltaTime;
-            float t = elapsed / knockbackDuration;
-            agent.Warp(Vector3.Lerp(startPos, targetPos, t));
-            yield return null;
-        }
-
-        if (agent.isOnNavMesh)
-            agent.isStopped = false;
-
-        isKnockedBack = false;
-    }
-
     public void ForceConvertToPlayer()
     {
-        int requiredInfluence = VoterConfig.MAX_POS - data.currentPosition;
-        if (requiredInfluence <= 0)
-        {
-            return;
-        }
-
+        if (Data == null) return;
+        int requiredInfluence = VoterConfig.MAX_POS - Data.currentPosition;
+        if (requiredInfluence <= 0) return;
         OnInfluence(requiredInfluence, true, transform.position);
-    }
-
-    public void ApplyTimedStun(float stunTime)
-    {
-        if (stunTime <= 0f)
-        {
-            return;
-        }
-
-        if (dogezaStunCoroutine != null)
-        {
-            StopCoroutine(dogezaStunCoroutine);
-        }
-
-        dogezaStunCoroutine = StartCoroutine(DogezaStunRoutine(stunTime));
     }
 
     public void ConvertColdIdentityToEmotion()
     {
-        data?.ConvertColdIdentityToEmotion();
+        Data?.ConvertColdIdentityToEmotion();
     }
 
-    private IEnumerator DogezaStunRoutine(float stunTime)
+    // ==========================================
+    // 簡單處理離場 bug，未來將替換為 VoterExitState
+    // ==========================================
+    public void BeginExitMovement(Vector3 destination)
     {
-        isFrozenByHitStop = true;
-
-        if (agent != null && agent.isOnNavMesh)
+        IsGameActive = false;
+        
+        // 簡單做法：直接叫 Agent 走過去。未來會由獨立的 VoterExitState 來負責
+        if (Agent != null && Agent.isOnNavMesh)
         {
-            agent.isStopped = true;
-            agent.ResetPath();
+            Agent.isStopped = false;
+            Agent.SetDestination(destination);
         }
-
-        yield return new WaitForSeconds(stunTime);
-
-        if (agent != null && agent.isOnNavMesh)
-        {
-            agent.isStopped = false;
-        }
-
-        isFrozenByHitStop = false;
-        dogezaStunCoroutine = null;
     }
+
+    private void OnGameEnd()
+    {
+        IsGameActive = false;
+        // 遊戲結束時強制進入離開狀態或待機
+        StateMachine.ChangeState(new VoterIdleState(this)); 
+    }
+
+/* 
+=========================================================
+[開發筆記] 未來特殊狀態擴充指南 (FleeState & DeadState)
+=========================================================
+由於本次 Demo 著重於穩定性，選民機制暫不處理退場與逃跑。
+若未來發佈後需要擴充，請依照既有狀態機架構新增以下狀態：
+
+1. VoterFleeState (逃跑狀態)
+   - 觸發時機：當特定陣營技能生效，或受驚嚇時，由外部呼叫 ChangeState 進入。
+   - 實作概念：在 Enter() 計算反方向目標點 (如：玩家位置的反向延長線)，呼叫 Agent.SetDestination()。
+   - 結束條件：在 Update() 檢查跑到安全距離後，切回 Idle，或直接由 Controller 呼叫回收 (ObjectPool)。
+
+2. VoterDeadState (死亡/退場狀態)
+   - 觸發時機：若遊戲未來引入血量或退場機制。
+   - 實作概念：Enter() 時播放倒地動畫，關閉 Collider 與 NavMeshAgent，避免阻礙交通。
+   - 結束條件：結合本次的 TriggerAnimationEnd()，當倒地動畫播完後，
+               在 AnimationFinishTrigger() 中執行 Destroy 或是歸還物件池。
+
+設計原則：堅持 OCP，不要在主腳本寫判斷，一律實作新 State 並由外部觸發切換！
+=========================================================
+*/
 }

@@ -22,4 +22,9 @@ public interface IState
     /// 離開狀態時呼叫。
     /// </summary>
     void Exit();
+
+    /// <summary>
+    /// 由外部動畫事件 (Animation Event) 呼叫。預設為空實作。
+    /// </summary>
+    void AnimationFinishTrigger() { }
 }
