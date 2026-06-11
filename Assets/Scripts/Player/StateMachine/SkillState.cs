@@ -9,7 +9,7 @@ public class SkillState : IState
     private readonly SkillData _skillData;
     private float _timer;
 
-    // 將建構子改為接收 PlayerController 與具體的 SkillData
+    // 將建構子改為接收統一的 SkillData
     public SkillState(PlayerController ctx, SkillData skillData)
     {
         _ctx = ctx;
@@ -25,21 +25,30 @@ public class SkillState : IState
 
         if (_skillData != null)
         {
-            // 2. 呼叫 Animator 播放對應的技能動畫
-            if (_ctx.characterAnimator != null && !string.IsNullOrEmpty(_skillData.animationTriggerName))
+            // 2. 呼叫 Animator 播放對應的技能動畫 (硬控，不依賴 Trigger 與箭頭)
+            if (_ctx.AnimController != null && !string.IsNullOrEmpty(_skillData.AnimationTriggerName))
             {
-                _ctx.characterAnimator.SetTrigger(_skillData.animationTriggerName);
+                _ctx.AnimController.PlaySkillAnimation(_skillData.AnimationTriggerName);
+                Debug.Log($"[SkillState] 正在強制播放動畫 State: {_skillData.AnimationTriggerName}");
+            }
+            else
+            {
+                if (_ctx.AnimController == null)
+                    Debug.LogWarning("[SkillState] ⚠️ _ctx.AnimController 為空！");
+                if (string.IsNullOrEmpty(_skillData.AnimationTriggerName))
+                    Debug.LogWarning($"[SkillState] ⚠️ {_skillData.skillName} 的 AnimationTriggerName 為空！");
             }
 
-            // 3. 通知 Manager 執行真正的技能邏輯（生成特效、進入 CD 等）
-            // 假設您的 _ctx 有公開 _skillManager，或者您可以透過 GetComponent 取得
-            var skillManager = _ctx.GetComponent<PlayerSkillManager>();
-            if (skillManager != null)
+            // 3. 呼叫多型介面執行真正的技能邏輯（生成特效、扣資源等）
+            _skillData.ExecuteSkill(_ctx.gameObject);
+            
+            // 4. 紀錄施放時間並正式進入 CD
+            if (_ctx.SkillManager != null)
             {
-                skillManager.PerformSkill(_skillData);
+                _ctx.SkillManager.RecordSkillUse(_skillData);
             }
             
-            Debug.Log($"[SkillState] Enter — 施放技能: {_skillData.name}");
+            Debug.Log($"[SkillState] Enter — 施放技能");
         }
     }
 
@@ -47,8 +56,11 @@ public class SkillState : IState
     {
         _timer += Time.deltaTime;
 
-        // 假設 SkillData 也有定義動畫的播放長度 (duration)，如果沒有，可以給一個預設值
-        float duration = _skillData != null ? _skillData.cooldown : 0.5f; // 這裡暫用 cooldown 或預設值，建議在 SkillData 新增 duration 欄位
+        // 呼叫多型介面每幀更新技能邏輯 (例如：位移、追蹤)
+        _skillData?.UpdateSkill(_ctx.gameObject, Time.deltaTime);
+
+        // 透過介面取得該技能的持續時間
+        float duration = _skillData != null ? _skillData.Duration : 0.5f;
 
         if (_timer >= duration)
         {

@@ -170,4 +170,16 @@ public class PlayerAnimationController : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// 直接透過程式硬控播放指定名稱的技能動畫 (跳過 Animator 箭頭與 Trigger 限制)
+    /// </summary>
+    /// <param name="stateName">Animator 裡面該狀態的準確名稱</param>
+    public void PlaySkillAnimation(string stateName)
+    {
+        if (string.IsNullOrEmpty(stateName)) return;
+
+        int hash = Animator.StringToHash(stateName);
+        ChangeAnimationState(hash);
+    }
 }

@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "DogezaSkill", menuName = "Skills/Party/Dogeza Skill")]
-public class DogezaSkill : PartySkillData
+public class DogezaSkill : SkillData
 {
-    [Header("特效")]
-    [SerializeField] private GameObject skillEffectPrefab;
+    [Header("土下座特殊特效參數")]
     [SerializeField] private Vector3 effectSpawnOffset;
     [SerializeField] private bool useCasterRotation = true;
 
@@ -21,57 +20,8 @@ public class DogezaSkill : PartySkillData
 
     public int MpCost => mpCost;
 
-    public override bool CanExecute(GameObject caster, out string failureReason)
-    {
-        failureReason = string.Empty;
 
-        if (caster == null)
-        {
-            failureReason = "[DogezaSkill] caster 為空，無法執行技能。";
-            return false;
-        }
-
-        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
-            ? PlayerMPSystem.Instance
-            : caster.GetComponent<PlayerMPSystem>();
-        if (mpSystem == null)
-        {
-            failureReason = "[DogezaSkill] 找不到 PlayerMPSystem，無法確認 MP。";
-            return false;
-        }
-
-        if (!mpSystem.HasEnoughMP(mpCost))
-        {
-            failureReason = "⚠️ MP 不足，無法施放政黨技能。";
-            return false;
-        }
-
-        return true;
-    }
-
-    public override bool TryConsumeResources(GameObject caster, out string failureReason)
-    {
-        failureReason = string.Empty;
-
-        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
-            ? PlayerMPSystem.Instance
-            : caster != null ? caster.GetComponent<PlayerMPSystem>() : null;
-        if (mpSystem == null)
-        {
-            failureReason = "[DogezaSkill] 找不到 PlayerMPSystem，無法扣除 MP。";
-            return false;
-        }
-
-        if (!mpSystem.UseMP(mpCost))
-        {
-            failureReason = "[DogezaSkill] MP 不足，無法施放悲情土下座。";
-            return false;
-        }
-
-        return true;
-    }
-
-    public override void Execute(GameObject caster)
+    public override void ExecuteSkill(GameObject caster)
     {
         if (caster == null)
         {
@@ -79,9 +29,36 @@ public class DogezaSkill : PartySkillData
             return;
         }
 
-        PlaySkillAnimation(caster);
+        // 資源檢查與消耗 (取代了舊的 CanExecute / TryConsumeResources)
+        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
+            ? PlayerMPSystem.Instance
+            : caster.GetComponent<PlayerMPSystem>();
+            
+        if (mpSystem != null && !mpSystem.UseMP(mpCost))
+        {
+            Debug.LogWarning("[DogezaSkill] MP 不足，無法施放悲情土下座。");
+            return;
+        }
 
-        PlaySkillEffect(caster);
+        // 自訂的特效生成邏輯 (取代 base.ExecuteSkill)
+        if (skillEffectPrefab != null)
+        {
+            Quaternion effectRotation = useCasterRotation ? caster.transform.rotation : Quaternion.identity;
+            Vector3 effectPosition = caster.transform.TransformPoint(effectSpawnOffset);
+            GameObject effectInstance = PoolManager.Instance.Get(skillEffectPrefab, effectPosition, effectRotation);
+            
+            if (effectInstance != null)
+            {
+                FollowTargetWhileActive followTarget = effectInstance.GetComponent<FollowTargetWhileActive>();
+                if (followTarget == null)
+                {
+                    followTarget = effectInstance.AddComponent<FollowTargetWhileActive>();
+                }
+                followTarget.Bind(caster.transform, effectSpawnOffset, useCasterRotation);
+            }
+        }
+
+        // 2. 啟動衝刺與判定 Coroutine
         MonoBehaviour coroutineHost = caster.GetComponent<PlayerSkillManager>();
         if (coroutineHost == null)
         {
@@ -95,73 +72,6 @@ public class DogezaSkill : PartySkillData
         }
 
         coroutineHost.StartCoroutine(DogezaDashRoutine(caster));
-    }
-
-    private void PlaySkillAnimation(GameObject caster)
-    {
-        Animator animator = caster.GetComponent<Animator>();
-        if (animator == null)
-        {
-            animator = caster.GetComponentInChildren<Animator>();
-        }
-
-        if (animator == null)
-        {
-            Debug.LogWarning("[DogezaSkill] caster 身上找不到 Animator，略過技能動作播放。");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(animationTriggerName))
-        {
-            Debug.LogWarning("[DogezaSkill] animationTriggerName 為空，無法播放技能動作。");
-            return;
-        }
-
-        if (!HasTriggerParameter(animator, animationTriggerName))
-        {
-            Debug.LogWarning($"[DogezaSkill] Animator 缺少 Trigger 參數：{animationTriggerName}");
-            return;
-        }
-
-        animator.ResetTrigger(animationTriggerName);
-        animator.SetTrigger(animationTriggerName);
-    }
-
-    private static bool HasTriggerParameter(Animator animator, string parameterName)
-    {
-        foreach (AnimatorControllerParameter parameter in animator.parameters)
-        {
-            if (parameter.type == AnimatorControllerParameterType.Trigger && parameter.name == parameterName)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void PlaySkillEffect(GameObject caster)
-    {
-        if (skillEffectPrefab == null)
-        {
-            return;
-        }
-
-        Quaternion effectRotation = useCasterRotation ? caster.transform.rotation : Quaternion.identity;
-        Vector3 effectPosition = caster.transform.TransformPoint(effectSpawnOffset);
-        GameObject effectInstance = PoolManager.Instance.Get(skillEffectPrefab, effectPosition, effectRotation);
-        if (effectInstance == null)
-        {
-            return;
-        }
-
-        FollowTargetWhileActive followTarget = effectInstance.GetComponent<FollowTargetWhileActive>();
-        if (followTarget == null)
-        {
-            followTarget = effectInstance.AddComponent<FollowTargetWhileActive>();
-        }
-
-        followTarget.Bind(caster.transform, effectSpawnOffset, useCasterRotation);
     }
 
     private IEnumerator DogezaDashRoutine(GameObject caster)

@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: DogezaSkill
   m_EditorClassIdentifier: 
   skillName: "\u60B2\u60C5\u571F\u4E0B\u5EA7"
-  baseCooldown: 5
-  animationTriggerName: Begging
+  cooldown: 5
+  duration: 0.5
+  animationTriggerName: Male_Begging
   skillEffectPrefab: {fileID: 7246763196193437300, guid: 268633b25e00646a7927c4266f63b6a6, type: 3}
   effectSpawnOffset: {x: 0, y: 0, z: 0}
   useCasterRotation: 1
-  beggingAnimationClip: {fileID: 7400000, guid: 8b02c6e24d25241e6a5fb3c73a768f82, type: 2}
   mpCost: 10
   hpCost: 5
   dashDuration: 0.3

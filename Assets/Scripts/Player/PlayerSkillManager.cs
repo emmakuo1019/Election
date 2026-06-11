@@ -1,83 +1,33 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class PlayerSkillManager : MonoBehaviour
 {
     private const string PendingMapSkillSelectionKey = "PendingMapSkillSelection";
-    private static PartySkillData equippedPartySkill;
 
-    [Header("技能")]
-    [SerializeField] private PlayerAttack speechAttack;
-    [SerializeField] private PartySkillData currentPartySkill;
-
-    [Header("戰鬥技能裝備 (Data-Driven)")]
+    #region 技能槽區 (Skill Slots)
+    [Header("一般戰鬥技能 (J, K)")]
     public SkillData baseSkillJ;
     public SkillData skillK;
-    public SkillData skillL;
 
-    // 儲存各個技能的上次施放時間，用來計算冷卻
-    private System.Collections.Generic.Dictionary<SkillData, float> skillLastUseTime = new System.Collections.Generic.Dictionary<SkillData, float>();
+    [Header("政黨大招 (L)")]
+    [SerializeField] private SkillData currentPartySkill;
+    
+    // 供跨場景讀取的靜態變數
+    private static SkillData equippedPartySkill;
+    #endregion
 
-    [Header("技能選單（長按）")]
-    [SerializeField] private InputActionReference partySelectAction;
-    [SerializeField] private float holdDuration = 1f;
-
-    private float holdTimer;
-    private float lastPartySkillUseTime = float.NegativeInfinity;
-    private bool isHolding;
-
-    public delegate void PartySkillSelectionDelegate();
-    public event PartySkillSelectionDelegate OnPartySkillSelectionRequested;
-
+    #region 屬性區 (Properties)
     public bool HasPartySkill => currentPartySkill != null;
-    public PartySkillData CurrentPartySkill => currentPartySkill;
+    public SkillData CurrentPartySkill => currentPartySkill;
     public static bool HasEquippedPartySkill => equippedPartySkill != null;
-    public static PartySkillData EquippedPartySkill => equippedPartySkill;
-    public float HoldProgress => isHolding ? Mathf.Clamp01(holdTimer / holdDuration) : 0f;
+    public static SkillData EquippedPartySkill => equippedPartySkill;
+    #endregion
 
-    private void Awake()
-    {
-        if (currentPartySkill == null && equippedPartySkill != null)
-            currentPartySkill = equippedPartySkill;
-    }
-
-    private void OnEnable()
-    {
-        if (partySelectAction != null)
-        {
-            partySelectAction.action.started  += OnPartySelectStarted;
-            partySelectAction.action.canceled += OnPartySelectCanceled;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (partySelectAction != null)
-        {
-            partySelectAction.action.started  -= OnPartySelectStarted;
-            partySelectAction.action.canceled -= OnPartySelectCanceled;
-        }
-    }
-
-    private void Update()
-    {
-        if (isHolding) holdTimer += Time.deltaTime;
-    }
-
-    private void OnPartySelectStarted(InputAction.CallbackContext context)
-    {
-        isHolding = true;
-        holdTimer = 0f;
-    }
-
-    private void OnPartySelectCanceled(InputAction.CallbackContext context)
-    {
-        if (holdTimer >= holdDuration && !HasPartySkill)
-            OnPartySkillSelectionRequested?.Invoke();
-
-        isHolding = false;
-        holdTimer = 0f;
-    }
+    #region 舊有攻擊保留區 (Legacy Attack)
+    // 注意：目前一般攻擊已由 AttackState 與 PlayerAttack 處理，這裡僅暫作保留防編譯錯誤
+    [Header("一般攻擊 (舊有保留)")]
+    [SerializeField] private PlayerAttack speechAttack;
 
     public void UseSpeech()
     {
@@ -88,94 +38,80 @@ public class PlayerSkillManager : MonoBehaviour
         }
         speechAttack.PerformAttack(Vector3.zero);
     }
+    
+    public void UnlockSpeech() { }
+    #endregion
 
-    public void UsePartySkill()
+    #region 生命週期 (Lifecycle)
+    private void Awake()
     {
-        if (currentPartySkill == null)
+        // 確保場景載入時，能正確讀取跨場景的裝備技能
+        // 依照您的需求，將選單選擇的技能改為裝備到 J 鍵 (baseSkillJ)
+        if (baseSkillJ == null && equippedPartySkill != null)
         {
-            Debug.LogWarning("⚠️ 尚未裝備政黨技能");
-            return;
+            baseSkillJ = equippedPartySkill;
+            Debug.Log($"[PlayerSkillManager] 場景載入：已將跨場景技能 {equippedPartySkill.skillName} 裝備至 J 鍵");
         }
-
-        if (Time.time < lastPartySkillUseTime + currentPartySkill.baseCooldown)
-        {
-            Debug.LogWarning($"⏳ 技能冷卻中... {lastPartySkillUseTime + currentPartySkill.baseCooldown - Time.time:F1} 秒");
-            return;
-        }
-
-        if (!currentPartySkill.CanExecute(gameObject, out string executeFailureReason))
-        {
-            if (!string.IsNullOrWhiteSpace(executeFailureReason)) Debug.LogWarning(executeFailureReason);
-            return;
-        }
-
-        if (!currentPartySkill.TryConsumeResources(gameObject, out string resourceFailureReason))
-        {
-            if (!string.IsNullOrWhiteSpace(resourceFailureReason)) Debug.LogWarning(resourceFailureReason);
-            return;
-        }
-
-        currentPartySkill.Execute(gameObject);
-        lastPartySkillUseTime = Time.time;
     }
+    #endregion
 
-    // ============================================
-    // 新增：戰鬥技能 (J, K, L) 管理邏輯 (SRP & OCP)
-    // ============================================
+    #region CD 管理區 (Cooldown Management)
+    // 儲存各個技能的上次施放時間，用來計算冷卻
+    private Dictionary<SkillData, float> skillLastUseTime = new Dictionary<SkillData, float>();
 
     /// <summary>
-    /// 檢查傳入的戰鬥技能是否可以施放（冷卻時間是否結束）
+    /// 檢查傳入的戰鬥技能或大招是否可以施放
     /// </summary>
     public bool CanCastSkill(SkillData skillData)
     {
         if (skillData == null) return false;
 
+        // 注意：統一為 SkillData 後，資源扣除與條件檢查建議未來實作於 SkillData 內部
+        // 這裡負責純粹的冷卻時間計算
         if (skillLastUseTime.TryGetValue(skillData, out float lastTime))
         {
-            // 如果當前時間已經大於等於 上次施放時間 + 冷卻時間，代表 CD 完畢
-            return Time.time >= lastTime + skillData.cooldown;
+            if (Time.time < lastTime + skillData.Cooldown)
+            {
+                Debug.LogWarning($"⏳ 技能 [{skillData.AnimationTriggerName}] 冷卻中...");
+                return false;
+            }
         }
 
-        // 字典裡沒有紀錄，代表從沒施放過，直接回傳 true
         return true;
     }
 
     /// <summary>
-    /// 執行技能：生成特效、觸發邏輯，並記錄施放時間以進入 CD
+    /// 紀錄技能施放時間以進入冷卻
     /// </summary>
-    public void PerformSkill(SkillData skillData)
+    public void RecordSkillUse(SkillData skillData)
     {
         if (skillData == null) return;
-
-        // 1. 紀錄施放時間，進入 CD
         skillLastUseTime[skillData] = Time.time;
+    }
+    #endregion
 
-        // 2. 處理技能的具體邏輯（例如生成特效）
-        // 假設 SkillData 有 prefab 欄位
-        // if (skillData.prefab != null)
-        // {
-        //     Instantiate(skillData.prefab, transform.position, transform.rotation);
-        // }
-        Debug.Log($"[PlayerSkillManager] 施放技能：{skillData.name}");
+    #region 裝備管理區 (Equipment Management)
+    // 讓 UI 可以直接將技能裝備到 J 鍵，並保存至靜態變數以供跨場景讀取
+    public void EquipSkillJ(SkillData skillData)
+    {
+        baseSkillJ = skillData;
+        equippedPartySkill = skillData; // 同步儲存至跨場景變數
+        Debug.Log($"[PlayerSkillManager] 已將 {skillData.skillName} 裝備至 J 鍵 (並寫入跨場景靜態變數)");
     }
 
-    public void EquipPartySkill(PartySkillData skillData)
+    public void EquipPartySkill(SkillData skillData)
     {
         SetEquippedPartySkill(skillData);
         currentPartySkill = equippedPartySkill;
-        lastPartySkillUseTime = float.NegativeInfinity;
     }
 
     public void ClearPartySkill()
     {
         currentPartySkill = null;
         equippedPartySkill = null;
-        lastPartySkillUseTime = float.NegativeInfinity;
     }
 
-    public void UnlockSpeech() { }
-
-    public static void SetEquippedPartySkill(PartySkillData skillData)
+    public static void SetEquippedPartySkill(SkillData skillData)
     {
         equippedPartySkill = skillData;
         ClearPendingMapSkillSelection();
@@ -202,4 +138,5 @@ public class PlayerSkillManager : MonoBehaviour
         PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
         PlayerPrefs.Save();
     }
+    #endregion
 }

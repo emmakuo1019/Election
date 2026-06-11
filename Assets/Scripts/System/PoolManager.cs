@@ -113,7 +113,8 @@ public class PoolManager : MonoBehaviour
 
     private GameObject CreateInstance(GameObject prefab)
     {
-        GameObject createdInstance = Instantiate(prefab);
+        // 將生成的物件設為 PoolManager 的子物件，確保它們跟著 PoolManager 一起 DontDestroyOnLoad
+        GameObject createdInstance = Instantiate(prefab, transform);
         createdInstance.name = prefab.name;
         instanceToPrefab[createdInstance] = prefab;
         PooledParticleInstance particleState = createdInstance.GetComponent<PooledParticleInstance>();

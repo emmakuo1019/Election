@@ -113,10 +113,25 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     /// </summary>
     public bool CanAttack()
     {
-        if (!SceneContext.IsLevelScene()) return false;
-        if (PlayerMPSystem.Instance == null) return false;
+        if (!SceneContext.IsLevelScene())
+        {
+            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！(SceneContext.IsLevelScene() 回傳 false)");
+            return false;
+        }
         
-        return Time.time >= lastAttackTime + currentAttackCooldown;
+        if (PlayerMPSystem.Instance == null)
+        {
+            Debug.LogWarning("⚠️ 找不到 PlayerMPSystem，無法施放演說！");
+            return false;
+        }
+        
+        if (Time.time < lastAttackTime + currentAttackCooldown)
+        {
+            Debug.LogWarning("⚠️ 攻擊冷卻中！");
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>

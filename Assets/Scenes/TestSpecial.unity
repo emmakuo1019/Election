@@ -195,9 +195,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  needMiniSettlement: 0
   roomResultCalculator: {fileID: 0}
-  miniSettlementUI: {fileID: 0}
   roomExitController: {fileID: 594423865}
   rewardPanelController: {fileID: 0}
 --- !u!4 &34283342
@@ -4216,7 +4214,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1148722642}
+  m_Mesh: {fileID: 284816322}
 --- !u!33 &1154391341
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -5433,7 +5431,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1659759861}
+  m_Mesh: {fileID: 1111418555}
 --- !u!33 &1851217115
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -7393,17 +7391,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3016036086028709808, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
+      propertyPath: baseSkillJ
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.92
+      value: 4.1000004
       objectReference: {fileID: 0}
     - target: {fileID: 3194468659857429607, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -6.519999
+      value: -7.52
       objectReference: {fileID: 0}
     - target: {fileID: 5403555500550337343, guid: c5c12ff34148d4acabe00ac269d70810, type: 3}
       propertyPath: m_Name

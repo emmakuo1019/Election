@@ -64,8 +64,13 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         CharCon = GetComponent<CharacterController>();
-        PlayerAttack = GetComponent<PlayerAttack>();
+        PlayerAttack = GetComponentInChildren<PlayerAttack>();
         SkillManager = GetComponent<PlayerSkillManager>();
+        
+        if (characterAnimator == null)
+        {
+            characterAnimator = GetComponentInChildren<Animator>();
+        }
         
         // 改為 GetComponentInChildren，允許使用者將腳本掛在父物件或子物件(如 PlayerSprite)上
         AnimController = GetComponentInChildren<PlayerAnimationController>();
@@ -81,47 +86,80 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        if (dashAction != null)   dashAction.action.performed   += OnDash;
-        if (attackAction != null) attackAction.action.performed += OnAttack;
-        if (skillJAction != null) skillJAction.action.performed += OnSkillJ;
-        if (skillKAction != null) skillKAction.action.performed += OnSkillK;
-        if (skillLAction != null) skillLAction.action.performed += OnSkillL;
-
         if (LevelTimer.Instance != null)
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
     }
 
     private void OnDisable()
     {
-        if (dashAction != null)   dashAction.action.performed   -= OnDash;
-        if (attackAction != null) attackAction.action.performed -= OnAttack;
-        if (skillJAction != null) skillJAction.action.performed -= OnSkillJ;
-        if (skillKAction != null) skillKAction.action.performed -= OnSkillK;
-        if (skillLAction != null) skillLAction.action.performed -= OnSkillL;
-
         if (LevelTimer.Instance != null)
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
     }
 
-    private void OnDash(InputAction.CallbackContext _)    => DashInputThisFrame   = true;
-    private void OnAttack(InputAction.CallbackContext _)  => AttackInputThisFrame = true;
+    private void OnDestroy()
+    {
+    }
+
+    private void OnDash(InputAction.CallbackContext _)
+    {
+        // 留空，改為在 Update 輪詢
+    }
     
+    private void OnAttack(InputAction.CallbackContext _)
+    {
+        // 留空，改為在 Update 輪詢
+    }
+    
+    // 確認當前狀態是否允許施放技能
+    private bool IsInActionableState()
+    {
+        return StateMachine.CurrentState is IdleState || StateMachine.CurrentState is MoveState;
+    }
+
     private void OnSkillJ(InputAction.CallbackContext _)
     {
-        if (SkillManager != null && SkillManager.baseSkillJ != null && SkillManager.CanCastSkill(SkillManager.baseSkillJ))
-            StateMachine.ChangeState(new SkillState(this, SkillManager.baseSkillJ));
+        if (this == null) return;
+        Debug.Log("[PlayerController] 收到技能 J 按鍵輸入！");
+        if (!IsInActionableState())
+        {
+            Debug.LogWarning($"[PlayerController] 當前狀態無法施放技能！當前狀態：{CurrentStateName}");
+            return;
+        }
+        if (SkillManager == null)
+        {
+            Debug.LogWarning("[PlayerController] SkillManager 為空！");
+            return;
+        }
+        if (SkillManager.baseSkillJ == null)
+        {
+            Debug.LogWarning("[PlayerController] SkillManager.baseSkillJ 為空！尚未裝備技能。");
+            return;
+        }
+        if (!SkillManager.CanCastSkill(SkillManager.baseSkillJ))
+        {
+            Debug.LogWarning("[PlayerController] 技能無法施放 (可能在 CD 中或資源不足)！");
+            return;
+        }
+        
+        Debug.Log("[PlayerController] 條件達成，準備切換至 SkillState...");
+        StateMachine.ChangeState(new SkillState(this, SkillManager.baseSkillJ));
     }
 
     private void OnSkillK(InputAction.CallbackContext _)
     {
+        if (this == null) return;
+        if (!IsInActionableState()) return;
         if (SkillManager != null && SkillManager.skillK != null && SkillManager.CanCastSkill(SkillManager.skillK))
             StateMachine.ChangeState(new SkillState(this, SkillManager.skillK));
     }
 
     private void OnSkillL(InputAction.CallbackContext _)
     {
-        if (SkillManager != null && SkillManager.skillL != null && SkillManager.CanCastSkill(SkillManager.skillL))
-            StateMachine.ChangeState(new SkillState(this, SkillManager.skillL));
+        if (this == null) return;
+        if (!IsInActionableState()) return;
+        // L 鍵對應大招 (CurrentPartySkill)
+        if (SkillManager != null && SkillManager.CurrentPartySkill != null && SkillManager.CanCastSkill(SkillManager.CurrentPartySkill))
+            StateMachine.ChangeState(new SkillState(this, SkillManager.CurrentPartySkill));
     }
 
     private void Start()
@@ -134,11 +172,16 @@ public class PlayerController : MonoBehaviour
     {
         MoveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
 
+        // 輪詢輸入，徹底避開 C# Event 殘留的坑
+        DashInputThisFrame = dashAction != null && dashAction.action.WasPerformedThisFrame();
+        AttackInputThisFrame = attackAction != null && attackAction.action.WasPerformedThisFrame();
+
+        if (skillJAction != null && skillJAction.action.WasPerformedThisFrame()) OnSkillJ(default);
+        if (skillKAction != null && skillKAction.action.WasPerformedThisFrame()) OnSkillK(default);
+        if (skillLAction != null && skillLAction.action.WasPerformedThisFrame()) OnSkillL(default);
+
         // 呼叫當前狀態的 Update
         StateMachine.CurrentState?.Update();
-
-        DashInputThisFrame   = false;
-        AttackInputThisFrame = false;
     }
 
     private void FixedUpdate()

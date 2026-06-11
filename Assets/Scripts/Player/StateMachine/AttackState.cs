@@ -10,9 +10,17 @@ public class AttackState : IState
 
     public void Enter()
     {
+        Debug.Log("[AttackState] Enter 觸發了！");
         // 1. 檢查是否可以攻擊（冷卻限制邏輯）
-        if (_ctx.PlayerAttack == null || !_ctx.PlayerAttack.CanAttack())
+        if (_ctx.PlayerAttack == null)
         {
+            Debug.LogWarning("[AttackState] 錯誤：_ctx.PlayerAttack 為空！");
+            attackTimer = attackDuration;
+            return;
+        }
+        if (!_ctx.PlayerAttack.CanAttack())
+        {
+            Debug.LogWarning("[AttackState] CanAttack() 回傳 false，中斷攻擊！");
             // 如果在 CD 中，立刻將計時器設滿，讓 Update 迴圈下一幀直接跳回 Idle
             attackTimer = attackDuration;
             return;

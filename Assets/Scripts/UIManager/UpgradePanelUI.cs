@@ -11,8 +11,8 @@ public class UpgradePanelUI : MonoBehaviour
     [SerializeField] private PlayerSkillManager playerSkillManager;
 
     [Header("技能資料")]
-    [SerializeField] private PartySkillData policyDebateSkill;
-    [SerializeField] private PartySkillData dogezaSkill;
+    [SerializeField] private SkillData policyDebateSkill;
+    [SerializeField] private SkillData dogezaSkill;
 
     [Header("UI - 主面板")]
     [SerializeField] private Button closeButton;
@@ -40,10 +40,6 @@ public class UpgradePanelUI : MonoBehaviour
         SetButtonLabel(policyDebateButton, "暈眩對手");
         SetButtonLabel(dogezaButton, "悲情土下座");
 
-        if (playerSkillManager != null)
-        {
-            playerSkillManager.OnPartySkillSelectionRequested += OnPartySkillSelectionRequested;
-        }
         RefreshUI();
     }
 
@@ -58,8 +54,6 @@ public class UpgradePanelUI : MonoBehaviour
         if (dogezaButton != null)
             dogezaButton.onClick.RemoveListener(() => OnSelectPartySkill(dogezaSkill));
 
-        if (playerSkillManager != null)
-            playerSkillManager.OnPartySkillSelectionRequested -= OnPartySkillSelectionRequested;
     }
 
     private void ResolveReferences()
@@ -74,10 +68,10 @@ public class UpgradePanelUI : MonoBehaviour
     {
         if (dogezaSkill == null)
         {
-            DogezaSkill runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkill>();
+            DogezaSkillData runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkillData>();
             runtimeDogezaSkill.skillName = "悲情土下座";
-            runtimeDogezaSkill.baseCooldown = 5f;
-            runtimeDogezaSkill.animationTriggerName = "Begging";
+            runtimeDogezaSkill.cooldown = 5f;
+            runtimeDogezaSkill.animationTriggerName = "Male_Begging";
             dogezaSkill = runtimeDogezaSkill;
         }
     }
@@ -109,11 +103,11 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void ClosePanel()
     {
-        bool hasPartySkill = playerSkillManager != null
-            ? playerSkillManager.HasPartySkill
+        bool hasSkillJ = playerSkillManager != null 
+            ? playerSkillManager.baseSkillJ != null 
             : PlayerSkillManager.HasEquippedPartySkill;
 
-        if (PlayerSkillManager.HasPendingMapSkillSelection() && !hasPartySkill)
+        if (PlayerSkillManager.HasPendingMapSkillSelection() && !hasSkillJ)
         {
             return;
         }
@@ -130,7 +124,7 @@ public class UpgradePanelUI : MonoBehaviour
         }
     }
 
-    private void OnSelectPartySkill(PartySkillData skillData)
+    private void OnSelectPartySkill(SkillData skillData)
     {
         if (skillData == null)
         {
@@ -140,7 +134,8 @@ public class UpgradePanelUI : MonoBehaviour
 
         if (playerSkillManager != null)
         {
-            playerSkillManager.EquipPartySkill(skillData);
+            // 將技能裝備到 J 鍵 (而不是 L 鍵的 PartySkill)
+            playerSkillManager.EquipSkillJ(skillData);
         }
         else
         {
@@ -153,19 +148,20 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        bool hasPartySkill = playerSkillManager != null
-            ? playerSkillManager.HasPartySkill
+        bool hasSkillJ = playerSkillManager != null 
+            ? playerSkillManager.baseSkillJ != null 
             : PlayerSkillManager.HasEquippedPartySkill;
-        PartySkillData equippedSkill = playerSkillManager != null
-            ? playerSkillManager.CurrentPartySkill
+            
+        SkillData equippedSkill = playerSkillManager != null
+            ? playerSkillManager.baseSkillJ
             : PlayerSkillManager.EquippedPartySkill;
 
-        partyStatusText.text = hasPartySkill
-            ? $"✅ 已選擇技能: {GetSkillDisplayName(equippedSkill)}"
+        partyStatusText.text = hasSkillJ
+            ? $"✅ 已裝備技能至 J 鍵: {GetSkillDisplayName(equippedSkill)}"
             : "請從下方二選一：暈眩對手 / 悲情土下座";
 
-        policyDebateButton.interactable = !hasPartySkill;
-        dogezaButton.interactable = !hasPartySkill;
+        policyDebateButton.interactable = !hasSkillJ;
+        dogezaButton.interactable = !hasSkillJ;
     }
 
     private void SetButtonLabel(Button button, string label)
@@ -182,7 +178,7 @@ public class UpgradePanelUI : MonoBehaviour
         }
     }
 
-    private string GetSkillDisplayName(PartySkillData skillData)
+    private string GetSkillDisplayName(SkillData skillData)
     {
         return skillData != null && !string.IsNullOrWhiteSpace(skillData.skillName)
             ? skillData.skillName
