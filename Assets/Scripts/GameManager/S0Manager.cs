@@ -15,7 +15,7 @@ public class S0Manager : MonoBehaviour
     
     private void OnNewGameBtnClick()
     {
-        SceneManager.LoadScene("S1");
+        GameFlowManager.Instance.ChangeState(new HQState());
     }
 
     private void OnExitBtnClick()

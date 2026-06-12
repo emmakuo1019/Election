@@ -3,7 +3,7 @@ using UnityEngine;
 public class AttackState : IState
 {
     private readonly PlayerController _ctx;
-    private float attackDuration = 0.4f; // 對應攻擊動畫的長度
+    private float attackDuration = 0.2f; // 對應攻擊動畫的長度
     private float attackTimer;
 
     public AttackState(PlayerController ctx) => _ctx = ctx;

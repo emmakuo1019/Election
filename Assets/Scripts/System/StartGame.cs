@@ -5,7 +5,6 @@ public class StartGame : MonoBehaviour
 {
     public GameObject tips;
     private bool isPlayerNearSwitch;
-    public KeyCode interactKey = KeyCode.E;
     
     void Start()
     {
@@ -16,8 +15,7 @@ public class StartGame : MonoBehaviour
     void Update()
     {
         if (isPlayerNearSwitch
-            && tips.activeSelf
-            && Input.GetKeyDown(interactKey))
+            && tips.activeSelf)
         {
             OpenUpgradePanel();
         }
@@ -27,8 +25,9 @@ public class StartGame : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            tips.SetActive(true);
-            isPlayerNearSwitch = true;
+            // 點擊時呼叫：
+            GameFlowManager.Instance.ChangeState(new GameplayState(1));
+
         }
     }
     private void OnTriggerExit(Collider other)

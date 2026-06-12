@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,12 @@ public class RewardPanelUI : MonoBehaviour
     [Header("操作")]
     [SerializeField] private Button continueButton;
 
+    [Header("區塊設定")]
+    [Tooltip("請將包住結算資訊的父物件拖曳到這裡")]
+    public GameObject settlementPanelContainer;
+    [Tooltip("請將包住這3個獎勵按鈕的父物件拖曳到這裡")]
+    public GameObject rewardPanelContainer;
+
     public Button rewardBtn01, rewardBtn02, rewardBtn03;
     public RewardPanelController rewardPanelController;
     public PolicyCardManager policyCardManager;
@@ -25,6 +32,7 @@ public class RewardPanelUI : MonoBehaviour
     private bool isProcessingSelection;
     private bool canClaimReward;
     private bool hasSelectedReward;
+    private bool isProceeding;
 
     void Awake()
     {
@@ -37,6 +45,24 @@ public class RewardPanelUI : MonoBehaviour
     {
         isProcessingSelection = false;
         hasSelectedReward = false;
+        isProceeding = false;
+    }
+
+    private void Update()
+    {
+        if (isProceeding) return;
+
+        bool hasAnyContainer = rewardPanelContainer != null || settlementPanelContainer != null;
+        if (!hasAnyContainer) return;
+
+        bool rewardClosed = rewardPanelContainer == null || !rewardPanelContainer.activeSelf;
+        bool settlementClosed = settlementPanelContainer == null || !settlementPanelContainer.activeSelf;
+
+        if (rewardClosed && settlementClosed)
+        {
+            isProceeding = true;
+            ProceedAutomatically();
+        }
     }
 
     private void CacheTextReferences()
@@ -75,11 +101,17 @@ public class RewardPanelUI : MonoBehaviour
 
     public void ConfigureSettlement(float supportRate, int supporterCount, int totalVoters, int rewardMP, bool canClaimReward)
     {
+        StopAllCoroutines();
         EnsureSettlementUIReferences();
         CacheTextReferences();
         this.canClaimReward = canClaimReward;
         hasSelectedReward = false;
         isProcessingSelection = false;
+
+        if (rewardPanelContainer != null)
+        {
+            rewardPanelContainer.SetActive(canClaimReward);
+        }
 
         if (supportRateText != null)
         {
@@ -160,6 +192,12 @@ public class RewardPanelUI : MonoBehaviour
         BattleFlowController.Instance?.OnRewardSelected();
         hasSelectedReward = true;
         isProcessingSelection = false;
+
+        if (rewardPanelContainer != null)
+        {
+            rewardPanelContainer.SetActive(false);
+        }
+
         UpdateInteractionState();
     }
 
@@ -222,11 +260,18 @@ public class RewardPanelUI : MonoBehaviour
 
     private void OnContinueClicked()
     {
+        StopAllCoroutines();
+
         if (canClaimReward && !hasSelectedReward)
         {
             return;
         }
 
+        ProceedAutomatically();
+    }
+
+    private void ProceedAutomatically()
+    {
         rewardPanelController?.HideRewardPanel();
 
         RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);

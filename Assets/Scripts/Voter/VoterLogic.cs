@@ -297,22 +297,22 @@ public class VoterLogic : MonoBehaviour
 
 /* 
 =========================================================
-[開發筆記] 未來特殊狀態擴充指南 (FleeState & DeadState)
+[開發筆記] 未來特殊狀態擴充指南 (FleeState & ExitState)
 =========================================================
-由於本次 Demo 著重於穩定性，選民機制暫不處理退場與逃跑。
+由於本次 Demo 著重於穩定性，選民機制暫不處理逃跑，且退場機制使用簡單寫法。
 若未來發佈後需要擴充，請依照既有狀態機架構新增以下狀態：
 
 1. VoterFleeState (逃跑狀態)
    - 觸發時機：當特定陣營技能生效，或受驚嚇時，由外部呼叫 ChangeState 進入。
    - 實作概念：在 Enter() 計算反方向目標點 (如：玩家位置的反向延長線)，呼叫 Agent.SetDestination()。
-   - 結束條件：在 Update() 檢查跑到安全距離後，切回 Idle，或直接由 Controller 呼叫回收 (ObjectPool)。
+   - 結束條件：在 Update() 檢查跑到安全距離後，切回 Idle 或是 Exit。
 
-2. VoterDeadState (死亡/退場狀態)
-   - 觸發時機：若遊戲未來引入血量或退場機制。
-   - 實作概念：Enter() 時播放倒地動畫，關閉 Collider 與 NavMeshAgent，避免阻礙交通。
-   - 結束條件：結合本次的 TriggerAnimationEnd()，當倒地動畫播完後，
-               在 AnimationFinishTrigger() 中執行 Destroy 或是歸還物件池。
+2. VoterExitState (離場狀態)
+   - 觸發時機：遊戲倒數結束後，統一觸發向指定地點移動並退場。
+   - 實作概念：取代原本 `BeginExitMovement()` 中的臨時寫法。Enter() 時設定 Agent.SetDestination(destination)，並在 Update() 中檢查是否已到達目的地。
+   - 結束條件：當接近目的地 (或到達) 時，執行物件回收或 Destroy，將選民移出遊戲。
 
+※ 註：遊戲設定選民不會死亡，因此不需要實作 VoterDeadState。
 設計原則：堅持 OCP，不要在主腳本寫判斷，一律實作新 State 並由外部觸發切換！
 =========================================================
 */
