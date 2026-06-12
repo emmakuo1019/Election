@@ -36,12 +36,9 @@ public class LevelTimer : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Debug.LogWarning("⚠️ 場景中有多個 LevelTimer，已刪除重複物件");
-            Destroy(gameObject);
-            return;
-        }
+        // 🚨 修正：因為是各場景專屬的 Timer，不用防止多重實例的自殺檢查，
+        // 否則在 Async 載入場景時，新場景的 Awake 會先跑，看到舊場景的 Instance 還在就自殺了。
+        // 直接覆蓋 Instance 即可。
 
         Instance = this;
         EnsureValidDuration();

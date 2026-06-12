@@ -10,7 +10,7 @@ public class LevelTimerUI : MonoBehaviour
     [SerializeField] private TMP_Text timerText;
     private bool hasSubscribed = false;
 
-    private void Start()
+    private void OnEnable()
     {
         SubscribeToTimer();
     }
