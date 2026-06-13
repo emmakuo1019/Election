@@ -73,15 +73,22 @@ public class RoomExitController : MonoBehaviour
         if (triggerOnlyOnce && hasTriggered) return;
         if (!other.CompareTag("Player")) return;
 
+        hasTriggered = true;
+
+        // ⭐️ 如果目前是 Boss 戰狀態，玩家走到出口直接觸發過關，狀態機將切換至 GameEndState 顯示 GameEndPanel
+        if (GameFlowManager.Instance != null && GameFlowManager.Instance.CurrentState is BossBattleState)
+        {
+            BattleEventManager.TriggerRoomCleared();
+            return;
+        }
+
         RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
         if (roomClearFlowController != null && roomClearFlowController.HasPendingSettlement())
         {
-            hasTriggered = true;
             roomClearFlowController.ShowSettlementAtExit();
             return;
         }
 
-        hasTriggered = true;
         ProceedToNextScene();
     }
 

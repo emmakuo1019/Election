@@ -8,6 +8,7 @@ public class GameFlowManager : MonoBehaviour
     public static GameFlowManager Instance { get; private set; }
 
     private StateMachine stateMachine;
+    public IState CurrentState => stateMachine?.CurrentState;
 
     private void Awake()
     {

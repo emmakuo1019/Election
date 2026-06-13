@@ -8,15 +8,15 @@ public class BossBattleState : IState
 
     public void Enter()
     {
-        Debug.Log("[BossBattleState] Enter - 進入 Boss 戰！");
+        Debug.Log("[BossBattleState] Enter - 進入 Boss 戰！(依賴倒數計時)");
 
         if (GameFlowManager.Instance != null)
         {
             GameFlowManager.Instance.StartCoroutine(LoadBossSceneRoutine());
         }
 
-        // 訂閱戰鬥事件
-        BattleEventManager.OnRoomCleared += HandleBossDefeated;
+        // 訂閱戰鬥事件 (目前共用 RoomCleared 作為倒數結束的信號)
+        BattleEventManager.OnRoomCleared += HandleRoomCleared;
         BattleEventManager.OnPlayerDied += HandlePlayerDied;
     }
 
@@ -31,7 +31,10 @@ public class BossBattleState : IState
             }
             Debug.Log($"[BossBattleState] 場景 {bossSceneName} 載入完成！");
 
-            // ⭐️ 場景載入完成後打開 HUD
+            // 等待一幀，確保場景中的 LevelTimer 等物件已完成 Awake/Start 初始化
+            yield return new WaitForEndOfFrame();
+            
+            // ⭐️ 場景載入且物件初始化完成後打開 HUD，讓 UI 能順利抓到 LevelTimer
             if (UIManager.Instance != null) UIManager.Instance.ShowGameplayHUD();
         }
         else
@@ -40,9 +43,9 @@ public class BossBattleState : IState
         }
     }
 
-    private void HandleBossDefeated()
+    private void HandleRoomCleared()
     {
-        Debug.Log("[BossBattleState] 收到過關事件，打贏 Boss！前往遊戲結束狀態 (勝利)");
+        Debug.Log("[BossBattleState] 收到過關事件 (倒數結束)！前往遊戲結束狀態 (勝利)");
         GameFlowManager.Instance.ChangeState(new GameEndState(true));
     }
 
@@ -57,17 +60,17 @@ public class BossBattleState : IState
         Debug.Log("[BossBattleState] Exit - 離開 Boss 戰");
         if (UIManager.Instance != null) UIManager.Instance.HideGameplayHUD();
 
-        // ⚠️ 解除訂閱戰鬥事件
-        BattleEventManager.OnRoomCleared -= HandleBossDefeated;
+        // 解除訂閱戰鬥事件
+        BattleEventManager.OnRoomCleared -= HandleRoomCleared;
         BattleEventManager.OnPlayerDied -= HandlePlayerDied;
     }
 
     public void Update() 
     {
-        // 按下 Y 鍵：模擬打贏 Boss（會走勝利結束流程）
+        // 按下 Y 鍵：模擬時間到/過關
         if (Input.GetKeyDown(KeyCode.Y))
         {
-            Debug.Log("[BossBattleState] 偵測到按下 Y 鍵，模擬擊敗 Boss！");
+            Debug.Log("[BossBattleState] 偵測到按下 Y 鍵，模擬倒數結束過關！");
             BattleEventManager.TriggerRoomCleared();
         }
     }
