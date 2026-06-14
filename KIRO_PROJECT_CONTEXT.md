@@ -66,6 +66,10 @@
                                      結局（見下方結局系統）
 ```
 
+### 遊戲流程狀態機 (GameFlow States)
+狀態類別對應：`BootState`、`MainMenuState`、`CharacterSelectState`、`HQState`、`GameplayState`、`SafeRoomState`、`StageClearState`、`BossBattleState`、`GameEndState`。
+以上狀態由全域的 `GameFlowManager` 負責管理與切換。
+
 ### 結局系統
 | 結局 | 條件 | 畫面描述 |
 |------|------|----------|
@@ -208,6 +212,10 @@ PolicyCard 數值欄位（`PolicyEffectRuntimeManager` 管理）：
 被攻擊後會「退後 / 閃避 」
 必須到一定的攻擊量
 
+### 選民狀態機 (Voter States)
+狀態類別對應：`VoterIdleState`（閒置）、`VoterWanderState`（徘徊）、`VoterFollowState`（跟隨玩家）、`VoterHitState`（受擊）、`VoterStunState`（暈眩）、`VoterCheerState`（歡呼）。
+以上狀態由 `VoterLogic` 內建的 `StateMachine` 進行切換與管理。
+
 ---
 
 ## 敵人設計
@@ -327,3 +335,81 @@ Assets/Scripts/
 - 新增腳本請放在 `Assets/Scripts/` 對應資料夾。
 - **資金 = MP（法力）**，**誠信值 = HP（血量）**，兩者是完全不同的資源，注意不要混淆。
 - **深色選民 ≠ Dark Attribute**：程式中 `VoterAttribute.Dark` 對應企劃書「深色選民」，`VoterAttribute.Cold` 對應「#冷感選民」，`VoterLabel.Emotion` 對應「#情緒共振」。
+
+# 🎮 Unity 專案架構與全域狀態機開發規範
+
+本文件記錄了本專案的核心架構設計、狀態機（State Machine）開發準則，以及 UI 流程控制規範。未來所有的功能擴充與 AI 程式碼生成，**都必須嚴格遵守以下原則**，以維持程式碼的乾淨、高擴充性（OCP）與單一職責（SRP）。
+
+## 🌟 一、 核心系統架構 (The Big Picture)
+
+本專案採用 **Clean Architecture（乾淨架構）**，將遊戲邏輯分為三大核心區塊，嚴禁跨界干涉：
+
+1. **大腦 `GameFlowManager` (全域狀態機)**
+* **職責**：管理遊戲的宏觀生命週期（主選單 ➔ 總部 ➔ 戰鬥/休息 ➔ 結算 ➔ Boss）。
+* **特性**：跨場景不銷毀 (`DontDestroyOnLoad`) 的 Singleton。只負責切換 `IState`，絕對不處理具體的 UI 動畫或戰鬥傷害計算。
+* **狀態讀取**：對外僅提供唯讀屬性 `public IState CurrentState => stateMachine?.CurrentState;`，嚴禁外部腳本直接修改狀態。
+
+
+2. **雙手 `UIManager` & 全域 Canvas**
+* **職責**：純粹的視覺呈現。只提供 `ShowPanel()` 與 `HidePanel()` 以及 UI 序列的控制。
+* **特性**：與大腦一樣是 `DontDestroyOnLoad`。它不知道「遊戲現在玩到哪裡」，只聽命於大腦的指揮。
+
+
+3. **神經 `UIFlowHelper` & `BattleEventManager**`
+* **職責**：負責傳遞訊號。
+* **`UIFlowHelper`**：掛載於 UI 按鈕上，將玩家的點擊事件（OnClick）轉發為大腦的狀態切換指令（例如 `ChangeState(new CharacterSelectState())`）。
+* **`BattleEventManager`**：戰鬥場景中的大聲公（靜態事件中心）。當玩家死亡或打贏房間時，發送 `OnRoomCleared` 或 `OnPlayerDied` 廣播，讓大腦決定下一步。
+
+---
+
+## 🛠️ 二、 狀態 (IState) 開發規範
+
+當未來需要新增任何全域流程狀態（如：商店狀態、轉蛋狀態）時，請遵守以下實作守則：
+
+### 1. 場景載入必須使用非同步與 Coroutine
+
+**嚴禁**在 `Enter()` 中直接呼叫 `SceneManager.LoadScene` 並預期物件立刻可用（會導致 Race Condition 與 NullReferenceException）。
+
+* ✅ **正確做法**：在 `Enter()` 中啟動 Coroutine (`GameFlowManager.Instance.StartCoroutine(...)`)，使用 `LoadSceneAsync` 並加上 `while (!asyncLoad.isDone) { yield return null; }`。
+* **UI 開啟時機**：必須等 `isDone` 為 `true` 後，才呼叫 `UIManager` 開啟對應的場景內 HUD（確保場景物件如 Timer 已被 Awake）。
+
+### 2. 事件訂閱與解除 (防止 Memory Leak)
+
+* **訂閱時機**：在場景確定載入**完成後**（Coroutine 結束時），才向 `BattleEventManager` 訂閱事件。
+* **解除時機**：**必須、一定、絕對**要在 `Exit()` 中解除訂閱（`-=`），防止舊狀態在背景繼續干擾新流程。
+
+### 3. 轉場邏輯與分流 (Edge Cases 防禦)
+
+在寫狀態切換邏輯時，必須考慮極限值與特殊流程。例如從 `SafeRoomState` (安全房) 離開時，必須檢查 `if (roomNumber == 15) { 進入Boss }`，防止無縫切換時不小心跳過主線重要事件。
+
+---
+
+## 🚫 三、 避坑指南與嚴禁寫法 (Anti-Patterns)
+
+為了避免架構退化回義大利麵條代碼（Spaghetti Code），嚴禁使用以下寫法：
+
+### ❌ 嚴禁使用 Checklist Pattern 控制 UI (Update 裡的 Booleans)
+
+* **錯誤示範**：在 State 裡面寫 `bool isDataClosed`，然後在 `Update()` 裡面一直 `if(isDataClosed)`。這違反開閉原則，且效能低落。
+* **✅ 正確做法 (委派回呼 Action)**：使用 UI Sequence Controller 模式。由 State 呼叫 `UIManager.Instance.StartSequence(Action onComplete)`，把「展演完畢後要切換狀態的邏輯」當作參數傳給 UI，等 UI 播完後自己 `Invoke()` 呼叫它。
+
+### ❌ 嚴禁在 Manager 裡寫滿 if-else
+
+* **錯誤示範**：`if(isPaused) { ... } else if (isGameOver) { ... }`。
+* **✅ 正確做法**：所有行為都封裝在具體的 `IState` (例如 `PauseState`, `GameplayState`) 中。Manager 的 `Update()` 裡面永遠只有乾淨的一行 `stateMachine.CurrentState?.Update();`。
+
+### ❌ 嚴禁全域狀態干涉個體戰鬥狀態
+
+* 全域大腦 (`GameFlowManager`) 不可以去呼叫 `Player.Attack()` 或控制怪物 AI。大腦只看宏觀的「房間進入」與「房間結束」。具體戰鬥由 `PlayerStateMachine` 等局部狀態機自行負責。
+
+---
+
+## 🚀 四、 未來擴充標準流程 (How to Add a New Feature)
+
+當你想增加一個新功能（例如：第 8 關固定進入「商人房間」）時，請依照以下 3 步：
+
+1. **建立新 State**：新增 `MerchantRoomState.cs` 實作 `IState`。寫好 Coroutine 場景載入與離開事件監聽。
+2. **建立/註冊新 UI**：在 `UIManager` 新增商人的 Panel 欄位與 `Show/Hide` 方法。在 `MerchantRoomState` 的 Enter/Exit 中呼叫。
+3. **修改切換樞紐**：去前一個狀態（如 `StageClearState` 的轉場邏輯中），加入判定 `if (roomNumber + 1 == 8) ChangeState(new MerchantRoomState());`。
+
+**(完)**

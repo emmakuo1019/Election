@@ -1,51 +1,24 @@
 using UnityEngine;
 
+/// <summary>
+/// [已廢棄 Obsolete]
+/// 原有的過關抽卡 UI 控制器已不再使用，此腳本已清空邏輯。
+/// 所有的結算流程已移交給 StageClearState 配合 UIManager.StartStageClearSequence 處理。
+/// 請從場景中移除掛載此腳本的 GameObject 以保持整潔。
+/// </summary>
+[System.Obsolete("已被 StageClearState 與 UIManager 取代，請移除此腳本的掛載", false)]
 public class RewardPanelController : MonoBehaviour
 {
-    [Header("獎勵面板")]
-    [SerializeField] private GameObject rewardPanel;
-
-    private bool isShowing = false;
-    private RewardPanelUI rewardPanelUI;
-
-    private void Start()
-    {
-        if (rewardPanel != null)
-        {
-            rewardPanel.SetActive(false);
-            rewardPanelUI = rewardPanel.GetComponent<RewardPanelUI>();
-        }
-    }
-
     public void ShowRewardPanel()
     {
-        ShowRewardPanel(0f, 0, 0, 0, false);
+        Debug.LogWarning("RewardPanelController 已廢棄，請不要再呼叫它。");
     }
 
     public void ShowRewardPanel(float supportRate, int supporterCount, int totalVoters, int rewardMP, bool canClaimReward)
     {
-        if (isShowing) return;
-        isShowing = true;
-        Time.timeScale = 0f;
-
-        if (rewardPanel != null)
-        {
-            rewardPanel.SetActive(true);
-            rewardPanelUI ??= rewardPanel.GetComponent<RewardPanelUI>();
-            rewardPanelUI?.ConfigureSettlement(supportRate, supporterCount, totalVoters, rewardMP, canClaimReward);
-        }
     }
 
     public void HideRewardPanel()
     {
-        if (!isShowing) return;
-        isShowing = false;
-        Time.timeScale = 1f;
-
-
-        if (rewardPanel != null)
-        {
-            rewardPanel.SetActive(false);
-        }
     }
 }

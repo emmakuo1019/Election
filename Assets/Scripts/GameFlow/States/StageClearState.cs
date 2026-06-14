@@ -32,8 +32,17 @@ public class StageClearState : IState
         }
         else
         {
-            Debug.Log($"[StageClearState] 序列結束，前往下一關: {roomNumber + 1}");
-            GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
+            // 利用 Random.value 取得 0.0 ~ 1.0 的隨機值，若小於等於設定機率則進入安全房
+            if (UnityEngine.Random.value <= GameFlowManager.Instance.SafeRoomSpawnChance)
+            {
+                Debug.Log($"[StageClearState] 序列結束，隨機命中！前往安全房: {roomNumber + 1}");
+                GameFlowManager.Instance.ChangeState(new SafeRoomState(roomNumber + 1));
+            }
+            else
+            {
+                Debug.Log($"[StageClearState] 序列結束，前往下一關戰鬥: {roomNumber + 1}");
+                GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
+            }
         }
     }
 

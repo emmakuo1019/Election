@@ -1,151 +1,29 @@
 using UnityEngine;
 
+/// <summary>
+/// [已廢棄 Obsolete]
+/// 原有的過關抽卡 UI 控制器已不再使用，此腳本已清空邏輯。
+/// 所有的結算流程已移交給 StageClearState 配合 UIManager.StartStageClearSequence 處理。
+/// 請從場景中移除掛載此腳本的 GameObject 以保持整潔。
+/// </summary>
+[System.Obsolete("已被 StageClearState 與 UIManager 取代，請移除此腳本的掛載", false)]
 public class RoomClearFlowController : MonoBehaviour
 {
-    [Header("房間選情結算器")]
-    [SerializeField] private RoomResultCalculator roomResultCalculator;
-
-    [Header("房間出口控制器")]
-    [SerializeField] private RoomExitController roomExitController;
-
-    [Header("獎勵面板控制器")]
-    [SerializeField] private RewardPanelController rewardPanelController;
-
-    private bool isResolvingRoomClear = false;
-    private bool hasPendingSettlement = false;
-    private bool canClaimReward;
-    private float pendingSupportRate;
-    private int pendingTotalVoters;
-    private int pendingPlayerSupporters;
-    private int pendingRewardMP;
-
     public void OnRoomCleared(bool canClaimReward)
     {
-        if (isResolvingRoomClear)
-        {
-            return;
-        }
-
-        isResolvingRoomClear = true;
-        this.canClaimReward = canClaimReward;
-
-        PauseGameplayForSettlement();
-        ForceAllVotersExit();
-        CacheSettlementData();
-        UnlockExitForSettlement();
+        Debug.LogWarning("RoomClearFlowController 已廢棄，請不要再呼叫它。");
     }
 
     public bool HasPendingSettlement()
     {
-        return hasPendingSettlement;
+        return false;
     }
 
     public void ShowSettlementAtExit()
     {
-        if (!isResolvingRoomClear || !hasPendingSettlement)
-        {
-            return;
-        }
-
-        ShowRewardPanel();
     }
 
     public void OnContinuePressed()
     {
-        hasPendingSettlement = false;
-        ProceedToNextScene();
-    }
-
-    private void PauseGameplayForSettlement()
-    {
-        LevelTimer.Instance?.PauseTimer();
-    }
-
-    private void CacheSettlementData()
-    {
-        pendingSupportRate = roomResultCalculator != null ? roomResultCalculator.GetGlobalSupportRate() : 0f;
-        pendingTotalVoters = roomResultCalculator != null ? roomResultCalculator.GetTotalVoters() : 0;
-        pendingPlayerSupporters = roomResultCalculator != null ? roomResultCalculator.GetPlayerSupporters() : 0;
-        pendingRewardMP = roomResultCalculator != null ? roomResultCalculator.CalculateAndRewardMP() : 0;
-    }
-
-    private void UnlockExitForSettlement()
-    {
-        PlayerController playerStateMachine = FindFirstObjectByType<PlayerController>();
-        playerStateMachine?.ResumeIdle();
-
-        if (roomExitController == null)
-        {
-            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        }
-
-        if (roomExitController == null)
-        {
-            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RoomExitController，無法開啟出口");
-            return;
-        }
-
-        hasPendingSettlement = true;
-        roomExitController.UnlockExit();
-    }
-
-    private void ShowRewardPanel()
-    {
-        if (rewardPanelController == null)
-        {
-            rewardPanelController = FindFirstObjectByType<RewardPanelController>(FindObjectsInactive.Include);
-        }
-
-        if (rewardPanelController == null)
-        {
-            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RewardPanelController，直接前往下一場景");
-            ProceedToNextScene();
-            return;
-        }
-
-        rewardPanelController.ShowRewardPanel(
-            pendingSupportRate,
-            pendingPlayerSupporters,
-            pendingTotalVoters,
-            pendingRewardMP,
-            canClaimReward
-        );
-    }
-
-    private void ProceedToNextScene()
-    {
-        if (roomExitController == null)
-        {
-            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        }
-
-        if (roomExitController == null)
-        {
-            Debug.LogWarning("⚠️ RoomClearFlowController：找不到 RoomExitController，無法前往下一場景");
-            return;
-        }
-
-        roomExitController.ProceedToNextScene();
-        isResolvingRoomClear = false;
-    }
-
-    private void ForceAllVotersExit()
-    {
-        if (roomExitController == null)
-        {
-            roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        }
-
-        if (roomExitController == null)
-        {
-            return;
-        }
-
-        Vector3 exitPosition = roomExitController.GetVoterExitPosition();
-        VoterLogic[] voters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);
-        foreach (VoterLogic voter in voters)
-        {
-            voter.BeginExitMovement(exitPosition);
-        }
     }
 }

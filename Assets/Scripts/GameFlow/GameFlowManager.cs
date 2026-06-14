@@ -10,6 +10,10 @@ public class GameFlowManager : MonoBehaviour
     private StateMachine stateMachine;
     public IState CurrentState => stateMachine?.CurrentState;
 
+    // 安全房出現機率 (0 = 0%, 1 = 100%)
+    [SerializeField] [Range(0f, 1f)] private float safeRoomSpawnChance = 0.2f;
+    public float SafeRoomSpawnChance => safeRoomSpawnChance;
+
     private void Awake()
     {
         // Singleton 實作，確保整個遊戲生命週期只有一個 GameFlowManager

@@ -9,9 +9,6 @@ public class RoomExitController : MonoBehaviour
     [SerializeField] private GameObject lockedVisual;
     [SerializeField] private GameObject unlockedVisual;
 
-    [Header("出口目標場景")]
-    [SerializeField] private string targetSceneName;
-
     [Header("是否只觸發一次")]
     [SerializeField] private bool triggerOnlyOnce = true;
 
@@ -24,9 +21,7 @@ public class RoomExitController : MonoBehaviour
 
     private bool isUnlocked = false;
     private bool hasTriggered = false;
-
-    public string TargetSceneName => targetSceneName;
-
+    
     public Vector3 GetVoterExitPosition()
     {
         if (voterExitTarget != null)
@@ -75,46 +70,14 @@ public class RoomExitController : MonoBehaviour
 
         hasTriggered = true;
 
-        // ⭐️ 如果目前是 Boss 戰狀態，玩家走到出口直接觸發過關，狀態機將切換至 GameEndState 顯示 GameEndPanel
-        if (GameFlowManager.Instance != null && GameFlowManager.Instance.CurrentState is BossBattleState)
-        {
-            BattleEventManager.TriggerRoomCleared();
-            return;
-        }
-
-        RoomClearFlowController roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>(FindObjectsInactive.Include);
-        if (roomClearFlowController != null && roomClearFlowController.HasPendingSettlement())
-        {
-            roomClearFlowController.ShowSettlementAtExit();
-            return;
-        }
-
+        // 不論是一般房間還是 Boss 戰，統一廣播房間通關事件
+        // 讓 GameFlowManager (透過 GameplayState 或 BossBattleState) 決定後續狀態
+        BattleEventManager.TriggerRoomCleared();
         ProceedToNextScene();
     }
 
     public void ProceedToNextScene()
     {
         Time.timeScale = 1f;
-
-        string nextSceneName = targetSceneName;
-        string managedNextScene = BlockProgressManager.GetSceneAfterRoomExit();
-        if (!string.IsNullOrWhiteSpace(managedNextScene))
-        {
-            nextSceneName = managedNextScene;
-        }
-
-        if (string.IsNullOrEmpty(nextSceneName))
-        {
-            Debug.LogWarning("RoomExitController：targetSceneName 沒有設定");
-            return;
-        }
-
-        if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
-        {
-            Debug.LogWarning("RoomExitController：無法載入場景：" + nextSceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(nextSceneName);
     }
 }

@@ -13,7 +13,6 @@ public class BattleFlowController : MonoBehaviour
 
     [Header("引用")]
     [SerializeField] private LevelTimer levelTimer;
-    [SerializeField] private RoomClearFlowController roomClearFlowController;
     [SerializeField] private bool autoStartBattle = false;
 
     public BattleState CurrentState { get; private set; } = BattleState.WaitingStart;
@@ -50,11 +49,6 @@ public class BattleFlowController : MonoBehaviour
             levelTimer = FindFirstObjectByType<LevelTimer>();
         }
 
-        if (roomClearFlowController == null)
-        {
-            roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
-        }
-
         if (autoStartBattle)
         {
             StartBattle();
@@ -82,21 +76,7 @@ public class BattleFlowController : MonoBehaviour
         if (!isLastRoomInBlock)
         {
             CurrentState = BattleState.Completed;
-
-            if (roomClearFlowController == null)
-            {
-                roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
-            }
-
-            if (roomClearFlowController != null)
-            {
-                roomClearFlowController.OnRoomCleared(canClaimReward);
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
-            }
-
+            UnlockExitAndForceVotersLeave();
             return;
         }
 
@@ -108,18 +88,31 @@ public class BattleFlowController : MonoBehaviour
             BlockProgressManager.FailCurrentBlock();
         }
 
-        if (roomClearFlowController == null)
-        {
-            roomClearFlowController = FindFirstObjectByType<RoomClearFlowController>();
-        }
+        UnlockExitAndForceVotersLeave();
+    }
 
-        if (roomClearFlowController != null)
+    private void UnlockExitAndForceVotersLeave()
+    {
+        // 暫停計時
+        levelTimer?.PauseTimer();
+
+        // 尋找出口並解鎖
+        RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        if (roomExitController != null)
         {
-            roomClearFlowController.OnRoomCleared(canClaimReward);
+            roomExitController.UnlockExit();
+            
+            // 強制選民離場
+            Vector3 exitPosition = roomExitController.GetVoterExitPosition();
+            VoterLogic[] voters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);
+            foreach (VoterLogic voter in voters)
+            {
+                voter.BeginExitMovement(exitPosition);
+            }
         }
         else
         {
-            Debug.LogWarning("⚠️ 找不到 RoomClearFlowController");
+            Debug.LogWarning("⚠️ 找不到 RoomExitController，無法開啟出口或強制選民離場");
         }
     }
 

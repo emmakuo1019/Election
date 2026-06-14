@@ -19,6 +19,14 @@ public class CloseEndPanel : MonoBehaviour
 
     void ClosePanel()
     {
-        SceneManager.LoadScene("headquarters");
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.ChangeState(new HQState());
+        }
+        else
+        {
+            Debug.LogWarning("GameFlowManager.Instance is null. Falling back to direct load.");
+            SceneManager.LoadScene("headquarters");
+        }
     }
 }
