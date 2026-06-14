@@ -17,16 +17,12 @@ public class CloseEndPanel : MonoBehaviour
         
     }
 
-    void ClosePanel()
+    public void ClosePanel()
     {
-        if (GameFlowManager.Instance != null)
-        {
-            GameFlowManager.Instance.ChangeState(new HQState());
-        }
-        else
-        {
-            Debug.LogWarning("GameFlowManager.Instance is null. Falling back to direct load.");
-            SceneManager.LoadScene("headquarters");
-        }
+        Debug.Log("[CloseEndPanel] 按下了關閉面板按鈕！準備廣播事件...");
+        
+        // 嚴格遵守 UI 脫鉤原則：不直接呼叫 ChangeState，也不直接 LoadScene。
+        // 只負責無腦廣播「玩家確認返回」的事件。
+        BattleEventManager.TriggerReturnToHQConfirmed();
     }
 }

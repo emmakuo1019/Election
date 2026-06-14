@@ -28,7 +28,7 @@ public class SafeRoomState : IState
 
     private IEnumerator LoadSafeRoomRoutine()
     {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("SafeRoomScene");
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("TestSpecial");
         
         while (!asyncLoad.isDone)
         {

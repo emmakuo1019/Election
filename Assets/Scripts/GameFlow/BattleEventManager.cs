@@ -13,6 +13,9 @@ public static class BattleEventManager
     // 玩家死亡事件
     public static event Action OnPlayerDied;
 
+    // 遊戲結束，玩家確認返回總部事件
+    public static event Action OnReturnToHQConfirmed;
+
     /// <summary>
     /// 當最後一隻怪物死亡，或達成過關條件時呼叫
     /// </summary>
@@ -29,5 +32,14 @@ public static class BattleEventManager
     {
         Debug.Log("[BattleEventManager] 觸發玩家死亡事件 (OnPlayerDied)");
         OnPlayerDied?.Invoke();
+    }
+
+    /// <summary>
+    /// 當玩家在結算面板點擊確認返回總部時呼叫
+    /// </summary>
+    public static void TriggerReturnToHQConfirmed()
+    {
+        Debug.Log("[BattleEventManager] 觸發確認返回總部事件 (OnReturnToHQConfirmed)");
+        OnReturnToHQConfirmed?.Invoke();
     }
 }

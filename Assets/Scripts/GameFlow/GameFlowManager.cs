@@ -42,15 +42,7 @@ public class GameFlowManager : MonoBehaviour
     {
         // 驅動當前狀態的 Update
         stateMachine.CurrentState?.Update();
-
-        // 測試機制：按下 1~7 切換對應狀態
-        if (Input.GetKeyDown(KeyCode.Alpha1)) ChangeState(new BootState());
-        if (Input.GetKeyDown(KeyCode.Alpha2)) ChangeState(new MainMenuState());
-        if (Input.GetKeyDown(KeyCode.Alpha3)) ChangeState(new CharacterSelectState());
-        if (Input.GetKeyDown(KeyCode.Alpha4)) ChangeState(new HQState());
-        if (Input.GetKeyDown(KeyCode.Alpha5)) ChangeState(new GameplayState(1)); // 測試假定房間為 1
-        if (Input.GetKeyDown(KeyCode.Alpha6)) ChangeState(new StageClearState(1)); // 測試假定房間為 1
-        if (Input.GetKeyDown(KeyCode.Alpha7)) ChangeState(new GameEndState(true)); // 測試假定為勝利
+        
     }
 
     private void FixedUpdate()
