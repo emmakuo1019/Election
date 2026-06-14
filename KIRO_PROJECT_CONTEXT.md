@@ -231,6 +231,14 @@ PolicyCard 數值欄位（`PolicyEffectRuntimeManager` 管理）：
 - 倒數結束前票數 > 對手
 - 資金與誠信皆未歸零
 
+### 敵人狀態機架構 (Enemy AI States)
+目前已實作一套符合 SOLID 原則、基於純 C# 介面的基礎敵人 AI 狀態機：
+- `EnemyController`：作為核心控制器，管理 `NavMeshAgent` 與 `Animator`，並透過 `targetLayer` (選民 Layer) 搭配 `Physics.OverlapSphere` 進行動態索敵。具備 GC 優化（預先實例化所有狀態）與遲滯區間（`escapeRange`）設計。
+- 具體狀態包含：
+  - `EnemyIdleState`：停止移動、播放 Idle 動畫，並持續發射隱形球體掃描周圍目標。
+  - `EnemyMoveState`：恢復導航並追擊目標，若進入 `attackRange` 則攻擊，若目標逃脫超過 `escapeRange` 則放棄追擊。
+  - `EnemyAttackState`：鎖死移動、面向目標並觸發 Attack 動畫。加入攻擊計時器（攻擊時長與後搖），結束後重新評估狀態。
+
 ---
 
 ## 玩家狀態機（PlayerState 圖）
@@ -323,6 +331,10 @@ Assets/Scripts/
 - 棄保效應機制：區塊完成時若票數未高於對手，對手深色選民出現率 +10%，待實作。
 - 結局 A/B/C/D 的結局畫面演出待製作。
 - 前導劇情（S1）待製作。
+- **敵人 AI 後續優化**：
+  - **實作真實傷害判定**：目前 `EnemyAttackState` 僅觸發動畫，需加入實際對目標扣血的邏輯。
+  - **實作 Billboard**：敵人 Sprite 需永遠面向攝影機，避免在 3D 空間中不自然旋轉。
+  - **敵人數值調整**：需調高 `NavMeshAgent` 的速度，優化敵人追擊節奏。
 
 ---
 

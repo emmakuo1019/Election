@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 5954382957210391331}
   - component: {fileID: 2538185110753480166}
   - component: {fileID: 3431464443221608221}
+  - component: {fileID: 5636245655671424398}
+  - component: {fileID: 8874614300515229391}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Enemy
@@ -121,7 +123,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 447725353262188044}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2a028d4f31d44881a0c2f01df5b8c74, type: 3}
   m_Name: 
@@ -142,6 +144,47 @@ MonoBehaviour:
     m_Bits: 64
   targetSearchBufferSize: 64
   attackHitBufferSize: 32
+--- !u!195 &5636245655671424398
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447725353262188044}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 360
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &8874614300515229391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447725353262188044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b98ed664cf6d42bf8c65e4ef5bdde83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  target: {fileID: 0}
+  attackRange: 2
+  detectionRange: 10
+  escapeRange: 15
 --- !u!1 &1568685876034101917
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,7 +365,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: bccb87320ad9a475d80fae855879eeed, type: 3}
-  m_Color: {r: 0.6588312, g: 0.3726415, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
