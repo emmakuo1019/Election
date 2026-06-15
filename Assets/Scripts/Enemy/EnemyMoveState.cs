@@ -22,11 +22,15 @@ public class EnemyMoveState : IState
         }
 
         ctx.Animator?.Play("Move");
-        Debug.Log("Enemy: 進入 Move 狀態，開始追擊");
+        Debug.Log("Enemy: 進入 Move 狀態，開始追擊選民");
     }
 
     public void Update()
     {
+        // 持續更新 Sprite 朝向
+        ctx.UpdateFacingDirection();
+
+        // 如果沒有選民目標，退回 IdleState
         if (ctx.target == null)
         {
             stateMachine.ChangeState(ctx.IdleState);
@@ -42,12 +46,12 @@ public class EnemyMoveState : IState
 
         if (distance <= ctx.attackRange)
         {
-            // 【GC 優化】使用快取的狀態實例
+            // 當距離小於等於攻擊距離時，切換到攻擊狀態發動拉票
             stateMachine.ChangeState(ctx.AttackState);
         }
         else if (distance > ctx.escapeRange) // 【遲滯區間】使用獨立的脫戰距離
         {
-            // 玩家逃出脫戰距離，放棄追擊並清空目標
+            // 選民逃出脫戰距離，放棄追擊並清空目標
             ctx.target = null;
             stateMachine.ChangeState(ctx.IdleState);
         }

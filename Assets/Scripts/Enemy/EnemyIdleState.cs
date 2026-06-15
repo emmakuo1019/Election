@@ -29,21 +29,20 @@ public class EnemyIdleState : IState
 
     public void Update()
     {
-        // 1. 如果目前沒有目標，透過範圍掃描尋找 targetLayer 的物件
+        // 持續更新 Sprite 朝向
+        ctx.UpdateFacingDirection();
+
+        // 1. 如果目前沒有目標，尋找最近的選民
         if (ctx.target == null)
         {
-            Collider[] colliders = Physics.OverlapSphere(ctx.transform.position, ctx.detectionRange, ctx.targetLayer);
-            if (colliders.Length > 0)
+            ctx.FindNearestVoter();
+            if (ctx.target == null)
             {
-                ctx.target = colliders[0].transform;
-            }
-            else
-            {
-                return; // 沒找到任何目標，繼續保持 Idle
+                return; // 沒找到任何選民，繼續保持 Idle
             }
         }
 
-        // 2. 計算與目標的距離
+        // 2. 計算與選民的距離
         float distance = Vector3.Distance(ctx.transform.position, ctx.target.position);
 
         // 3. 判斷是否進入偵測範圍

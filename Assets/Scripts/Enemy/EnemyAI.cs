@@ -52,6 +52,7 @@ public class EnemyAI : MonoBehaviour, IAttackSource
 
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
+    public Vector3 AttackDirection => transform.forward;
 
     private void Awake()
     {

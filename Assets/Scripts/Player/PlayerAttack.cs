@@ -74,6 +74,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     public float AttackRange => attackRange;
     public float AttackAngle => attackAngle;
+    public Vector3 AttackDirection => GetAttackDirection();
 
     public void UpdateAttackShape(float range, float angle)
     {

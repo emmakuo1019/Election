@@ -40,6 +40,15 @@ public class AttackRangeMesh : MonoBehaviour
             attackSource.OnAttackShapeChanged -= SetShape;
     }
 
+    void Update()
+    {
+        // 每幀追蹤來源位置，確保網格跟隨移動
+        if (meshRenderer != null && meshRenderer.enabled)
+        {
+            SyncToSourcePosition();
+        }
+    }
+
     private void BindSource()
     {
         // 若你在 Inspector 指定了來源物件，就用它來綁定，避免因為層級不同而找不到 IAttackSource。
@@ -140,6 +149,14 @@ public class AttackRangeMesh : MonoBehaviour
     private void SyncToSourcePosition()
     {
         if (attackSourceComponent != null)
+        {
             transform.position = attackSourceComponent.transform.position + positionOffset;
+        }
+        
+        // 透過 IAttackSource 取得方向，由來源端負責提供，保持視覺端單一職責
+        if (attackSource != null && attackSource.AttackDirection.sqrMagnitude > 0.001f)
+        {
+            transform.rotation = Quaternion.LookRotation(attackSource.AttackDirection);
+        }
     }
 }
