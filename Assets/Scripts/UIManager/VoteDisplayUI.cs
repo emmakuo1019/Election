@@ -15,9 +15,7 @@ public class VoteDisplayUI : MonoBehaviour
     [SerializeField] private TMP_Text opponentPercentText;// 對手百分比
 
     [SerializeField] private Image voteBarColor;          // Slider 顏色
-
-    private Color playerColor = new Color(0.2f, 0.8f, 1f);  // 藍色 (玩家)
-    private Color opponentColor = new Color(1f, 0.2f, 0.2f); // 紅色 (對手)
+    
     private Color neutralColor = Color.gray;
 
     private void Start()
@@ -66,19 +64,5 @@ public class VoteDisplayUI : MonoBehaviour
 
         // 更新 Slider (玩家比例)
         voteSlider.value = mgr.PlayerVotePercentage;
-
-        // 根據領先方改變顏色
-        if (mgr.PlayerVotes > mgr.OpponentVotes)
-        {
-            voteBarColor.color = playerColor;
-        }
-        else if (mgr.OpponentVotes > mgr.PlayerVotes)
-        {
-            voteBarColor.color = opponentColor;
-        }
-        else
-        {
-            voteBarColor.color = neutralColor;
-        }
     }
 }
