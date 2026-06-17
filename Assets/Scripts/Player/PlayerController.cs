@@ -173,12 +173,12 @@ public class PlayerController : MonoBehaviour
         MoveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
 
         // 輪詢輸入，徹底避開 C# Event 殘留的坑
-        DashInputThisFrame = dashAction != null && dashAction.action.WasPerformedThisFrame();
-        AttackInputThisFrame = attackAction != null && attackAction.action.WasPerformedThisFrame();
+        DashInputThisFrame = !IsTimeUp && dashAction != null && dashAction.action.WasPerformedThisFrame();
+        AttackInputThisFrame = !IsTimeUp && attackAction != null && attackAction.action.WasPerformedThisFrame();
 
-        if (skillJAction != null && skillJAction.action.WasPerformedThisFrame()) OnSkillJ(default);
-        if (skillKAction != null && skillKAction.action.WasPerformedThisFrame()) OnSkillK(default);
-        if (skillLAction != null && skillLAction.action.WasPerformedThisFrame()) OnSkillL(default);
+        if (skillJAction != null && skillJAction.action.WasPerformedThisFrame() && !IsTimeUp) OnSkillJ(default);
+        if (skillKAction != null && skillKAction.action.WasPerformedThisFrame() && !IsTimeUp) OnSkillK(default);
+        if (skillLAction != null && skillLAction.action.WasPerformedThisFrame() && !IsTimeUp) OnSkillL(default);
 
         // 呼叫當前狀態的 Update
         StateMachine.CurrentState?.Update();
@@ -192,10 +192,13 @@ public class PlayerController : MonoBehaviour
 
     public void SetDashCooldown() => _dashReadyTime = Time.time + dashCooldown;
 
-    // 遊戲結束，停用所有輸入（進入無法轉換的空狀態）
+    public bool IsTimeUp { get; private set; } = false;
+
+    // 時間結束：停用攻擊/技能，但保留移動讓玩家能走到出口
     public void OnGameEnd()
     {
-        StateMachine.ChangeState(null);
+        IsTimeUp = true;
+        StateMachine.ChangeState(new IdleState(this));
     }
 
     // 房間結算後恢復玩家輸入

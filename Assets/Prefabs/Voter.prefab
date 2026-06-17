@@ -4917,8 +4917,8 @@ Transform:
   m_GameObject: {fileID: 4628284427397550804}
   serializedVersion: 2
   m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: 0, y: 0.706, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalPosition: {x: 0, y: 0.543, z: 0}
+  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3841077316995993801}
@@ -4967,7 +4967,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 2e4186de1428e46c5be10d960d777915, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 75bc33ec5fb2e418ebac830586f38cc1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5004,7 +5004,7 @@ Transform:
   m_GameObject: {fileID: 4860688840932149779}
   serializedVersion: 2
   m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: 0.037, y: 1.551, z: 0.259}
+  m_LocalPosition: {x: -0.023, y: 1.253, z: 0.184}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -5120,13 +5120,10 @@ MonoBehaviour:
   wanderIntervalMin: 2
   wanderIntervalMax: 5
   moveSpeed: 7
-  knockbackDistance: 1.5
-  knockbackDuration: 0.3
   darkApproachStoppingDistance: 1.5
   darkDestinationRefreshInterval: 0.28
-  hitAnimationTriggerCooldown: 0.08
-  moveToExitWhenBattleEnds: 1
-  exitMoveSpeedMultiplier: 7
+  knockbackDistance: 1.5
+  knockbackDuration: 0.3
 --- !u!114 &5396591549920925665
 MonoBehaviour:
   m_ObjectHideFlags: 0
