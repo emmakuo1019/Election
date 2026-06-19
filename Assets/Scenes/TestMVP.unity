@@ -762,6 +762,59 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 35.512634, y: 1, z: 0.7976582}
   m_Center: {x: -0.104637146, y: 0, z: 0.015924517}
+--- !u!1 &242449935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 242449936}
+  - component: {fileID: 242449937}
+  m_Layer: 0
+  m_Name: GameObject (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &242449936
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242449935}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.28, z: 7.93}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 568873992}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &242449937
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242449935}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 35.512634, y: 1, z: 0.7976582}
+  m_Center: {x: -0.104637146, y: 0, z: 0.015924517}
 --- !u!1 &289865591
 GameObject:
   m_ObjectHideFlags: 0
@@ -1136,7 +1189,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lockedVisual: {fileID: 1951885031}
   unlockedVisual: {fileID: 1617313007}
-  targetSceneName: TestMVP
   triggerOnlyOnce: 1
   unlockOnStart: 0
   voterExitTarget: {fileID: 364505765}
@@ -1608,6 +1660,7 @@ Transform:
   - {fileID: 2085676570}
   - {fileID: 2110449698}
   - {fileID: 199332012}
+  - {fileID: 242449936}
   - {fileID: 524316040}
   - {fileID: 1358747406}
   - {fileID: 529938602}
@@ -3686,7 +3739,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d293794b05be4ea49c0c8cf926300a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rewardPanel: {fileID: 1625029666}
 --- !u!1 &1113865618
 GameObject:
   m_ObjectHideFlags: 0
@@ -4806,7 +4858,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelTimer: {fileID: 1067532211}
-  roomClearFlowController: {fileID: 1638184982}
   autoStartBattle: 0
 --- !u!1 &1428988368
 GameObject:
@@ -5792,17 +5843,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 517473ab01d084a59b707c60494612e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  supportRateText: {fileID: 1683817467}
-  supporterCountText: {fileID: 2127246917}
-  rewardMPText: {fileID: 1244454385}
-  continueButton: {fileID: 1133222267}
-  settlementPanelContainer: {fileID: 0}
-  rewardPanelContainer: {fileID: 1110776904}
-  rewardBtn01: {fileID: 289865593}
-  rewardBtn02: {fileID: 665918642}
-  rewardBtn03: {fileID: 590950883}
-  rewardPanelController: {fileID: 1113263786}
-  policyCardManager: {fileID: 608356171}
 --- !u!1 &1638184978
 GameObject:
   m_ObjectHideFlags: 0
@@ -5862,9 +5902,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomResultCalculator: {fileID: 1638184981}
-  roomExitController: {fileID: 364505761}
-  rewardPanelController: {fileID: 1113263786}
 --- !u!1 &1683817466
 GameObject:
   m_ObjectHideFlags: 0
@@ -5962,7 +5999,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400762, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0000038146973
+      value: -0.0000038146973
       objectReference: {fileID: 0}
     - target: {fileID: 22426080, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchorMax.x
@@ -7011,8 +7048,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 11.205567}
-  m_Center: {x: 0, y: 0, z: -0.058084436}
+  m_Size: {x: 1, y: 1, z: 14.31772}
+  m_Center: {x: 0, y: 0, z: 1.4979932}
 --- !u!1001 &2108815257
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7125,8 +7162,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 11.205567}
-  m_Center: {x: 0, y: 0, z: -0.058084436}
+  m_Size: {x: 1, y: 1, z: 14.999529}
+  m_Center: {x: 0, y: 0, z: 1.8388952}
 --- !u!1 &2113632199
 GameObject:
   m_ObjectHideFlags: 0
