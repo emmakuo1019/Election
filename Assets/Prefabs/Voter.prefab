@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 550731369262533568}
   m_Layer: 6
   m_Name: BeChangeParticle
-  m_TagString: Untagged
+  m_TagString: Voter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4903,7 +4903,7 @@ GameObject:
   - component: {fileID: 2774184649760543316}
   m_Layer: 6
   m_Name: VoterSprit_Body
-  m_TagString: Untagged
+  m_TagString: Voter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4990,7 +4990,7 @@ GameObject:
   - component: {fileID: 4798280922386667136}
   m_Layer: 6
   m_Name: VoterSprit_Head
-  m_TagString: Untagged
+  m_TagString: Voter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5122,7 +5122,7 @@ MonoBehaviour:
   moveSpeed: 7
   darkApproachStoppingDistance: 1.5
   darkDestinationRefreshInterval: 0.28
-  knockbackDistance: 1.5
+  knockbackDistance: 0.3
   knockbackDuration: 0.3
 --- !u!114 &5396591549920925665
 MonoBehaviour:
@@ -5159,7 +5159,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config: {fileID: 0}
   primaryLabel: 0
-  secondaryLabel: 0
+  secondaryLabel: 1
   voterAttribute: 0
   normalMoveSpeed: 1.2
   darkMoveSpeed: 2

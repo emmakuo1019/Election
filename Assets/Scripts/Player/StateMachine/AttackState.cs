@@ -3,7 +3,6 @@ using UnityEngine;
 public class AttackState : IState
 {
     private readonly PlayerController _ctx;
-    private float attackDuration = 0.2f; // 對應攻擊動畫的長度
     private float attackTimer;
 
     public AttackState(PlayerController ctx) => _ctx = ctx;
@@ -15,14 +14,14 @@ public class AttackState : IState
         if (_ctx.PlayerAttack == null)
         {
             Debug.LogWarning("[AttackState] 錯誤：_ctx.PlayerAttack 為空！");
-            attackTimer = attackDuration;
+            attackTimer = _ctx.attackDuration;
             return;
         }
         if (!_ctx.PlayerAttack.CanAttack())
         {
             Debug.LogWarning("[AttackState] CanAttack() 回傳 false，中斷攻擊！");
             // 如果在 CD 中，立刻將計時器設滿，讓 Update 迴圈下一幀直接跳回 Idle
-            attackTimer = attackDuration;
+            attackTimer = _ctx.attackDuration;
             return;
         }
 
@@ -48,7 +47,7 @@ public class AttackState : IState
         attackTimer += Time.deltaTime;
 
         // 與 Animator 箭頭同步安全退出
-        if (attackTimer >= attackDuration)
+        if (attackTimer >= _ctx.attackDuration)
         {
             _ctx.StateMachine.ChangeState(new IdleState(_ctx));
         }

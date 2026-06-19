@@ -178,6 +178,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b98ed664cf6d42bf8c65e4ef5bdde83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spriteRenderer: {fileID: 0}
+  attackRangeMesh: {fileID: 0}
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 64
@@ -188,6 +190,7 @@ MonoBehaviour:
   escapeRange: 15
   attackHitRadius: 1
   attackHitOffset: {x: 0, y: 1, z: 1}
+  attackAngle: 90
 --- !u!1 &1568685876034101917
 GameObject:
   m_ObjectHideFlags: 0
@@ -301,7 +304,6 @@ GameObject:
   - component: {fileID: 3146650173815152346}
   - component: {fileID: 3658033242400712837}
   - component: {fileID: 2571794595514145987}
-  - component: {fileID: 7447315893915344066}
   m_Layer: 0
   m_Name: EnemySprit
   m_TagString: Untagged
@@ -368,7 +370,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: bccb87320ad9a475d80fae855879eeed, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 47a91359f80864e9facba0ac584a02fc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -401,16 +403,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7447315893915344066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2080525298294722704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ddb89b23ef244984a344fb2c05a1c07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lockYAxis: 1

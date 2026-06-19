@@ -27,6 +27,7 @@ public class VoterVisuals : MonoBehaviour
     public ParticleSystem voteParticles;
 
     private Coroutine colorCoroutine;
+    private Coroutine hitFlashCoroutine;
     private VoterLogic logic;
     private VoterData data;
 
@@ -142,6 +143,13 @@ public class VoterVisuals : MonoBehaviour
         float intensity = maxAbsPosition > 0f
             ? Mathf.Clamp01(Mathf.Abs(position) / maxAbsPosition)
             : 0f;
+            
+        // 加入最低強度保底 (例如 0.4)，只要受影響了就立刻有 40% 以上的陣營顏色，這樣視覺上才看得出來
+        if (intensity > 0f)
+        {
+            intensity = Mathf.Lerp(0.4f, 1f, intensity);
+        }
+
         Color sideColor = position < 0 ? opponentColor : playerColor;
         return Color.Lerp(neutralColor, sideColor, intensity);
     }
@@ -186,5 +194,34 @@ public class VoterVisuals : MonoBehaviour
         }
 
         colorCoroutine = null;
+    }
+
+    public void TriggerHitFlash(Color flashColor, float duration = 0.1f)
+    {
+        if (hitFlashCoroutine != null)
+        {
+            StopCoroutine(hitFlashCoroutine);
+        }
+        // 重要：必須停止原本正在跑的顏色漸變，否則下一幀就會把閃爍的白色蓋掉！
+        if (colorCoroutine != null)
+        {
+            StopCoroutine(colorCoroutine);
+            colorCoroutine = null;
+        }
+        
+        hitFlashCoroutine = StartCoroutine(HitFlashRoutine(flashColor, duration));
+    }
+
+    private IEnumerator HitFlashRoutine(Color flashColor, float duration)
+    {
+        // 強制設定為受擊顏色
+        if (headRenderer != null) headRenderer.color = flashColor;
+        if (bodyRenderer != null) bodyRenderer.color = flashColor;
+        
+        yield return new WaitForSeconds(duration);
+        
+        // 恢復到當前陣營狀態該有的顏色
+        ApplyCurrentVisualState();
+        hitFlashCoroutine = null;
     }
 }

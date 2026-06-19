@@ -8,7 +8,8 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("移動設定")]
+    [Header("攻擊設定")]
+    public float attackDuration = 0.2f;
     public float moveSpeed = 5f;
     public float dashSpeed = 20f;
     public float dashDuration = 0.2f;

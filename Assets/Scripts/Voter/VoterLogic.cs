@@ -11,6 +11,7 @@ public class VoterLogic : MonoBehaviour
     public NavMeshAgent Agent { get; private set; }
     public Animator Anim { get; private set; }
     public Transform PlayerTransform { get; private set; }
+    public VoterVisuals Visuals { get; private set; }
 
     public bool IsGameActive { get; set; } = true;
     public bool HasUsableNavMeshAgent { get; private set; }
@@ -40,6 +41,7 @@ public class VoterLogic : MonoBehaviour
         Data = GetComponent<VoterData>();
         Agent = GetComponent<NavMeshAgent>();
         Anim = GetComponentInChildren<Animator>();
+        Visuals = GetComponent<VoterVisuals>();
         
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         PlayerTransform = playerObject != null ? playerObject.transform : null;
@@ -148,6 +150,9 @@ public class VoterLogic : MonoBehaviour
 
         UpdateConversionState(allowSpread);
         OnPositionChanged?.Invoke(Data.currentPosition);
+        
+        // 無論有沒有 NavMeshAgent，被影響時都統一觸發受擊閃爍 (改成紅色才看得出差異)
+        Visuals?.TriggerHitFlash(Color.red, 0.15f);
 
         if (HasUsableNavMeshAgent && attackerPosition != default)
         {
