@@ -4968,7 +4968,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 75bc33ec5fb2e418ebac830586f38cc1, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -5055,7 +5055,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 408278bd2142845a7b4f64b3854f95e0, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -5163,8 +5163,8 @@ MonoBehaviour:
   voterAttribute: 0
   normalMoveSpeed: 1.2
   darkMoveSpeed: 2
-  currentPosition: 0
-  convertedSide: 0
+  _currentPosition: 0
+  _convertedSide: 0
   isConverted: 0
   loyalty: 1
 --- !u!195 &1022887108545879583

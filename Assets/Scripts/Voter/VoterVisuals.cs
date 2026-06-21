@@ -26,42 +26,52 @@ public class VoterVisuals : MonoBehaviour
     [Header("打擊特效")]
     public ParticleSystem voteParticles;
 
+    public Animator Anim { get; private set; }
+
     private Coroutine colorCoroutine;
     private Coroutine hitFlashCoroutine;
     private VoterLogic logic;
     private VoterData data;
 
+    private static readonly int HashHit = Animator.StringToHash("hit");
+    private static readonly int HashCheer = Animator.StringToHash("cheer");
+    private static readonly int HashIsMoving = Animator.StringToHash("isMoving");
+
+    private static MaterialPropertyBlock _mpb;
+
     private void Awake()
     {
         logic = GetComponent<VoterLogic>();
         data = GetComponent<VoterData>();
+        Anim = GetComponentInChildren<Animator>();
+
+        if (bodyRenderer == null) bodyRenderer = GetComponent<SpriteRenderer>();
+        if (headRenderer == null) headRenderer = transform.Find("Head")?.GetComponent<SpriteRenderer>();
+
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
     }
+
+    private bool isInitialized = false;
 
     private void OnEnable()
     {
-        if (logic != null)
-        {
-            logic.OnPositionChanged += UpdateBubbleVisual;
-        }
-
         if (data != null)
         {
             data.OnIdentityChanged += OnIdentityChanged;
+            data.OnDataUpdated += ApplyCurrentVisualState;
         }
 
+        isInitialized = false;
         ApplyCurrentVisualState();
+        isInitialized = true;
     }
 
     private void OnDisable()
     {
-        if (logic != null)
-        {
-            logic.OnPositionChanged -= UpdateBubbleVisual;
-        }
-
         if (data != null)
         {
             data.OnIdentityChanged -= OnIdentityChanged;
+            data.OnDataUpdated -= ApplyCurrentVisualState;
         }
     }
 
@@ -74,7 +84,7 @@ public class VoterVisuals : MonoBehaviour
 
         ApplyBodySprite();
         ApplyHeadSprite();
-        UpdateBubbleVisual(data.currentPosition);
+        UpdateBubbleVisual(data.CurrentPosition);
     }
 
     private void UpdateBubbleVisual(int position)
@@ -86,6 +96,14 @@ public class VoterVisuals : MonoBehaviour
 
         Color targetHeadColor = ResolveHeadColor(position);
         Color targetBodyColor = ResolveBodyColor(position);
+
+        // 如果是剛載入的初始化階段，直接瞬間變色並跳出，不要播放特效和漸變！
+        if (!isInitialized)
+        {
+            if (headRenderer != null) SetSpriteColor(headRenderer, targetHeadColor);
+            if (bodyRenderer != null) SetSpriteColor(bodyRenderer, targetBodyColor);
+            return;
+        }
 
         if (colorCoroutine != null)
         {
@@ -172,12 +190,12 @@ public class VoterVisuals : MonoBehaviour
 
             if (headRenderer != null)
             {
-                headRenderer.color = Color.Lerp(startHeadColor, targetHeadColor, t);
+                SetSpriteColor(headRenderer, Color.Lerp(startHeadColor, targetHeadColor, t));
             }
 
             if (bodyRenderer != null)
             {
-                bodyRenderer.color = Color.Lerp(startBodyColor, targetBodyColor, t);
+                SetSpriteColor(bodyRenderer, Color.Lerp(startBodyColor, targetBodyColor, t));
             }
 
             yield return null;
@@ -185,12 +203,12 @@ public class VoterVisuals : MonoBehaviour
 
         if (headRenderer != null)
         {
-            headRenderer.color = targetHeadColor;
+            SetSpriteColor(headRenderer, targetHeadColor);
         }
 
         if (bodyRenderer != null)
         {
-            bodyRenderer.color = targetBodyColor;
+            SetSpriteColor(bodyRenderer, targetBodyColor);
         }
 
         colorCoroutine = null;
@@ -215,13 +233,50 @@ public class VoterVisuals : MonoBehaviour
     private IEnumerator HitFlashRoutine(Color flashColor, float duration)
     {
         // 強制設定為受擊顏色
-        if (headRenderer != null) headRenderer.color = flashColor;
-        if (bodyRenderer != null) bodyRenderer.color = flashColor;
+        if (headRenderer != null) SetSpriteColor(headRenderer, flashColor);
+        if (bodyRenderer != null) SetSpriteColor(bodyRenderer, flashColor);
         
         yield return new WaitForSeconds(duration);
         
         // 恢復到當前陣營狀態該有的顏色
         ApplyCurrentVisualState();
         hitFlashCoroutine = null;
+    }
+
+    public void PlayHitAnimation()
+    {
+        if (Anim != null)
+        {
+            Anim.ResetTrigger(HashHit);
+            Anim.SetTrigger(HashHit);
+        }
+    }
+
+    public void PlayCheerAnimation()
+    {
+        if (Anim != null)
+        {
+            Anim.SetTrigger(HashCheer);
+        }
+    }
+
+    public void SetMovingAnimation(bool isMoving)
+    {
+        if (Anim != null)
+        {
+            Anim.SetBool(HashIsMoving, isMoving);
+        }
+    }
+
+    private void SetSpriteColor(SpriteRenderer sr, Color color)
+    {
+        sr.color = color;
+        if (_mpb != null)
+        {
+            sr.GetPropertyBlock(_mpb);
+            _mpb.SetColor("_Color", color);
+            _mpb.SetColor("_BaseColor", color); // 以防萬一也塞入 _BaseColor
+            sr.SetPropertyBlock(_mpb);
+        }
     }
 }

@@ -6,8 +6,6 @@ public class VoterIdleState : IState
     private float _idleTimer;
     private float _idleDuration;
 
-    private static readonly int IsMovingHash = Animator.StringToHash("isMoving");
-
     public VoterIdleState(VoterLogic controller)
     {
         _controller = controller;
@@ -20,9 +18,9 @@ public class VoterIdleState : IState
             _controller.Agent.isStopped = true;
         }
 
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetBool(IsMovingHash, false);
+            _controller.Visuals.SetMovingAnimation(false);
         }
 
         _idleDuration = Random.Range(_controller.wanderIntervalMin, _controller.wanderIntervalMax);

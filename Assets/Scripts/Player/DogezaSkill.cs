@@ -19,8 +19,12 @@ public class DogezaSkill : SkillData
     [SerializeField] private float voterDetectionRadius = 1.5f;
 
     public int MpCost => mpCost;
-
-
+    public float DashDuration => dashDuration;
+    public float DashSpeed => dashSpeed;
+    public float StunTime => stunTime;
+    public float ConvertChance => convertChance;
+    public float VoterDetectionRadius => voterDetectionRadius;
+    public int HpCost => hpCost;
     public override void ExecuteSkill(GameObject caster)
     {
         if (caster == null)
@@ -58,94 +62,6 @@ public class DogezaSkill : SkillData
             }
         }
 
-        // 2. 啟動衝刺與判定 Coroutine
-        MonoBehaviour coroutineHost = caster.GetComponent<PlayerSkillManager>();
-        if (coroutineHost == null)
-        {
-            coroutineHost = caster.GetComponent<MonoBehaviour>();
-        }
-
-        if (coroutineHost == null)
-        {
-            Debug.LogWarning("[DogezaSkill] caster 身上找不到可啟動 Coroutine 的 MonoBehaviour。");
-            return;
-        }
-
-        coroutineHost.StartCoroutine(DogezaDashRoutine(caster));
-    }
-
-    private IEnumerator DogezaDashRoutine(GameObject caster)
-    {
-        CharacterController characterController = caster.GetComponent<CharacterController>();
-        if (characterController == null)
-        {
-            Debug.LogWarning("[DogezaSkill] caster 身上缺少 CharacterController。");
-            yield break;
-        }
-
-        PlayerController playerStateMachine = caster.GetComponent<PlayerController>();
-        Vector3 dashDirection = caster.transform.forward;
-
-        if (playerStateMachine != null && playerStateMachine.LastMoveDirection.sqrMagnitude > 0.01f)
-        {
-            dashDirection = playerStateMachine.LastMoveDirection.normalized;
-        }
-        else if (dashDirection.sqrMagnitude > 0.01f)
-        {
-            dashDirection = dashDirection.normalized;
-        }
-        else
-        {
-            yield break;
-        }
-
-        bool hasHitVoter = false;
-        HashSet<VoterLogic> hitVoters = new HashSet<VoterLogic>();
-        float elapsedTime = 0f;
-        while (elapsedTime < dashDuration)
-        {
-            characterController.Move(dashDirection * dashSpeed * Time.deltaTime);
-            DetectVotersDuringDash(caster, hitVoters, ref hasHitVoter);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        if (hasHitVoter && PolicyEffectRuntimeManager.HasInstance)
-        {
-            PolicyEffectRuntimeManager.Instance.AddIntegrityHp(-hpCost);
-        }
-    }
-
-    private void DetectVotersDuringDash(GameObject caster, HashSet<VoterLogic> hitVoters, ref bool hasHitVoter)
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(caster.transform.position, voterDetectionRadius);
-        for (int i = 0; i < hitColliders.Length; i++)
-        {
-            Collider hitCollider = hitColliders[i];
-            if (hitCollider == null)
-            {
-                continue;
-            }
-
-            GameObject hitObject = hitCollider.attachedRigidbody != null
-                ? hitCollider.attachedRigidbody.gameObject
-                : hitCollider.gameObject;
-            if (!hitObject.CompareTag("Voter"))
-            {
-                continue;
-            }
-
-            VoterLogic voterLogic = hitCollider.GetComponentInParent<VoterLogic>();
-            if (voterLogic == null || hitVoters.Contains(voterLogic))
-            {
-                continue;
-            }
-
-            hitVoters.Add(voterLogic);
-            if (voterLogic.ApplySkillEffect(new DogezaVoterEffect(stunTime, convertChance)))
-            {
-                hasHitVoter = true;
-            }
-        }
+        // 2. 啟動衝刺與判定 Coroutine (已移除，改由 SkillState.PhysicsUpdate 驅動)
     }
 }

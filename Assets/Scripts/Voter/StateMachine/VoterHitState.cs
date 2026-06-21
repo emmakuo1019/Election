@@ -8,8 +8,6 @@ public class VoterHitState : IState
     private float _timer;
     private Vector3 _startPos;
     private Vector3 _targetPos;
-    
-    private static readonly int HashHit = Animator.StringToHash("hit");
 
     public VoterHitState(VoterLogic controller, Vector3 attackerPos)
     {
@@ -24,10 +22,9 @@ public class VoterHitState : IState
             _controller.Agent.isStopped = true;
         }
 
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.ResetTrigger(HashHit);
-            _controller.Anim.SetTrigger(HashHit);
+            _controller.Visuals.PlayHitAnimation();
         }
 
         _timer = 0f;

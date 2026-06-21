@@ -5,8 +5,6 @@ public class VoterCheerState : IState
     private VoterLogic _controller;
     private Vector3 _lookTarget;
 
-    private static readonly int HashCheer = Animator.StringToHash("cheer");
-
     public VoterCheerState(VoterLogic controller, Vector3 lookTarget = default)
     {
         _controller = controller;
@@ -31,9 +29,9 @@ public class VoterCheerState : IState
             }
         }
 
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetTrigger(HashCheer);
+            _controller.Visuals.PlayCheerAnimation();
         }
     }
 

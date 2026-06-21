@@ -233,12 +233,12 @@ public class EnemyAI : MonoBehaviour, IAttackSource
         int attackSign = GetAttackSign();
         if (attackSign > 0)
         {
-            return data.currentPosition < VoterConfig.MAX_POS;
+            return data.CurrentPosition < VoterConfig.MAX_POS;
         }
 
         if (attackSign < 0)
         {
-            return data.currentPosition > VoterConfig.MIN_POS;
+            return data.CurrentPosition > VoterConfig.MIN_POS;
         }
 
         return false;

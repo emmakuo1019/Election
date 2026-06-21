@@ -4,7 +4,6 @@ public class VoterFollowState : IState
 {
     private VoterLogic _controller;
     private float _nextRefreshTime;
-    private static readonly int IsMovingHash = Animator.StringToHash("isMoving");
 
     public VoterFollowState(VoterLogic controller)
     {
@@ -18,9 +17,9 @@ public class VoterFollowState : IState
             _controller.Agent.isStopped = false;
         }
         
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetBool(IsMovingHash, true);
+            _controller.Visuals.SetMovingAnimation(true);
         }
 
         _nextRefreshTime = 0f;
@@ -64,9 +63,9 @@ public class VoterFollowState : IState
             _controller.Agent.ResetPath();
         }
         
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetBool(IsMovingHash, false);
+            _controller.Visuals.SetMovingAnimation(false);
         }
     }
 }

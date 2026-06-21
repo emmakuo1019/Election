@@ -252,7 +252,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         if (voter.TryGetComponent<VoterLogic>(out var logic))
         {
-            int requiredInfluence = VoterConfig.MAX_POS - voter.currentPosition;
+            int requiredInfluence = VoterConfig.MAX_POS - voter.CurrentPosition;
             if (requiredInfluence > 0)
             {
                 logic.OnInfluence(requiredInfluence, true, transform.position);

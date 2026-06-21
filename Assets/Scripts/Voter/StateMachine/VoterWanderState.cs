@@ -4,7 +4,6 @@ using UnityEngine.AI;
 public class VoterWanderState : IState
 {
     private VoterLogic _controller;
-    private static readonly int IsMovingHash = Animator.StringToHash("isMoving");
 
     public VoterWanderState(VoterLogic controller)
     {
@@ -28,9 +27,9 @@ public class VoterWanderState : IState
             }
         }
 
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetBool(IsMovingHash, true);
+            _controller.Visuals.SetMovingAnimation(true);
         }
     }
 
@@ -63,9 +62,9 @@ public class VoterWanderState : IState
             _controller.Agent.ResetPath();
         }
         
-        if (_controller.Anim != null)
+        if (_controller.Visuals != null)
         {
-            _controller.Anim.SetBool(IsMovingHash, false);
+            _controller.Visuals.SetMovingAnimation(false);
         }
     }
 

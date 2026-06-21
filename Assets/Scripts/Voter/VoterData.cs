@@ -20,6 +20,7 @@ public class VoterData : MonoBehaviour
     public const int NeutralSideSign = 0;
 
     public event System.Action OnIdentityChanged;
+    public event System.Action OnDataUpdated;
 
     [Header("設定")]
     [SerializeField] private VoterConfig config;
@@ -37,8 +38,33 @@ public class VoterData : MonoBehaviour
 
     [Header("立場資料")]
     [Tooltip("-5 = 敵方完全支持，+5 = 玩家完全支持。")]
-    public int currentPosition;
-    public int convertedSide;
+    [SerializeField] private int _currentPosition;
+    public int CurrentPosition
+    {
+        get => _currentPosition;
+        set
+        {
+            if (_currentPosition != value)
+            {
+                _currentPosition = value;
+                OnDataUpdated?.Invoke();
+            }
+        }
+    }
+
+    [SerializeField] private int _convertedSide;
+    public int ConvertedSide
+    {
+        get => _convertedSide;
+        set
+        {
+            if (_convertedSide != value)
+            {
+                _convertedSide = value;
+                OnDataUpdated?.Invoke();
+            }
+        }
+    }
 
     [Header("狀態")]
     public bool isConverted = false;
@@ -64,8 +90,8 @@ public class VoterData : MonoBehaviour
             return baseSpeed * multiplier;
         }
     }
-    public bool IsPlayerAligned => convertedSide == PlayerSideSign;
-    public bool IsEnemyAligned => convertedSide == EnemySideSign;
+    public bool IsPlayerAligned => ConvertedSide == PlayerSideSign;
+    public bool IsEnemyAligned => ConvertedSide == EnemySideSign;
     public bool ShouldFollowPlayer => HasDarkAttribute && IsPlayerAligned;
 
     private void Awake()
@@ -79,15 +105,20 @@ public class VoterData : MonoBehaviour
         {
             InitializeFromConfig();
         }
+        else
+        {
+            // 允許在 Play Mode 時透過 Inspector 手動拉數值測試
+            OnDataUpdated?.Invoke();
+        }
     }
 
     public void InitializeFromConfig()
     {
-        currentPosition = config != null
+        CurrentPosition = config != null
             ? Mathf.Clamp(config.startingPosition, VoterConfig.MIN_POS, VoterConfig.MAX_POS)
             : 0;
-        convertedSide = EvaluateSideFromPosition();
-        isConverted = convertedSide != NeutralSideSign;
+        ConvertedSide = EvaluateSideFromPosition();
+        isConverted = ConvertedSide != NeutralSideSign;
         loyalty = 1f;
     }
 
@@ -133,12 +164,12 @@ public class VoterData : MonoBehaviour
 
     public int EvaluateSideFromPosition()
     {
-        if (currentPosition >= VoterConfig.MAX_POS)
+        if (CurrentPosition >= VoterConfig.MAX_POS)
         {
             return PlayerSideSign;
         }
 
-        if (currentPosition <= VoterConfig.MIN_POS)
+        if (CurrentPosition <= VoterConfig.MIN_POS)
         {
             return EnemySideSign;
         }

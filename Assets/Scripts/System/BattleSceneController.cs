@@ -57,8 +57,8 @@ public class BattleSceneController : MonoBehaviour
             if (voter.TryGetComponent<VoterVisuals>(out var visuals))
                 visuals.ApplyCurrentVisualState();
 
-            if (voter.convertedSide == VoterData.PlayerSideSign) addedPlayerVotes++;
-            else if (voter.convertedSide == VoterData.EnemySideSign) addedOpponentVotes++;
+            if (voter.ConvertedSide == VoterData.PlayerSideSign) addedPlayerVotes++;
+            else if (voter.ConvertedSide == VoterData.EnemySideSign) addedOpponentVotes++;
         }
 
         // 將本場選民的初始票數加入跨場景累計

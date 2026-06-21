@@ -9,7 +9,6 @@ public class VoterLogic : MonoBehaviour
     
     public VoterData Data { get; private set; }
     public NavMeshAgent Agent { get; private set; }
-    public Animator Anim { get; private set; }
     public Transform PlayerTransform { get; private set; }
     public VoterVisuals Visuals { get; private set; }
 
@@ -32,15 +31,12 @@ public class VoterLogic : MonoBehaviour
     public float knockbackDistance = 1.2f;
     public float knockbackDuration = 0.25f;
 
-    public event Action<int> OnPositionChanged;
-
     public bool CanReceiveSkillEffect => IsGameActive && Data != null;
 
     private void Awake()
     {
         Data = GetComponent<VoterData>();
         Agent = GetComponent<NavMeshAgent>();
-        Anim = GetComponentInChildren<Animator>();
         Visuals = GetComponent<VoterVisuals>();
         
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
@@ -143,13 +139,12 @@ public class VoterLogic : MonoBehaviour
         if (!IsGameActive || Data == null) return;
 
         int finalAmount = amount * Mathf.Max(1, 1 + Data.EmotionLabelCount);
-        Data.currentPosition = Mathf.Clamp(
-            Data.currentPosition + finalAmount,
+        Data.CurrentPosition = Mathf.Clamp(
+            Data.CurrentPosition + finalAmount,
             VoterConfig.MIN_POS,
             VoterConfig.MAX_POS);
 
         UpdateConversionState(allowSpread);
-        OnPositionChanged?.Invoke(Data.currentPosition);
         
         // 無論有沒有 NavMeshAgent，被影響時都統一觸發受擊閃爍 (改成紅色才看得出差異)
         Visuals?.TriggerHitFlash(Color.red, 0.15f);
@@ -160,7 +155,7 @@ public class VoterLogic : MonoBehaviour
         }
         else
         {
-            Anim?.SetTrigger("hit");
+            Visuals?.PlayHitAnimation();
         }
     }
 
@@ -190,10 +185,10 @@ public class VoterLogic : MonoBehaviour
 
     private void UpdateConversionState(bool allowSpread)
     {
-        int oldSide = Data.convertedSide;
+        int oldSide = Data.ConvertedSide;
         int newSide = Data.EvaluateSideFromPosition();
 
-        Data.convertedSide = newSide;
+        Data.ConvertedSide = newSide;
         Data.isConverted = newSide != VoterData.NeutralSideSign;
 
         if (oldSide != newSide)
@@ -219,14 +214,13 @@ public class VoterLogic : MonoBehaviour
 
     public void RevertToNeutral()
     {
-        int oldSide = Data.convertedSide;
-        Data.currentPosition = 0;
-        Data.convertedSide = VoterData.NeutralSideSign;
+        int oldSide = Data.ConvertedSide;
+        Data.CurrentPosition = 0;
+        Data.ConvertedSide = VoterData.NeutralSideSign;
         Data.isConverted = false;
         Data.loyalty = 1f;
 
         VoteManager.Instance?.ApplyAlignmentChange(oldSide, VoterData.NeutralSideSign);
-        OnPositionChanged?.Invoke(Data.currentPosition);
     }
 
     private void UpdateLoyaltyDecay()
@@ -268,7 +262,7 @@ public class VoterLogic : MonoBehaviour
     public void ForceConvertToPlayer()
     {
         if (Data == null) return;
-        int requiredInfluence = VoterConfig.MAX_POS - Data.currentPosition;
+        int requiredInfluence = VoterConfig.MAX_POS - Data.CurrentPosition;
         if (requiredInfluence <= 0) return;
         OnInfluence(requiredInfluence, true, transform.position);
     }
