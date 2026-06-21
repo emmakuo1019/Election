@@ -41,6 +41,10 @@ public class UIManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        // 強制解鎖並顯示游標，確保在執行檔中不會因為全螢幕或預設行為而消失
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     // Main Menu
