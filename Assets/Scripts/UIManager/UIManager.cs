@@ -21,6 +21,12 @@ public class UIManager : MonoBehaviour
     public GameObject stageClearRewardPanel;
     public GameObject stageClearSkillPanel;
 
+    [Header("Policy Card Reward")]
+    public RewardCardUI rewardCardPrefab;
+    public Transform rewardCardContainer;
+
+    public Action<PolicyCardData> OnPolicyCardSelected;
+
     private int currentRoomNumber;
     private Action onStageClearSequenceComplete;
 
@@ -50,7 +56,26 @@ public class UIManager : MonoBehaviour
     public void HideHQPanel() { if (hqPanel != null) hqPanel.SetActive(false); }
 
     // Gameplay HUD
-    public void ShowGameplayHUD() { if (gameplayHUDPanel != null) gameplayHUDPanel.SetActive(true); }
+    public void ShowGameplayHUD() 
+    { 
+        if (gameplayHUDPanel != null) 
+        {
+            gameplayHUDPanel.SetActive(true); 
+            
+            // 重新綁定 HUD 到當前場景的實例 (Bug 2 Fix)
+            var hpBar = gameplayHUDPanel.GetComponentInChildren<HPBarUI>(true);
+            if (hpBar != null) hpBar.Rebind();
+
+            var mpBar = gameplayHUDPanel.GetComponentInChildren<MPBarUI>(true);
+            if (mpBar != null) mpBar.Rebind();
+
+            var voteUI = gameplayHUDPanel.GetComponentInChildren<VoteDisplayUI>(true);
+            if (voteUI != null) voteUI.Rebind();
+
+            var timerUI = gameplayHUDPanel.GetComponentInChildren<LevelTimerUI>(true);
+            if (timerUI != null) timerUI.Rebind();
+        }
+    }
     public void HideGameplayHUD() { if (gameplayHUDPanel != null) gameplayHUDPanel.SetActive(false); }
 
     // Stage Clear
@@ -80,7 +105,41 @@ public class UIManager : MonoBehaviour
     {
         // 2. 玩家點擊繼續後，關閉 Data，打開「獎勵面板 (Reward)」
         if (stageClearDataPanel != null) stageClearDataPanel.SetActive(false);
-        if (stageClearRewardPanel != null) stageClearRewardPanel.SetActive(true);
+        if (stageClearRewardPanel != null) 
+        {
+            stageClearRewardPanel.SetActive(true);
+            GenerateRewardCards(); // Bug 1 Fix
+        }
+    }
+
+    private void GenerateRewardCards()
+    {
+        if (rewardCardContainer == null || rewardCardPrefab == null)
+        {
+            Debug.LogWarning("[UIManager] RewardCardPrefab 或 RewardCardContainer 未設定！請在 Inspector 綁定。");
+            return;
+        }
+
+        // 清除舊卡片
+        foreach (Transform child in rewardCardContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        PolicyCardManager cardManager = FindAnyObjectByType<PolicyCardManager>();
+        if (cardManager != null)
+        {
+            var cards = cardManager.GetRandomCards(3);
+            foreach (var card in cards)
+            {
+                var ui = Instantiate(rewardCardPrefab, rewardCardContainer);
+                ui.Setup(card, (c) => OnRewardPanelContinueClicked());
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[UIManager] 找不到 PolicyCardManager！");
+        }
     }
 
     public void OnRewardPanelContinueClicked()

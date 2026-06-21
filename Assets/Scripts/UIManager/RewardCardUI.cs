@@ -22,6 +22,10 @@ public class RewardCardUI : MonoBehaviour
         descriptionText.text = card.description;
 
         selectButton.onClick.RemoveAllListeners();
-        selectButton.onClick.AddListener(() => onSelected?.Invoke(currentCard));
+        selectButton.onClick.AddListener(() => 
+        {
+            UIManager.Instance.OnPolicyCardSelected?.Invoke(currentCard);
+            onSelected?.Invoke(currentCard); // Keep original callback just in case it's used elsewhere
+        });
     }
 }

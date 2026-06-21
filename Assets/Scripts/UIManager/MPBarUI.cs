@@ -40,4 +40,13 @@ public class MPBarUI : MonoBehaviour
             mpText.text = $"{currentMP} / {maxMP}";
         }
     }
+    public void Rebind()
+    {
+        if (PlayerMPSystem.Instance != null)
+        {
+            PlayerMPSystem.Instance.OnMPChanged -= UpdateUI;
+            PlayerMPSystem.Instance.OnMPChanged += UpdateUI;
+            UpdateUI(PlayerMPSystem.Instance.CurrentMP, PlayerMPSystem.Instance.MaxMP);
+        }
+    }
 }

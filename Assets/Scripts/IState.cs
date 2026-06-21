@@ -24,6 +24,16 @@ public interface IState
     void Exit();
 
     /// <summary>
+    /// 處理輸入邏輯，將輸入判定責任交給狀態本身。
+    /// </summary>
+    void HandleInput() { }
+
+    /// <summary>
+    /// 當受到暈眩/僵直攻擊時觸發，狀態可決定是否被打斷。
+    /// </summary>
+    void OnStunned(float duration) { }
+
+    /// <summary>
     /// 由外部動畫事件 (Animation Event) 呼叫。預設為空實作。
     /// </summary>
     void AnimationFinishTrigger() { }

@@ -76,4 +76,9 @@ public class SkillState : IState
     {
         Debug.Log("[SkillState] Exit");
     }
+
+    public void OnStunned(float duration)
+    {
+        Debug.Log("[SkillState] 霸體發動，忽視暈眩！");
+    }
 }

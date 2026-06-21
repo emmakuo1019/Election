@@ -67,4 +67,10 @@ public class LevelTimerUI : MonoBehaviour
 
         timerText.text = LevelTimer.Instance.GetFormattedTime();
     }
+
+    public void Rebind()
+    {
+        UnsubscribeFromTimer();
+        SubscribeToTimer();
+    }
 }

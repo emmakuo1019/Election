@@ -65,7 +65,7 @@ public class RoomExitController : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!isUnlocked) return;
-        if (triggerOnlyOnce && hasTriggered) return;
+        if (hasTriggered) return; // 防連點/防重複觸發保護
         if (!other.CompareTag("Player")) return;
 
         hasTriggered = true;
@@ -73,7 +73,16 @@ public class RoomExitController : MonoBehaviour
         // 不論是一般房間還是 Boss 戰，統一廣播房間通關事件
         // 讓 GameFlowManager (透過 GameplayState 或 BossBattleState) 決定後續狀態
         BattleEventManager.TriggerRoomCleared();
-        ProceedToNextScene();
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!isUnlocked) return;
+        if (hasTriggered) return; // 防連點/防重複觸發保護
+        if (!other.CompareTag("Player")) return;
+
+        hasTriggered = true;
+        BattleEventManager.TriggerRoomCleared();
     }
 
     public void ProceedToNextScene()

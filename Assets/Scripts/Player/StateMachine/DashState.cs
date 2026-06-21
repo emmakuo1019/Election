@@ -49,4 +49,9 @@ public class DashState : IState
     {
         Debug.Log("[DashState] Exit");
     }
+
+    public void OnStunned(float duration)
+    {
+        _ctx.StateMachine.ChangeState(new StunState(_ctx, duration));
+    }
 }

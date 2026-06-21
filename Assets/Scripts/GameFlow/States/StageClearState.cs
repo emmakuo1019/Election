@@ -13,14 +13,32 @@ public class StageClearState : IState
     public void Enter()
     {
         Debug.Log($"[StageClearState] Enter - 小結算序列開始，房號: {roomNumber}");
+        Time.timeScale = 0f; // 暫停時間
+
         if (UIManager.Instance != null) 
         {
+            UIManager.Instance.OnPolicyCardSelected += HandlePolicyCardSelected;
             UIManager.Instance.StartStageClearSequence(roomNumber, OnSequenceFinished);
         }
         else 
         {
             OnSequenceFinished();
         }
+    }
+
+    private void HandlePolicyCardSelected(PolicyCardData card)
+    {
+        Debug.Log($"[StageClearState] 選擇了政策卡: {card.cardName}");
+        
+        // 呼叫 PolicyEffectRuntimeManager 發放獎勵
+        if (PolicyEffectRuntimeManager.HasInstance)
+        {
+            PolicyEffectRuntimeManager.Instance.ApplyCard(card);
+        }
+
+        // ⚠️ 修正：移除這裡的 OnSequenceFinished()。
+        // 將流程控制權交還給 UIManager，讓它繼續處理技能面板等後續流程，
+        // 等所有面板都關閉後，UIManager 才會安全地觸發 OnSequenceFinished()。
     }
 
     private void OnSequenceFinished()
@@ -49,8 +67,14 @@ public class StageClearState : IState
     public void Exit()
     {
         Debug.Log($"[StageClearState] Exit - 離開小結算，房號: {roomNumber}");
+        Time.timeScale = 1f; // 恢復時間
+
         // UIManager 會在 Sequence 結束時自行關閉面板，也可以在這裡做二次確保
-        if (UIManager.Instance != null) UIManager.Instance.HideStageClearPanel();
+        if (UIManager.Instance != null) 
+        {
+            UIManager.Instance.OnPolicyCardSelected -= HandlePolicyCardSelected;
+            UIManager.Instance.HideStageClearPanel();
+        }
     }
     
     public void Update() { }

@@ -65,4 +65,13 @@ public class VoteDisplayUI : MonoBehaviour
         // 更新 Slider (玩家比例)
         voteSlider.value = mgr.PlayerVotePercentage;
     }
+    public void Rebind()
+    {
+        if (VoteManager.Instance != null)
+        {
+            VoteManager.Instance.OnVotesChanged -= OnVotesChanged;
+            VoteManager.Instance.OnVotesChanged += OnVotesChanged;
+            RefreshUI();
+        }
+    }
 }

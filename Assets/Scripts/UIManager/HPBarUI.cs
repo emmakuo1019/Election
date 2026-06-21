@@ -45,4 +45,13 @@ public class HPBarUI : MonoBehaviour
             hpText.text = $"HP {runtime.IntegrityHp:F0} / {runtime.MaxIntegrityHp:F0}";
         }
     }
+    public void Rebind()
+    {
+        if (PolicyEffectRuntimeManager.HasInstance)
+        {
+            PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= UpdateUI;
+            PolicyEffectRuntimeManager.Instance.OnEffectsChanged += UpdateUI;
+        }
+        UpdateUI();
+    }
 }

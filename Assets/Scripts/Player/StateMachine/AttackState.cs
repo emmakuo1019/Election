@@ -61,4 +61,9 @@ public class AttackState : IState
     {
         // 狀態退出時的清理
     }
+
+    public void OnStunned(float duration)
+    {
+        _ctx.StateMachine.ChangeState(new StunState(_ctx, duration));
+    }
 }

@@ -14,7 +14,7 @@ public class MoveState : IState
         }
     }
 
-    public void Update()
+    public void HandleInput()
     {
         if (_ctx.AttackInputThisFrame)
         {
@@ -28,6 +28,36 @@ public class MoveState : IState
             return;
         }
 
+        if (TryCastSkill()) return;
+    }
+
+    private bool TryCastSkill()
+    {
+        if (_ctx.SkillJInputThisFrame && _ctx.SkillManager != null && _ctx.SkillManager.CanCastSkill(_ctx.SkillManager.baseSkillJ))
+        {
+            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillManager.baseSkillJ));
+            return true;
+        }
+        if (_ctx.SkillKInputThisFrame && _ctx.SkillManager != null && _ctx.SkillManager.CanCastSkill(_ctx.SkillManager.skillK))
+        {
+            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillManager.skillK));
+            return true;
+        }
+        if (_ctx.SkillLInputThisFrame && _ctx.SkillManager != null && _ctx.SkillManager.CanCastSkill(_ctx.SkillManager.CurrentPartySkill))
+        {
+            _ctx.StateMachine.ChangeState(new SkillState(_ctx, _ctx.SkillManager.CurrentPartySkill));
+            return true;
+        }
+        return false;
+    }
+
+    public void OnStunned(float duration)
+    {
+        _ctx.StateMachine.ChangeState(new StunState(_ctx, duration));
+    }
+
+    public void Update()
+    {
         Vector2 input = _ctx.MoveInput;
         if (input.sqrMagnitude <= 0.01f)
         {
