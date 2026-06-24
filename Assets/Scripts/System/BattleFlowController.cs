@@ -101,6 +101,7 @@ public class BattleFlowController : MonoBehaviour
         if (roomExitController != null)
         {
             roomExitController.UnlockExit();
+            UIManager.Instance?.ShowExitPrompt();
             
             // 強制選民離場
             Vector3 exitPosition = roomExitController.GetVoterExitPosition();

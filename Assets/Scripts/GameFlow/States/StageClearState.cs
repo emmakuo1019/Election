@@ -17,6 +17,7 @@ public class StageClearState : IState
 
         if (UIManager.Instance != null) 
         {
+            UIManager.Instance.HideExitPrompt();
             UIManager.Instance.OnPolicyCardSelected += HandlePolicyCardSelected;
             UIManager.Instance.StartStageClearSequence(roomNumber, OnSequenceFinished);
         }

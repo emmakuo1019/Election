@@ -82,6 +82,21 @@ public class UIManager : MonoBehaviour
     }
     public void HideGameplayHUD() { if (gameplayHUDPanel != null) gameplayHUDPanel.SetActive(false); }
 
+    // Exit Prompt (子物件放在 gameplayHUDPanel 底下，Hide HUD 時自動帶走)
+    public void ShowExitPrompt()
+    {
+        if (gameplayHUDPanel == null) return;
+        var prompt = gameplayHUDPanel.transform.Find("ExitPrompt");
+        if (prompt != null) prompt.gameObject.SetActive(true);
+    }
+
+    public void HideExitPrompt()
+    {
+        if (gameplayHUDPanel == null) return;
+        var prompt = gameplayHUDPanel.transform.Find("ExitPrompt");
+        if (prompt != null) prompt.gameObject.SetActive(false);
+    }
+
     // Stage Clear
     public void ShowStageClearPanel() { if (stageClearPanel != null) stageClearPanel.SetActive(true); }
     public void HideStageClearPanel() { if (stageClearPanel != null) stageClearPanel.SetActive(false); }

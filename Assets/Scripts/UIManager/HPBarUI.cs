@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,7 +6,7 @@ public class HPBarUI : MonoBehaviour
 {
     [Header("UI 元件")]
     [SerializeField] private Slider hpSlider;
-    [SerializeField] private Text hpText;
+    [SerializeField] private TMP_Text hpText;
 
     private void Start()
     {
