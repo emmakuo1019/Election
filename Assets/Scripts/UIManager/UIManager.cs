@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// 全局 UI 管理器，負責管理各個遊戲流程狀態對應的 UI 面板開關。
@@ -26,6 +27,9 @@ public class UIManager : MonoBehaviour
     public Transform rewardCardContainer;
 
     public Action<PolicyCardData> OnPolicyCardSelected;
+
+    private PolicyCardData selectedRewardCard;
+    private List<RewardCardUI> generatedRewardCards = new List<RewardCardUI>();
 
     private int currentRoomNumber;
     private Action onStageClearSequenceComplete;
@@ -139,6 +143,9 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        selectedRewardCard = null;
+        generatedRewardCards.Clear();
+
         // 清除舊卡片
         foreach (Transform child in rewardCardContainer)
         {
@@ -152,7 +159,8 @@ public class UIManager : MonoBehaviour
             foreach (var card in cards)
             {
                 var ui = Instantiate(rewardCardPrefab, rewardCardContainer);
-                ui.Setup(card, (c) => OnRewardPanelContinueClicked());
+                ui.Setup(card, OnRewardCardClicked);
+                generatedRewardCards.Add(ui);
             }
         }
         else
@@ -161,8 +169,30 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private void OnRewardCardClicked(PolicyCardData card)
+    {
+        selectedRewardCard = card;
+
+        foreach (var ui in generatedRewardCards)
+        {
+            if (ui != null)
+            {
+                ui.SetSelected(ui.GetCard() == card);
+            }
+        }
+    }
+
     public void OnRewardPanelContinueClicked()
     {
+        if (selectedRewardCard == null)
+        {
+            Debug.LogWarning("[UIManager] 尚未選擇任何政策卡！");
+            return;
+        }
+
+        // 確認選擇，發送事件給 StageClearState 套用卡片效果
+        OnPolicyCardSelected?.Invoke(selectedRewardCard);
+
         // 3. 玩家點擊繼續後，關閉 Reward
         if (stageClearRewardPanel != null) stageClearRewardPanel.SetActive(false);
 

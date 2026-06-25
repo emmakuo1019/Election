@@ -62,49 +62,52 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 30,
-            normal = { textColor = Color.black }
+            normal = { textColor = Color.black },
+            alignment = TextAnchor.MiddleRight
         };
 
         float lineHeight = 40f;
         float lineCount = appliedCardSummaries.Count == 0 ? 9f : 8f + appliedCardSummaries.Count;
         float startY = Screen.height - 10f - (lineCount * lineHeight);
+        float rectWidth = 700f;
+        float startX = Screen.width - rectWidth - 20f;
 
         float y = startY;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), "政策卡數據", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), "政策卡數據", labelStyle);
         y += lineHeight;
 
         if (appliedCardSummaries.Count == 0)
         {
-            GUI.Label(new Rect(10f, y, 700f, lineHeight), "名稱: 尚未選擇政策卡", labelStyle);
+            GUI.Label(new Rect(startX, y, rectWidth, lineHeight), "名稱: 尚未選擇政策卡", labelStyle);
             y += lineHeight;
         }
         else
         {
             for (int i = 0; i < appliedCardSummaries.Count; i++)
             {
-                GUI.Label(new Rect(10f, y, 700f, lineHeight), $"名稱 {i + 1}: {appliedCardSummaries[i]}", labelStyle);
+                GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"名稱 {i + 1}: {appliedCardSummaries[i]}", labelStyle);
                 y += lineHeight;
             }
         }
 
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"攻擊範圍倍率: {AttackRadiusMultiplier:F2}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"攻擊範圍倍率: {AttackRadiusMultiplier:F2}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"轉化率加成: {ConvertChanceBonus:+0.00;-0.00;0}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"轉化率加成: {ConvertChanceBonus:+0.00;-0.00;0}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"攻擊冷卻增量: {AttackCooldownBonus:+0.00;-0.00;0.00}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"攻擊冷卻增量: {AttackCooldownBonus:+0.00;-0.00;0.00}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"流失率: {LoseControlRate:F2}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"流失率: {LoseControlRate:F2}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"擴散半徑: {SpreadRadius:F1}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"擴散半徑: {SpreadRadius:F1}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"NPC 速度倍率: {GlobalNpcSpeedMultiplier:F2}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"NPC 速度倍率: {GlobalNpcSpeedMultiplier:F2}", labelStyle);
         y += lineHeight;
-        GUI.Label(new Rect(10f, y, 700f, lineHeight), $"誠信值 HP: {IntegrityHp:F0}/{MaxIntegrityHp:F0}", labelStyle);
+        GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"誠信值 HP: {IntegrityHp:F0}/{MaxIntegrityHp:F0}", labelStyle);
         y += lineHeight;
 
         if (SocialAtmosphereManager.Instance != null)
         {
-            GUI.Label(new Rect(10f, y, 700f, lineHeight), $"社會風氣值: {SocialAtmosphereManager.Instance.SocialAtmosphere}", labelStyle);
+            GUI.Label(new Rect(startX, y, rectWidth, lineHeight), $"社會風氣值: {SocialAtmosphereManager.Instance.SocialAtmosphere}", labelStyle);
         }
     }
 

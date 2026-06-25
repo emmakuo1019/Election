@@ -24,8 +24,15 @@ public class RewardCardUI : MonoBehaviour
         selectButton.onClick.RemoveAllListeners();
         selectButton.onClick.AddListener(() => 
         {
-            UIManager.Instance.OnPolicyCardSelected?.Invoke(currentCard);
-            onSelected?.Invoke(currentCard); // Keep original callback just in case it's used elsewhere
+            onSelected?.Invoke(currentCard);
         });
+    }
+
+    public PolicyCardData GetCard() => currentCard;
+
+    public void SetSelected(bool isSelected)
+    {
+        // 變更顏色以表示選中狀態（可依需求修改為啟用 Outline 等其他效果）
+        selectButton.image.color = isSelected ? new Color(0.8f, 1f, 0.8f) : Color.white;
     }
 }
