@@ -88,3 +88,33 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # End of https://www.toptal.com/developers/gitignore/api/unity
+
+# 美術素材（檔案偏大，不進版控）
+/Assets/Art/
+/Assets/Plugins/
+/Assets/Resources/
+/Assets/TextMesh Pro/
+/Assets/TmpFont/
+/Assets/TmpScenes/
+/Assets/TmpTool/
+/Assets/Data/Skills/
+
+# 對應被 ignore 資料夾的孤兒 meta
+/Assets/Art.meta
+/Assets/Plugins.meta
+/Assets/Resources.meta
+/Assets/TextMesh Pro.meta
+/Assets/TmpFont.meta
+/Assets/TmpScenes.meta
+/Assets/TmpTool.meta
+/Assets/Data.meta
+/Assets/Data/Skills.meta
+
+# 檔名異常
+"Icon\r"
+Icon$'\r'
+
+# AI IDE configs
+.claude/
+.gemini/
+.vscode/
