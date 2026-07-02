@@ -31,6 +31,19 @@ public class VoterIdleState : IState
     {
         if (_controller.Data == null) return;
 
+        // 【安全防護】判斷是否進入搖擺狀態。
+        // 注意：如果你使用 <= 0.5f，代表 0 (絕對中立) 也會一直處於搖擺！
+        // 這裡幫你加上條件，只在「有偏向但尚未轉化」時搖擺（你可以根據企劃需求決定用 >= 還是 <=）
+        bool isWavering = !_controller.Data.isConverted && 
+                          Mathf.Abs(_controller.Data.CurrentPosition) > 0 &&
+                          Mathf.Abs(_controller.Data.CurrentPosition) <= _controller.Data.MaxSupportValue * 0.5f;
+
+        if (isWavering)
+        {
+            _controller.StateMachine.ChangeState(new VoterWaverState(_controller));
+            return;
+        }
+
         if (_controller.Data.ShouldFollowPlayer && _controller.PlayerTransform != null)
         {
             float distanceToPlayer = Vector3.Distance(_controller.transform.position, _controller.PlayerTransform.position);

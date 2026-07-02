@@ -21,6 +21,8 @@ public class VoterData : MonoBehaviour
 
     public event System.Action OnIdentityChanged;
     public event System.Action OnDataUpdated;
+    public event System.Action<int> OnConversionSuccess;
+    public event System.Action OnConversionLost;
 
     [Header("設定")]
     [SerializeField] private VoterConfig config;
@@ -35,6 +37,8 @@ public class VoterData : MonoBehaviour
     [Header("基礎數值")]
     [SerializeField] private float normalMoveSpeed = 1.2f;
     [SerializeField] private float darkMoveSpeed = 2f;
+    [Tooltip("單邊的最大值。例如 5 代表玩家滿值為 +5，敵人為 -5")]
+    public int MaxSupportValue = 5;
 
     [Header("立場資料")]
     [Tooltip("-5 = 敵方完全支持，+5 = 玩家完全支持。")]
@@ -60,8 +64,23 @@ public class VoterData : MonoBehaviour
         {
             if (_convertedSide != value)
             {
+                int oldSide = _convertedSide;
                 _convertedSide = value;
+                
+                // 自動同步 isConverted
+                isConverted = _convertedSide != NeutralSideSign;
+                
                 OnDataUpdated?.Invoke();
+
+                // 觸發轉化與流失事件
+                if (oldSide == NeutralSideSign && value != NeutralSideSign)
+                {
+                    OnConversionSuccess?.Invoke(value);
+                }
+                else if (oldSide != NeutralSideSign && value == NeutralSideSign)
+                {
+                    OnConversionLost?.Invoke();
+                }
             }
         }
     }
@@ -112,10 +131,16 @@ public class VoterData : MonoBehaviour
         }
     }
 
+    public void InitializeData(int baseSupport)
+    {
+        MaxSupportValue = baseSupport;
+        InitializeFromConfig();
+    }
+
     public void InitializeFromConfig()
     {
         CurrentPosition = config != null
-            ? Mathf.Clamp(config.startingPosition, VoterConfig.MIN_POS, VoterConfig.MAX_POS)
+            ? Mathf.Clamp(config.startingPosition, -MaxSupportValue, MaxSupportValue)
             : 0;
         ConvertedSide = EvaluateSideFromPosition();
         isConverted = ConvertedSide != NeutralSideSign;
@@ -164,12 +189,12 @@ public class VoterData : MonoBehaviour
 
     public int EvaluateSideFromPosition()
     {
-        if (CurrentPosition >= VoterConfig.MAX_POS)
+        if (CurrentPosition >= MaxSupportValue)
         {
             return PlayerSideSign;
         }
 
-        if (CurrentPosition <= VoterConfig.MIN_POS)
+        if (CurrentPosition <= -MaxSupportValue)
         {
             return EnemySideSign;
         }

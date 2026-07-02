@@ -61,6 +61,11 @@ public class VoterLogic : MonoBehaviour
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
         }
+        if (Data != null)
+        {
+            Data.OnConversionSuccess += HandleConversionSuccess;
+            Data.OnConversionLost += HandleConversionLost;
+        }
     }
 
     private void OnDisable()
@@ -68,6 +73,11 @@ public class VoterLogic : MonoBehaviour
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        }
+        if (Data != null)
+        {
+            Data.OnConversionSuccess -= HandleConversionSuccess;
+            Data.OnConversionLost -= HandleConversionLost;
         }
     }
 
@@ -141,8 +151,8 @@ public class VoterLogic : MonoBehaviour
         int finalAmount = amount * Mathf.Max(1, 1 + Data.EmotionLabelCount);
         Data.CurrentPosition = Mathf.Clamp(
             Data.CurrentPosition + finalAmount,
-            VoterConfig.MIN_POS,
-            VoterConfig.MAX_POS);
+            -Data.MaxSupportValue,
+            Data.MaxSupportValue);
 
         UpdateConversionState(allowSpread);
         
@@ -188,8 +198,8 @@ public class VoterLogic : MonoBehaviour
         int oldSide = Data.ConvertedSide;
         int newSide = Data.EvaluateSideFromPosition();
 
+        // 寫入新的陣營，會自動觸發 VoterData 內的事件與狀態更新
         Data.ConvertedSide = newSide;
-        Data.isConverted = newSide != VoterData.NeutralSideSign;
 
         if (oldSide != newSide)
         {
@@ -217,7 +227,6 @@ public class VoterLogic : MonoBehaviour
         int oldSide = Data.ConvertedSide;
         Data.CurrentPosition = 0;
         Data.ConvertedSide = VoterData.NeutralSideSign;
-        Data.isConverted = false;
         Data.loyalty = 1f;
 
         VoteManager.Instance?.ApplyAlignmentChange(oldSide, VoterData.NeutralSideSign);
@@ -262,7 +271,7 @@ public class VoterLogic : MonoBehaviour
     public void ForceConvertToPlayer()
     {
         if (Data == null) return;
-        int requiredInfluence = VoterConfig.MAX_POS - Data.CurrentPosition;
+        int requiredInfluence = Data.MaxSupportValue - Data.CurrentPosition;
         if (requiredInfluence <= 0) return;
         OnInfluence(requiredInfluence, true, transform.position);
     }
@@ -270,6 +279,37 @@ public class VoterLogic : MonoBehaviour
     public void ConvertColdIdentityToEmotion()
     {
         Data?.ConvertColdIdentityToEmotion();
+    }
+
+    // ==========================================
+    // 轉化狀態事件回呼 (Event Handlers)
+    // ==========================================
+
+    private void HandleConversionSuccess(int side)
+    {
+        // 顯示成功轉化的 UI
+        Visuals?.ShowEmote(EmoteType.Success);
+
+        // 如果目前處於 WaverState，強制切換回 Idle (或 Follow)
+        if (StateMachine.CurrentState is VoterWaverState)
+        {
+            if (Data.ShouldFollowPlayer)
+                StateMachine.ChangeState(new VoterFollowState(this));
+            else
+                StateMachine.ChangeState(new VoterIdleState(this));
+        }
+    }
+
+    private void HandleConversionLost()
+    {
+        // 顯示流失的 UI
+        Visuals?.ShowEmote(EmoteType.Lost);
+
+        // 如果目前處於 WaverState，強制切回 Idle
+        if (StateMachine.CurrentState is VoterWaverState)
+        {
+            StateMachine.ChangeState(new VoterIdleState(this));
+        }
     }
 
     // ==========================================

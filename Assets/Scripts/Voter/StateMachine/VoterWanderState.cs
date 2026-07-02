@@ -35,7 +35,20 @@ public class VoterWanderState : IState
 
     public void Update()
     {
-        if (_controller.Data != null && _controller.Data.ShouldFollowPlayer)
+        if (_controller.Data == null) return;
+
+        // 【安全防護】判斷是否進入搖擺狀態。
+        bool isWavering = !_controller.Data.isConverted && 
+                          Mathf.Abs(_controller.Data.CurrentPosition) > 0 &&
+                          Mathf.Abs(_controller.Data.CurrentPosition) <= _controller.Data.MaxSupportValue * 0.5f;
+
+        if (isWavering)
+        {
+            _controller.StateMachine.ChangeState(new VoterWaverState(_controller));
+            return;
+        }
+
+        if (_controller.Data.ShouldFollowPlayer)
         {
             _controller.StateMachine.ChangeState(new VoterFollowState(_controller));
             return;
