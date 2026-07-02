@@ -108,9 +108,9 @@ public class SkillState : IState
                 _dashTimer += Time.fixedDeltaTime;
 
                 // 衝刺剛結束時，如果撞到人則扣除 Integrity HP
-                if (_dashTimer >= dogeza.DashDuration && _hasHitVoter && PolicyEffectRuntimeManager.HasInstance)
+                if (_dashTimer >= dogeza.DashDuration && _hasHitVoter && PlayerHealthSystem.HasInstance)
                 {
-                    PolicyEffectRuntimeManager.Instance.AddIntegrityHp(-dogeza.HpCost);
+                    PlayerHealthSystem.Instance.TakeDamage(dogeza.HpCost);
                 }
             }
         }

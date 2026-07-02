@@ -49,8 +49,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         RefreshAttackStats();
         SyncAttackRangeMeshRotation();
 
-        if (PolicyEffectRuntimeManager.HasInstance)
-            PolicyEffectRuntimeManager.Instance.OnEffectsChanged += RefreshAttackStats;
+        if (PolicyManager.HasInstance)
+            PolicyManager.Instance.OnEffectsChanged += RefreshAttackStats;
 
         if (playerController != null)
             playerController.OnDirectionChanged += OnDirectionChanged;
@@ -58,8 +58,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     void OnDisable()
     {
-        if (PolicyEffectRuntimeManager.HasInstance)
-            PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= RefreshAttackStats;
+        if (PolicyManager.HasInstance)
+            PolicyManager.Instance.OnEffectsChanged -= RefreshAttackStats;
 
         if (playerController != null)
             playerController.OnDirectionChanged -= OnDirectionChanged;
@@ -86,7 +86,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private void RefreshAttackStats()
     {
-        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        PolicyManager effects = PolicyManager.Instance;
         float policyAdjustedRange = effects != null ? effects.GetModifiedAttackRange(baseAttackRange) : baseAttackRange;
         currentAttackRange = policyAdjustedRange * temporaryAttackRangeMultiplier;
         currentAttackCooldown = effects != null ? effects.GetModifiedAttackCooldown(attackCooldown) : attackCooldown;
@@ -120,9 +120,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             return false;
         }
         
-        if (PlayerMPSystem.Instance == null)
+        if (GameDB.Instance == null)
         {
-            Debug.LogWarning("⚠️ 找不到 PlayerMPSystem，無法施放演說！");
+            Debug.LogWarning("⚠️ 找不到 GameDB，無法施放演說！");
             return false;
         }
         
@@ -232,7 +232,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (voter == null)
             return;
 
-        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        PolicyManager effects = PolicyManager.Instance;
         float chance = effects != null
             ? effects.GetModifiedConvertChance(convertChance)
             : convertChance;

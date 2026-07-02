@@ -8,23 +8,20 @@ public class MPBarUI : MonoBehaviour
     [SerializeField] private Slider mpSlider;
     [SerializeField] private TMP_Text mpText;
 
-    private void Start()
+    private void OnEnable()
     {
-        if (PlayerMPSystem.Instance == null)
+        if (GameDB.Instance != null)
         {
-            Debug.LogWarning("MPBarUI：找不到 PlayerMPSystem");
-            return;
+            GameDB.Instance.Run.OnMPChanged += UpdateUI;
+            UpdateUI(GameDB.Instance.Run.CurrentMP, GameDB.Instance.Run.MaxMP);
         }
-
-        PlayerMPSystem.Instance.OnMPChanged += UpdateUI;
-        UpdateUI(PlayerMPSystem.Instance.CurrentMP, PlayerMPSystem.Instance.MaxMP);
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
-        if (PlayerMPSystem.Instance != null)
+        if (GameDB.Instance != null)
         {
-            PlayerMPSystem.Instance.OnMPChanged -= UpdateUI;
+            GameDB.Instance.Run.OnMPChanged -= UpdateUI;
         }
     }
 
@@ -41,13 +38,14 @@ public class MPBarUI : MonoBehaviour
             mpText.text = $"{currentMP} / {maxMP}";
         }
     }
+
     public void Rebind()
     {
-        if (PlayerMPSystem.Instance != null)
+        if (GameDB.Instance != null)
         {
-            PlayerMPSystem.Instance.OnMPChanged -= UpdateUI;
-            PlayerMPSystem.Instance.OnMPChanged += UpdateUI;
-            UpdateUI(PlayerMPSystem.Instance.CurrentMP, PlayerMPSystem.Instance.MaxMP);
+            GameDB.Instance.Run.OnMPChanged -= UpdateUI;
+            GameDB.Instance.Run.OnMPChanged += UpdateUI;
+            UpdateUI(GameDB.Instance.Run.CurrentMP, GameDB.Instance.Run.MaxMP);
         }
     }
 }

@@ -31,10 +31,10 @@ public class StageClearState : IState
     {
         Debug.Log($"[StageClearState] 選擇了政策卡: {card.cardName}");
         
-        // 呼叫 PolicyEffectRuntimeManager 發放獎勵
-        if (PolicyEffectRuntimeManager.HasInstance)
+        // 呼叫 PolicyManager 發放獎勵
+        if (PolicyManager.HasInstance)
         {
-            PolicyEffectRuntimeManager.Instance.ApplyCard(card);
+            PolicyManager.Instance.ApplyCard(card);
         }
 
         // ⚠️ 修正：移除這裡的 OnSequenceFinished()。

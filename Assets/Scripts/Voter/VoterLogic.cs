@@ -208,11 +208,18 @@ public class VoterLogic : MonoBehaviour
 
         if (oldSide != newSide)
         {
-            VoteManager.Instance?.ApplyAlignmentChange(oldSide, newSide);
+            if (GameDB.Instance != null)
+            {
+                if (oldSide == VoterData.PlayerSideSign) GameDB.Instance.Run.AddVote(-1, 0);
+                else if (oldSide == VoterData.EnemySideSign) GameDB.Instance.Run.AddVote(0, -1);
+
+                if (newSide == VoterData.PlayerSideSign) GameDB.Instance.Run.AddVote(1, 0);
+                else if (newSide == VoterData.EnemySideSign) GameDB.Instance.Run.AddVote(0, 1);
+            }
 
             if (newSide == VoterData.PlayerSideSign && oldSide != VoterData.PlayerSideSign)
             {
-                PlayerMPSystem.Instance?.RecoverMP(1);
+                GameDB.Instance?.Run.ModifyMP(1);
 
                 if (allowSpread)
                 {
@@ -229,12 +236,16 @@ public class VoterLogic : MonoBehaviour
         Data.ConvertedSide = VoterData.NeutralSideSign;
         Data.loyalty = 1f;
 
-        VoteManager.Instance?.ApplyAlignmentChange(oldSide, VoterData.NeutralSideSign);
+        if (GameDB.Instance != null)
+        {
+            if (oldSide == VoterData.PlayerSideSign) GameDB.Instance.Run.AddVote(-1, 0);
+            else if (oldSide == VoterData.EnemySideSign) GameDB.Instance.Run.AddVote(0, -1);
+        }
     }
 
     private void UpdateLoyaltyDecay()
     {
-        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        PolicyManager effects = PolicyManager.Instance;
         if (effects == null || !Data.isConverted || effects.LoseControlRate <= 0f)
         {
             return;
@@ -251,7 +262,7 @@ public class VoterLogic : MonoBehaviour
     private readonly Collider[] spreadHitBuffer = new Collider[32];
     private void SpreadInfluenceToNearbyVoters()
     {
-        PolicyEffectRuntimeManager effects = PolicyEffectRuntimeManager.Instance;
+        PolicyManager effects = PolicyManager.Instance;
         if (effects == null || effects.SpreadRadius <= 0f) return;
 
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, effects.SpreadRadius, spreadHitBuffer);

@@ -1,14 +1,20 @@
+## 架構守則
+1. 資料單一來源 (SSOT)：所有跨場景存活的數值嚴禁存在 Manager 中，必須在 GameDB.cs 註冊。
+2. 事件驅動 (Event-Driven)：UI 一律透過訂閱事件更新，嚴禁在 Update() 裡面輪詢。
+3. Proxy 模式：若現有 Manager 需保留，它只能作為 Proxy 轉接，不可存放狀態。
+4. 資料防呆：所有增減數值的方法必須包含邊界檢查（如除以零保護、負數防禦）。
+
+---
+
 # Election（酸宗痛）專案說明文件
 
 > 供 AI 助理優先讀取，用於了解遊戲的製作方向與規範。
-> 最後更新：2026-06-08（依據企劃書 G01 酸宗痛 企劃書.pdf 及流程圖修訂）
-
----
+> 最後更新：2026-07-02（合併 KIRO_PROJECT_CONTEXT 並導入 GameDB SSOT 架構）
 
 ## 專案概述
 
 - **遊戲名稱**：酸宗痛
-- **引擎**：Unity（URP 渲染管線，C#）
+- **引擎**：Unity 6000.3.17f1（URP 渲染管線，C#）
 - **開發工具**：Unity、Rider、Maya、CSP
 - **遊戲類型**：Roguelite 選舉主題動作遊戲
 - **目標平台**：PC / Steam
@@ -24,14 +30,14 @@
 
 ## 操作方式
 
-| 按鍵 | 功能 |
-|------|------|
-| WASD | 移動 |
-| L Shift | 衝刺（Dash） |
-| 左鍵 / Attack | 普通攻擊（演說） |
-| J / K / L | 技能（技能一、技能二、大招） |
-| Q / E / R | 技能（企劃書另一版本操作方式） |
-| Esc | 選單 |
+| 按鍵                   | 功能             |
+|----------------------|----------------|
+| WASD                 | 移動             |
+| L Shift / xbox把手 右板機 | 衝刺（Dash）       |
+| 空白鍵 / xbox把手 X鍵      | 普通攻擊（演說）       |
+| J / K / L            | 技能（技能一、技能二、大招） |
+| A / B / Y            | 技能（xbox把手）       |
+| Esc                  | 選單             |
 
 ---
 
@@ -103,21 +109,21 @@
 ## 核心系統
 
 ### 1. 選票系統（VoteManager）
-- 預設雙方各 50 票。
+- 預設雙方各 50 票。（資料存於 GameDB）
 - 選民被轉化時票數即時更新。
 - **計時結束時票數 > 對手** → 觸發通關 / 觸發政策卡獎勵。
 - **票數 ≤ 對手** → 顯示選擇快報，依比例恢復部分資金，繼續下一房間（非最後房間）。
 
 ### 2. 誠信值（HP）
-- 預設值 70 / 100（`IntegrityHp = 70f`, `MaxIntegrityHp = 100f`）。
+- 預設值 70 / 100（存放於 GameDB 中）。
 - **歸零邏輯**：
   - 誠信歸零後，深色選民開始「燃燒」（每秒減少），燃燒完才真正觸發退選（結局 D）。
   - 形象越差（低於 20%～1%）→ 敵人血量提升 10%～50%。
 - 在記者監視範圍內使用**情緒政策**會扣除誠信。
-- `IntegrityHpRatio` 影響選民的基礎 HP。
+- 誠信值比例影響選民的基礎 HP。
 
 ### 3. 資金（MP）
-- 用於施放技能、造勢大招。
+- 用於施放技能、造勢大招。（資料存於 GameDB）
 - **補充方式**：
   - 成功轉化選民回補
   - 特殊房間回補
@@ -145,7 +151,7 @@
 | 解鎖時機 | 技能 | 情緒版 | 理性版 |
 |----------|------|--------|--------|
 | 總部出發前 | 技能一 | 煽動情緒（短暫暈眩對手） | 政策論述（大範圍攻擊） |
-| 第一區完成後 | 技能二 | 側翼出擊（大幅減少對手選票） | 發表白皮書（短暫暈眩對手） |
+| 第一區完成後 | 技能二 | 側翼出擊（大幅減少對手選票） | 發表白白皮書（短暫暈眩對手） |
 | 第二區完成後 | 大招 | 群眾造勢（需深色選民，轉化支持者為深色選民） | 說明會（需深色選民，大範圍影響選民） |
 
 - 技能鍵：J / K / L（分別對應技能一、技能二、大招）。
@@ -161,7 +167,7 @@
 | 政策說明會 | 理性 | 支持者不易流失 | 範圍小 |
 | 精準訴求 | 理性 | 攻擊力大幅提升 | 範圍小 |
 | 情緒動員 | 情緒 | 有機率擴散至其他選民 | 所有選民移動速度增加 |
-
+/待增
 PolicyCard 數值欄位（`PolicyEffectRuntimeManager` 管理）：
 
 | 欄位 | 說明 |
@@ -300,7 +306,7 @@ Assets/Scripts/
 ├── Player/          # 玩家控制、攻擊、技能、狀態機
 │   └── StateMachine/  # Idle / Move / Dash / Attack / Skill / Stun 狀態
 ├── Voter/           # 選民邏輯、資料、外觀
-├── System/          # 核心系統（VoteManager、BattleFlowController 等）
+├── System/          # 核心系統（GameDB、VoteManager、BattleFlowController 等）
 ├── UIManager/       # UI 元件
 ├── Effects/         # 特效、物件池相關
 ├── Enemy/           # 敵方 AI
@@ -310,8 +316,9 @@ Assets/Scripts/
 
 ### 程式規範
 - **語言**：C#，Unity 6000.x 系列。
-- **Singleton 模式**：主要系統使用 `Instance` 靜態屬性，`Awake` 中防止重複建立。
-- **事件系統**：使用 C# `event Action` / `event delegate` 解耦系統間通訊。
+- **資料單一來源 (SSOT)**：全域狀態存放在 `GameDB.cs` 中，不依賴於 Manager 儲存全域數值，確保跨場景資料的一致性與防呆。
+- **Singleton 模式**：主要系統使用 `Instance` 靜態屬性，`Awake` 中防止重複建立。若 Manager 仍存在則主要作為 Proxy。
+- **事件系統**：使用 C# `event Action` / `event delegate` 解耦系統間通訊。UI 必須訂閱事件更新，嚴禁在 Update 輪詢。
 - **資料與邏輯分離**：資料層使用 `ScriptableObject`（`VoterConfig`、`PolicyCardData`、`PartySkillData`）或資料元件（`VoterData`），邏輯層獨立（`VoterLogic`）。
 - **物件池**：特效使用 `PoolManager`（`AutoReturnToPool`、`PooledParticleInstance`）。
 - **進度儲存**：`PlayerPrefs` 儲存 Block/Room 進度與待處理事件。
@@ -356,18 +363,20 @@ Assets/Scripts/
 
 本專案採用 **Clean Architecture（乾淨架構）**，將遊戲邏輯分為三大核心區塊，嚴禁跨界干涉：
 
-1. **大腦 `GameFlowManager` (全域狀態機)**
+1. **資料大腦 `GameDB` (SSOT)**
+* **職責**：全域單一資料來源，集中管理玩家、遊戲進度等所有跨場景資料。
+* **特性**：包含完整防呆機制、事件訂閱更新。所有變更皆須經過 `GameDB` 以確保資料正確性。
+
+2. **流程大腦 `GameFlowManager` (全域狀態機)**
 * **職責**：管理遊戲的宏觀生命週期（主選單 ➔ 總部 ➔ 戰鬥/休息 ➔ 結算 ➔ Boss）。
 * **特性**：跨場景不銷毀 (`DontDestroyOnLoad`) 的 Singleton。只負責切換 `IState`，絕對不處理具體的 UI 動畫或戰鬥傷害計算。
 * **狀態讀取**：對外僅提供唯讀屬性 `public IState CurrentState => stateMachine?.CurrentState;`，嚴禁外部腳本直接修改狀態。
 
-
-2. **雙手 `UIManager` & 全域 Canvas**
+3. **雙手 `UIManager` & 全域 Canvas**
 * **職責**：純粹的視覺呈現。只提供 `ShowPanel()` 與 `HidePanel()` 以及 UI 序列的控制。
-* **特性**：與大腦一樣是 `DontDestroyOnLoad`。它不知道「遊戲現在玩到哪裡」，只聽命於大腦的指揮。
+* **特性**：與流程大腦一樣是 `DontDestroyOnLoad`。它不知道「遊戲現在玩到哪裡」，只聽命於大腦的指揮與 `GameDB` 的事件推播。
 
-
-3. **神經 `UIFlowHelper` & `BattleEventManager**`
+4. **神經 `UIFlowHelper` & `BattleEventManager`**
 * **職責**：負責傳遞訊號。
 * **`UIFlowHelper`**：掛載於 UI 按鈕上，將玩家的點擊事件（OnClick）轉發為大腦的狀態切換指令（例如 `ChangeState(new CharacterSelectState())`）。
 * **`BattleEventManager`**：戰鬥場景中的大聲公（靜態事件中心）。當玩家死亡或打贏房間時，發送 `OnRoomCleared` 或 `OnPlayerDied` 廣播，讓大腦決定下一步。
@@ -387,7 +396,7 @@ Assets/Scripts/
 
 ### 2. 事件訂閱與解除 (防止 Memory Leak)
 
-* **訂閱時機**：在場景確定載入**完成後**（Coroutine 結束時），才向 `BattleEventManager` 訂閱事件。
+* **訂閱時機**：在場景確定載入**完成後**（Coroutine 結束時），才向 `BattleEventManager` 或 `GameDB` 訂閱事件。
 * **解除時機**：**必須、一定、絕對**要在 `Exit()` 中解除訂閱（`-=`），防止舊狀態在背景繼續干擾新流程。
 
 ### 3. 轉場邏輯與分流 (Edge Cases 防禦)
@@ -404,6 +413,7 @@ Assets/Scripts/
 
 * **錯誤示範**：在 State 裡面寫 `bool isDataClosed`，然後在 `Update()` 裡面一直 `if(isDataClosed)`。這違反開閉原則，且效能低落。
 * **✅ 正確做法 (委派回呼 Action)**：使用 UI Sequence Controller 模式。由 State 呼叫 `UIManager.Instance.StartSequence(Action onComplete)`，把「展演完畢後要切換狀態的邏輯」當作參數傳給 UI，等 UI 播完後自己 `Invoke()` 呼叫它。
+* **✅ 正確做法 (資料綁定)**：依賴 `GameDB` 廣播的 Action 更新數值型 UI，嚴禁 Update 中檢查數值。
 
 ### ❌ 嚴禁在 Manager 裡寫滿 if-else
 
@@ -425,3 +435,27 @@ Assets/Scripts/
 3. **修改切換樞紐**：去前一個狀態（如 `StageClearState` 的轉場邏輯中），加入判定 `if (roomNumber + 1 == 8) ChangeState(new MerchantRoomState());`。
 
 **(完)**
+
+---
+
+## 🧹 重構總結 (GameDB 統一數值管理)
+> 紀錄時間：2026-07-02
+
+我們已經成功將專案中散落的數值與 Manager 集中至 `GameDB`，以下是歸檔與確認狀態：
+
+### 1. 殘留引用掃描結果
+- **掃描目標**：`PlayerMPSystem`、`VoteManager`、`PolicyEffectRuntimeManager` 等舊版全域實例，以及直接操作 `HP` / `MP` / `Vote` 的外流代碼。
+- **掃描結果**：**乾淨無殘留**！
+  - 所有的 UI (`MPBarUI`, `HPBarUI`, `VoteDisplayUI`, `LevelTimerUI`, `RewardPanelUI`, `MiniSettlementUI`) 已經正確改為訂閱 `GameDB.Instance.Run` 的事件 (`OnMPChanged`, `OnVotesChanged` 等)。
+  - `VoterLogic.cs` 與 `VoterData.cs` 中呼叫陣營與影響力的邏輯，皆已安全轉向 `GameDB.Instance.Run` 或 `PolicyManager`。
+  - `DogezaSkillData` 等技能邏輯也正確掛載至 `GameDB.Instance.Run.ModifyMP`，包含防呆與邊界檢查。
+
+### 2. Obsolete 歸檔狀態
+- 🗑️ `VoteManager.cs`：已徹底移除，由 `GameDB.RunData.AddVote()` 負責計票。
+- 🗑️ `PlayerMPSystem.cs`：已徹底移除，由 `GameDB.RunData.ModifyMP()` 取代。
+- 📦 `PolicyEffectRuntimeManager.cs`：已歸檔至 `Assets/Scripts/Obsolete/`，被新的 `PolicyManager` 正式取代。
+核心邏輯的遷移完全符合 Clean Architecture 與 SSOT 原則。
+
+### 3. 測試腳本生成
+- 建立 `GameDBTest.cs` 於 `Assets/Scripts/System/GameDBTest.cs`。
+- 功能：每幀安全地監控 `GameDB.Instance.Run` 的 HP、MP 與選票狀態，確保跨場景資料存活正確無誤。

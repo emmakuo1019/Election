@@ -69,8 +69,8 @@ public class BattleFlowController : MonoBehaviour
     private void OnBattleTimeEnd()
     {
         bool isLastRoomInBlock = BlockProgressManager.HasBlockProgress() && BlockProgressManager.IsLastRoomInBlock();
-        int playerVotes = VoteManager.Instance != null ? VoteManager.Instance.PlayerVotes : 0;
-        int opponentVotes = VoteManager.Instance != null ? VoteManager.Instance.OpponentVotes : 0;
+        int playerVotes = GameDB.Instance != null ? GameDB.Instance.Run.PlayerVotes : 0;
+        int opponentVotes = GameDB.Instance != null ? GameDB.Instance.Run.OpponentVotes : 0;
         bool canClaimReward = playerVotes > opponentVotes;
 
         if (!isLastRoomInBlock)

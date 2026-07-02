@@ -24,7 +24,7 @@ public class RoomResultCalculator : MonoBehaviour
         float supportRate = (float)playerSupporters / totalVoters;
         int rewardMP = Mathf.RoundToInt(baseRoomMPReward * supportRate);
 
-        PlayerMPSystem.Instance?.RecoverMP(rewardMP);
+        GameDB.Instance?.Run.ModifyMP(rewardMP);
 
         if (showDebugLog)
         {
@@ -45,12 +45,13 @@ public class RoomResultCalculator : MonoBehaviour
 
     public float GetGlobalSupportRate()
     {
-        if (VoteManager.Instance == null)
+        if (GameDB.Instance == null)
         {
             return 0.5f;
         }
 
-        return VoteManager.Instance.PlayerVotePercentage;
+        int totalVotes = GameDB.Instance.Run.PlayerVotes + GameDB.Instance.Run.OpponentVotes;
+        return totalVotes > 0 ? (float)GameDB.Instance.Run.PlayerVotes / totalVotes : 0f;
     }
 
     public int GetTotalVoters()

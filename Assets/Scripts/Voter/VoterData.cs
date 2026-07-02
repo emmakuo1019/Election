@@ -102,8 +102,8 @@ public class VoterData : MonoBehaviour
         get
         {
             float baseSpeed = HasDarkAttribute ? darkMoveSpeed : normalMoveSpeed;
-            float multiplier = Application.isPlaying && PolicyEffectRuntimeManager.HasInstance
-                ? PolicyEffectRuntimeManager.Instance.GlobalNpcSpeedMultiplier
+            float multiplier = Application.isPlaying && PolicyManager.HasInstance
+                ? PolicyManager.Instance.GlobalNpcSpeedMultiplier
                 : 1f;
 
             return baseSpeed * multiplier;

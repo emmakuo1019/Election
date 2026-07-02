@@ -18,60 +18,47 @@ public class VoteDisplayUI : MonoBehaviour
     
     private Color neutralColor = Color.gray;
 
-    private void Start()
+    private void OnEnable()
     {
-        if (VoteManager.Instance == null)
+        if (GameDB.Instance != null)
         {
-            Debug.LogError("❌ VoteManager 未初始化！");
-            enabled = false;
-            return;
+            GameDB.Instance.Run.OnVotesChanged += OnVotesChanged;
+            OnVotesChanged(GameDB.Instance.Run.PlayerVotes, GameDB.Instance.Run.OpponentVotes);
         }
-
-        //if (voteSlider == null || playerVotesText == null || opponentVotesText == null)
-        //{
-            //enabled = false;
-            //return;
-        //}
-
-        VoteManager.Instance.OnVotesChanged += OnVotesChanged;
-        RefreshUI();
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
-        if (VoteManager.Instance != null)
+        if (GameDB.Instance != null)
         {
-            VoteManager.Instance.OnVotesChanged -= OnVotesChanged;
+            GameDB.Instance.Run.OnVotesChanged -= OnVotesChanged;
         }
     }
 
     private void OnVotesChanged(int playerVotes, int opponentVotes)
     {
-        RefreshUI();
-    }
-
-    private void RefreshUI()
-    {
-        VoteManager mgr = VoteManager.Instance;
-
-        // 更新文字
-        //playerVotesText.text = $"你: {mgr.PlayerVotes}";
-        //opponentVotesText.text = $"對手: {mgr.OpponentVotes}";
+        // 直接從 GameDB 取得已經封裝好的百分比
+        float playerVotePercentage = GameDB.Instance.Run.PlayerVotePercentage;
+        float opponentVotePercentage = 1f - playerVotePercentage;
 
         // 更新百分比
-        playerPercentText.text = $"{(mgr.PlayerVotePercentage * 100):F1}%";
-        opponentPercentText.text = $"{(mgr.OpponentVotePercentage * 100):F1}%";
+        if (playerPercentText != null)
+            playerPercentText.text = $"{(playerVotePercentage * 100):F1}%";
+        if (opponentPercentText != null)
+            opponentPercentText.text = $"{(opponentVotePercentage * 100):F1}%";
 
         // 更新 Slider (玩家比例)
-        voteSlider.value = mgr.PlayerVotePercentage;
+        if (voteSlider != null)
+            voteSlider.value = playerVotePercentage;
     }
+
     public void Rebind()
     {
-        if (VoteManager.Instance != null)
+        if (GameDB.Instance != null)
         {
-            VoteManager.Instance.OnVotesChanged -= OnVotesChanged;
-            VoteManager.Instance.OnVotesChanged += OnVotesChanged;
-            RefreshUI();
+            GameDB.Instance.Run.OnVotesChanged -= OnVotesChanged;
+            GameDB.Instance.Run.OnVotesChanged += OnVotesChanged;
+            OnVotesChanged(GameDB.Instance.Run.PlayerVotes, GameDB.Instance.Run.OpponentVotes);
         }
     }
 }

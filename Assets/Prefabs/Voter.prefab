@@ -5251,9 +5251,9 @@ MonoBehaviour:
   emoteRenderer: {fileID: 6137966727394157213}
   emoteSprites:
   - {fileID: 21300000, guid: 79c04b0f82c7f43e8909f2a0d81ceda1, type: 3}
-  - {fileID: 21300000, guid: 7ce32b620528d44718a6fc0e4f986a96, type: 3}
-  - {fileID: 21300000, guid: 55e2a32cf218a461d94de0870dc4cdad, type: 3}
   - {fileID: 21300000, guid: be8b95e0e806f4965904c8237e0f9a29, type: 3}
+  - {fileID: 21300000, guid: 55e2a32cf218a461d94de0870dc4cdad, type: 3}
+  - {fileID: 21300000, guid: 7ce32b620528d44718a6fc0e4f986a96, type: 3}
   waverShakeAmplitude: 0.05
   waverShakeFrequency: 15
 --- !u!195 &8013282526341333847

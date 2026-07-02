@@ -8,51 +8,44 @@ public class HPBarUI : MonoBehaviour
     [SerializeField] private Slider hpSlider;
     [SerializeField] private TMP_Text hpText;
 
-    private void Start()
+    private void OnEnable()
     {
-        if (!PolicyEffectRuntimeManager.HasInstance)
+        if (GameDB.Instance != null)
         {
-            _ = PolicyEffectRuntimeManager.Instance;
-        }
-
-        PolicyEffectRuntimeManager.Instance.OnEffectsChanged += UpdateUI;
-        UpdateUI();
-    }
-
-    private void OnDestroy()
-    {
-        if (PolicyEffectRuntimeManager.HasInstance)
-        {
-            PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= UpdateUI;
+            GameDB.Instance.Run.OnIntegrityHpChanged += UpdateUI;
+            UpdateUI(GameDB.Instance.Run.IntegrityHp, GameDB.Instance.Run.MaxIntegrityHp);
         }
     }
 
-    private void UpdateUI()
+    private void OnDisable()
     {
-        PolicyEffectRuntimeManager runtime = PolicyEffectRuntimeManager.Instance;
-        if (runtime == null)
+        if (GameDB.Instance != null)
         {
-            return;
+            GameDB.Instance.Run.OnIntegrityHpChanged -= UpdateUI;
         }
+    }
 
+    private void UpdateUI(float currentHp, float maxHp)
+    {
         if (hpSlider != null)
         {
-            hpSlider.maxValue = runtime.MaxIntegrityHp;
-            hpSlider.value = runtime.IntegrityHp;
+            hpSlider.maxValue = maxHp;
+            hpSlider.value = currentHp;
         }
 
         if (hpText != null)
         {
-            hpText.text = $"HP {runtime.IntegrityHp:F0} / {runtime.MaxIntegrityHp:F0}";
+            hpText.text = $"HP {currentHp:F0} / {maxHp:F0}";
         }
     }
+
     public void Rebind()
     {
-        if (PolicyEffectRuntimeManager.HasInstance)
+        if (GameDB.Instance != null)
         {
-            PolicyEffectRuntimeManager.Instance.OnEffectsChanged -= UpdateUI;
-            PolicyEffectRuntimeManager.Instance.OnEffectsChanged += UpdateUI;
+            GameDB.Instance.Run.OnIntegrityHpChanged -= UpdateUI;
+            GameDB.Instance.Run.OnIntegrityHpChanged += UpdateUI;
+            UpdateUI(GameDB.Instance.Run.IntegrityHp, GameDB.Instance.Run.MaxIntegrityHp);
         }
-        UpdateUI();
     }
 }

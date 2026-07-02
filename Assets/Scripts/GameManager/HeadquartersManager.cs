@@ -12,7 +12,7 @@ void Start()
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
     PlayerSkillManager.ResetSavedPartySkill();
-    VoteManager.Instance?.ResetToDefaultVotes();
+    GameDB.Instance?.ResetRunData();
     backBtn.onClick.AddListener(backBtnOnClick);
 
     void backBtnOnClick()

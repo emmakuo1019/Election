@@ -34,15 +34,13 @@ public class DogezaSkill : SkillData
         }
 
         // 資源檢查與消耗 (取代了舊的 CanExecute / TryConsumeResources)
-        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null
-            ? PlayerMPSystem.Instance
-            : caster.GetComponent<PlayerMPSystem>();
-            
-        if (mpSystem != null && !mpSystem.UseMP(mpCost))
+        if (GameDB.Instance != null && GameDB.Instance.Run.CurrentMP < mpCost)
         {
             Debug.LogWarning("[DogezaSkill] MP 不足，無法施放悲情土下座。");
             return;
         }
+        
+        GameDB.Instance?.Run.ModifyMP(-mpCost);
 
         // 自訂的特效生成邏輯 (取代 base.ExecuteSkill)
         if (skillEffectPrefab != null)

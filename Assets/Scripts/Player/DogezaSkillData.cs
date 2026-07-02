@@ -14,15 +14,13 @@ public class DogezaSkillData : SkillData
     public override void ExecuteSkill(GameObject caster)
     {
         // 1. 扣除 MP 資源 (若 MP 不足，阻止技能繼續執行)
-        PlayerMPSystem mpSystem = PlayerMPSystem.Instance != null 
-            ? PlayerMPSystem.Instance 
-            : caster.GetComponent<PlayerMPSystem>();
-            
-        if (mpSystem != null && !mpSystem.UseMP(mpCost))
+        if (GameDB.Instance != null && GameDB.Instance.Run.CurrentMP < mpCost)
         {
             Debug.LogWarning("[DogezaSkillData] MP 不足！技能取消執行。");
             return;
         }
+
+        GameDB.Instance?.Run.ModifyMP(-mpCost);
 
         // 2. 執行基底邏輯 (播放設定好的特效等)
         base.ExecuteSkill(caster);

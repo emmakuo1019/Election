@@ -62,12 +62,9 @@ public class BattleSceneController : MonoBehaviour
         }
 
         // 將本場選民的初始票數加入跨場景累計
-        if (VoteManager.Instance != null && (addedPlayerVotes > 0 || addedOpponentVotes > 0))
+        if (GameDB.Instance != null && (addedPlayerVotes > 0 || addedOpponentVotes > 0))
         {
-            VoteManager.Instance.SetVotes(
-                VoteManager.Instance.PlayerVotes + addedPlayerVotes,
-                VoteManager.Instance.OpponentVotes + addedOpponentVotes
-            );
+            GameDB.Instance.Run.AddVote(addedPlayerVotes, addedOpponentVotes);
         }
     }
 
