@@ -4,17 +4,11 @@ public class BattleSceneController : MonoBehaviour
 {
     [Header("場景初始化")]
     [SerializeField] private bool initializeVoterIdentityOnStart = true;
-    [SerializeField] private SocialAtmosphereManager socialAtmosphereManager;
     [SerializeField] private BattleFlowController battleFlowController;
     [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
 
     private void Start()
     {
-        if (socialAtmosphereManager == null)
-        {
-            socialAtmosphereManager = SocialAtmosphereManager.Instance ?? FindFirstObjectByType<SocialAtmosphereManager>();
-        }
-
         if (battleFlowController == null)
         {
             battleFlowController = FindFirstObjectByType<BattleFlowController>();
@@ -75,7 +69,7 @@ public class BattleSceneController : MonoBehaviour
 
     private VoterAttribute GetRandomAttribute()
     {
-        float darkChance = socialAtmosphereManager != null ? socialAtmosphereManager.GetDarkVoterRate() : 0.1f;
+        float darkChance = GameDB.Instance != null ? GameDB.Instance.Run.GetDarkVoterRate() : 0.1f;
         float roll = Random.value;
 
         if (roll < darkChance)

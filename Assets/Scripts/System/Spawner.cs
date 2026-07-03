@@ -4,7 +4,6 @@ public class Spawner : MonoBehaviour
 {
     [Header("Prefab")]
     public GameObject voterPrefab;
-    public SocialAtmosphereManager climateManager;
 
     [Header("屬性機率")]
     [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
@@ -41,7 +40,7 @@ public class Spawner : MonoBehaviour
 
     private VoterAttribute GetRandomAttribute()
     {
-        float darkChance = climateManager != null ? climateManager.GetDarkVoterRate() : 0f;
+        float darkChance = GameDB.Instance != null ? GameDB.Instance.Run.GetDarkVoterRate() : 0f;
         float roll = Random.value;
 
         if (roll < darkChance)

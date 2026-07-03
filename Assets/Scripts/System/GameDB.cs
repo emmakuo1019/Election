@@ -152,20 +152,61 @@ public class RunData
     public int MinAtmosphere { get; private set; } = -100;
     public int MaxAtmosphere { get; private set; } = 100;
     
-    // 參數：當前社會風氣
-    public event Action<int> OnAtmosphereChanged;
+    public float AtmosphereNormalized => (float)(SocialAtmosphere - MinAtmosphere) / (MaxAtmosphere - MinAtmosphere);
+    
+    // 參數：舊值, 新值
+    public event Action<int, int> OnAtmosphereChanged;
 
     public void ModifyAtmosphere(int amount)
     {
+        int oldValue = SocialAtmosphere;
         SocialAtmosphere = Mathf.Clamp(SocialAtmosphere + amount, MinAtmosphere, MaxAtmosphere);
-        OnAtmosphereChanged?.Invoke(SocialAtmosphere);
+        if (oldValue != SocialAtmosphere)
+        {
+            OnAtmosphereChanged?.Invoke(oldValue, SocialAtmosphere);
+        }
+    }
+
+    public void ApplyClimateDelta(int delta)
+    {
+        // 依照設計，正數代表增加情緒 (往負值走)，負數代表增加理性 (往正值走)
+        // 注意：這裡我將原版 `ApplyClimateDelta` 邏輯簡化為單純的加減，你可以根據需求將其改為直接 ModifyAtmosphere(-delta)
+        // 原始設定 delta > 0 時，呼叫 AddEmotion(delta) 也就是 ModifyAtmosphere(-delta)
+        ModifyAtmosphere(-delta);
     }
 
     public void ResetAtmosphere()
     {
+        int oldValue = SocialAtmosphere;
         SocialAtmosphere = 0;
-        OnAtmosphereChanged?.Invoke(SocialAtmosphere);
+        if (oldValue != SocialAtmosphere)
+        {
+            OnAtmosphereChanged?.Invoke(oldValue, SocialAtmosphere);
+        }
     }
+
+    public float GetDarkVoterRate()
+    {
+        // 情緒動員越強，深色選民越常出現。
+        float emotionalBias = Mathf.InverseLerp(MaxAtmosphere, MinAtmosphere, SocialAtmosphere);
+        return Mathf.Lerp(0.1f, 0.6f, emotionalBias);
+    }
+
+    public string GetAtmosphereDescription()
+    {
+        return SocialAtmosphere switch
+        {
+            < -70 => "🔴 強情緒動員",
+            < -30 => "🟠 傾向情感",
+            <= 30 => "⚪ 理性與情感平衡",
+            <= 70 => "🟢 傾向理性",
+            _ => "🟢 強理性政策"
+        };
+    }
+
+    public bool IsRationalTendency() => SocialAtmosphere > 0;
+    public bool IsEmotionalTendency() => SocialAtmosphere < 0;
+    public bool IsNeutral() => SocialAtmosphere == 0;
     #endregion
 
 

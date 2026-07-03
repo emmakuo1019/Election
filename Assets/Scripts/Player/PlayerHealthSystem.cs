@@ -16,6 +16,31 @@ public class PlayerHealthSystem : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void Start()
+    {
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
+        {
+            GameDB.Instance.Run.OnIntegrityHpChanged += CheckGameOver;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
+        {
+            GameDB.Instance.Run.OnIntegrityHpChanged -= CheckGameOver;
+        }
+    }
+
+    private void CheckGameOver(float currentHp, float maxHp)
+    {
+        if (currentHp <= 0)
+        {
+            Debug.Log("[PlayerHealthSystem] 玩家誠信歸零，觸發死亡事件！");
+            BattleEventManager.TriggerPlayerDied();
+        }
+    }
+
     public void TakeDamage(float amount)
     {
         if (amount <= 0) return;

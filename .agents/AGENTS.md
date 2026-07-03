@@ -459,3 +459,20 @@ Assets/Scripts/
 ### 3. 測試腳本生成
 - 建立 `GameDBTest.cs` 於 `Assets/Scripts/System/GameDBTest.cs`。
 - 功能：每幀安全地監控 `GameDB.Instance.Run` 的 HP、MP 與選票狀態，確保跨場景資料存活正確無誤。
+
+---
+
+## 🧹 重構總結 (社會風氣與政策倍率職責拆解)
+> 紀錄時間：2026-07-03
+
+我們接續了 GameDB 的集中化重構，成功將「社會風氣 (Social Atmosphere)」與「政策卡倍率」的職責徹底解耦：
+
+### 1. 社會風氣全域繼承 (`GameDB.RunData`)
+- **完全取代**：舊有的 `SocialAtmosphereManager` 已被徹底刪除。
+- **資料中心化**：`SocialAtmosphere` 的數值上下限、邊界保護以及 `OnAtmosphereChanged` 事件，全部移入 `GameDB.Instance.Run` 中。
+- **純函數轉換**：影響深色選民生成率的 `GetDarkVoterRate()`，已重構為直接向 GameDB 取值的唯讀方法。`Spawner` 等生成器現已完美對接 GameDB。
+
+### 2. 政策倍率拆分 (`PolicyManager` 與 `PlayerHealthSystem`)
+- **徹底解耦**：原本揉合了血量、倍率、社會風氣的 `PolicyEffectRuntimeManager` 已經被完全刪除。
+- **`PolicyManager`**：現在只專職負責 `AttackRadiusMultiplier` 等「政策卡增益倍率」的管理，並提供唯讀 Getter 供 `PlayerAttack` 等戰鬥邏輯調用。
+- **`PlayerHealthSystem`**：作為生命 Proxy，現在不僅負責 `TakeDamage()` 與 `Heal()`（並將之轉交給 GameDB），更成功訂閱了 `GameDB.Instance.Run.OnIntegrityHpChanged`。當生命歸零時，會主動發送 `BattleEventManager.TriggerPlayerDied()` 給全域狀態機，完美達成事件驅動設計！
