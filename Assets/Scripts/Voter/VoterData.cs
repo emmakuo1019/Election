@@ -28,8 +28,7 @@ public class VoterData : MonoBehaviour
     [SerializeField] private VoterConfig config;
 
     [Header("標籤")]
-    [SerializeField] private VoterLabel primaryLabel = VoterLabel.Rational;
-    [SerializeField] private VoterLabel secondaryLabel = VoterLabel.Rational;
+    [SerializeField] private VoterLabel voterLabel = VoterLabel.Rational;
 
     [Header("屬性")]
     [SerializeField] private VoterAttribute voterAttribute = VoterAttribute.None;
@@ -96,11 +95,10 @@ public class VoterData : MonoBehaviour
     [Range(0f, 1f)] public float loyalty = 1f;
 
     public VoterConfig Config => config;
-    public VoterLabel PrimaryLabel => primaryLabel;
-    public VoterLabel SecondaryLabel => secondaryLabel;
+    public VoterLabel Label => voterLabel;
     public VoterAttribute Attribute => voterAttribute;
-    public int EmotionLabelCount => (primaryLabel == VoterLabel.Emotion ? 1 : 0) + (secondaryLabel == VoterLabel.Emotion ? 1 : 0);
-    public int RationalLabelCount => 2 - EmotionLabelCount;
+    public int EmotionLabelCount => voterLabel == VoterLabel.Emotion ? 1 : 0;
+    public int RationalLabelCount => voterLabel == VoterLabel.Rational ? 1 : 0;
     public bool HasColdAttribute => voterAttribute == VoterAttribute.Cold;
     public bool HasDarkAttribute => voterAttribute == VoterAttribute.Dark;
     public float MoveSpeed
@@ -145,11 +143,13 @@ public class VoterData : MonoBehaviour
 
     public void InitializeFromConfig()
     {
-        CurrentPosition = config != null
+        // 使用底層變數 (_currentPosition, _convertedSide) 進行初始化，
+        // 避免在從 ObjectPool 取出時觸發不必要的轉化事件 (UI 彈出等)。
+        _currentPosition = config != null
             ? Mathf.Clamp(config.startingPosition, -MaxSupportValue, MaxSupportValue)
             : 0;
-        ConvertedSide = EvaluateSideFromPosition();
-        isConverted = ConvertedSide != NeutralSideSign;
+        _convertedSide = EvaluateSideFromPosition();
+        isConverted = _convertedSide != NeutralSideSign;
         loyalty = 1f;
     }
 
@@ -164,12 +164,27 @@ public class VoterData : MonoBehaviour
         InitializeFromConfig();
     }
 
-    public void ConfigureIdentity(VoterLabel firstLabel, VoterLabel secondLabel, VoterAttribute attribute)
+    public void ConfigureIdentity(VoterLabel label, VoterAttribute attribute, int initialStance)
     {
-        primaryLabel = firstLabel;
-        secondaryLabel = secondLabel;
+        voterLabel = label;
         voterAttribute = attribute;
+        
+        // 靜默更新立場與數值，確保從物件池重生時不會殘留舊數值，
+        // 同時也不會錯誤觸發 "轉化成功" 的視覺特效。
+        _convertedSide = initialStance;
+        isConverted = _convertedSide != NeutralSideSign;
+        
+        if (initialStance == PlayerSideSign)
+            _currentPosition = MaxSupportValue;
+        else if (initialStance == EnemySideSign)
+            _currentPosition = -MaxSupportValue;
+        else
+            _currentPosition = 0;
+
+        loyalty = 1f;
+
         OnIdentityChanged?.Invoke();
+        OnDataUpdated?.Invoke();
     }
 
     public void ConvertColdIdentityToEmotion()
@@ -181,13 +196,9 @@ public class VoterData : MonoBehaviour
 
         voterAttribute = VoterAttribute.None;
 
-        if (primaryLabel != VoterLabel.Emotion)
+        if (voterLabel != VoterLabel.Emotion)
         {
-            primaryLabel = VoterLabel.Emotion;
-        }
-        else
-        {
-            secondaryLabel = VoterLabel.Emotion;
+            voterLabel = VoterLabel.Emotion;
         }
 
         OnIdentityChanged?.Invoke();

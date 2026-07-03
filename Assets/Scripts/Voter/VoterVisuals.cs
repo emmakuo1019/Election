@@ -168,7 +168,7 @@ public class VoterVisuals : MonoBehaviour
             return null;
         }
 
-        return data.PrimaryLabel == VoterLabel.Emotion
+        return data.Label == VoterLabel.Emotion
             ? emotionHeadSprite
             : rationalHeadSprite;
     }

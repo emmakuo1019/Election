@@ -43,13 +43,26 @@ public class BattleSceneController : MonoBehaviour
         foreach (VoterData voter in voters)
         {
             voter.InitializeFromConfig();
-            voter.ConfigureIdentity(GetRandomLabel(), GetRandomLabel(), GetRandomAttribute());
+            VoterLabel label = GetRandomLabel();
+            VoterAttribute attribute = GetRandomAttribute();
+            int stance = VoterData.NeutralSideSign;
+
+            if (attribute == VoterAttribute.Dark)
+            {
+                float playerRatio = GameDB.Instance != null ? GameDB.Instance.Run.PlayerVotePercentage : 0.5f;
+                stance = UnityEngine.Random.value < playerRatio ? VoterData.PlayerSideSign : VoterData.EnemySideSign;
+            }
 
             if (voter.TryGetComponent<VoterLogic>(out var logic))
-                logic.RefreshMovementSpeed();
-
-            if (voter.TryGetComponent<VoterVisuals>(out var visuals))
-                visuals.ApplyCurrentVisualState();
+            {
+                logic.SetIdentity(label, attribute, stance);
+            }
+            else
+            {
+                voter.ConfigureIdentity(label, attribute, stance);
+                if (voter.TryGetComponent<VoterVisuals>(out var visuals))
+                    visuals.ApplyCurrentVisualState();
+            }
 
             if (voter.ConvertedSide == VoterData.PlayerSideSign) addedPlayerVotes++;
             else if (voter.ConvertedSide == VoterData.EnemySideSign) addedOpponentVotes++;

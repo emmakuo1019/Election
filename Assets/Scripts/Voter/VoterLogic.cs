@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
-public class VoterLogic : MonoBehaviour
+public class VoterLogic : MonoBehaviour, IPoolable
 {
     public StateMachine StateMachine { get; private set; }
     
@@ -46,10 +46,8 @@ public class VoterLogic : MonoBehaviour
 
         if (Agent != null)
         {
-            Agent.speed = Data != null ? Data.MoveSpeed : moveSpeed;
             Agent.angularSpeed = 0f;
             Agent.updateRotation = false;
-            HasUsableNavMeshAgent = TryInitializeNavMeshAgent();
         }
 
         StateMachine = new StateMachine();
@@ -81,11 +79,37 @@ public class VoterLogic : MonoBehaviour
         }
     }
 
-    private void Start()
+    public void OnSpawn()
     {
+        IsGameActive = true;
+        
+        if (PlayerTransform == null)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            PlayerTransform = playerObject != null ? playerObject.transform : null;
+        }
+        
+        if (Data != null)
+        {
+            Data.InitializeFromConfig();
+        }
+
+        HasUsableNavMeshAgent = TryInitializeNavMeshAgent();
         if (HasUsableNavMeshAgent)
         {
+            RefreshMovementSpeed();
             StateMachine.Initialize(new VoterIdleState(this));
+        }
+    }
+
+    public void OnDespawn()
+    {
+        IsGameActive = false;
+        if (Agent != null && Agent.isOnNavMesh)
+        {
+            Agent.isStopped = true;
+            Agent.ResetPath();
+            Agent.enabled = false;
         }
     }
 
@@ -113,6 +137,17 @@ public class VoterLogic : MonoBehaviour
         }
     }
 
+    public void SetIdentity(VoterLabel label, VoterAttribute attribute, int stance)
+    {
+        if (Data != null)
+        {
+            Data.ConfigureIdentity(label, attribute, stance);
+        }
+        
+        RefreshMovementSpeed();
+        Visuals?.ApplyCurrentVisualState();
+    }
+
     public bool ApplySkillEffect(IVoterSkillEffect effect)
     {
         if (!CanReceiveSkillEffect) return false;
@@ -123,14 +158,18 @@ public class VoterLogic : MonoBehaviour
     private bool TryInitializeNavMeshAgent()
     {
         if (Agent == null) return false;
+        
+        // 🚨 修正：因為 OnDespawn() 會將 Agent 停用，從物件池拿出來時必須強制重新啟用，
+        // 否則 Agent.isOnNavMesh 永遠會是 false。
+        Agent.enabled = true;
+        
         if (Agent.isOnNavMesh) return true;
 
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
         {
-            bool previousEnabled = Agent.enabled;
-            Agent.enabled = false;
+            Agent.enabled = false; // 為了安全移動 transform，先關閉 Agent
             transform.position = hit.position;
-            Agent.enabled = previousEnabled;
+            Agent.enabled = true; // 移好位置後重新啟用
 
             if (Agent.isOnNavMesh) return true;
         }
@@ -356,8 +395,10 @@ public class VoterLogic : MonoBehaviour
 
     private void OnGameEnd()
     {
+        if (!IsGameActive) return; // 若已經結束則不重複觸發
         IsGameActive = false;
-        // 遊戲結束時強制進入離開狀態或待機
+        
+        // 遊戲結束時強制進入待機狀態
         StateMachine.ChangeState(new VoterIdleState(this)); 
     }
 

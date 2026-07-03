@@ -11,7 +11,7 @@ public class PoolManager : MonoBehaviour
 
     private readonly Dictionary<GameObject, ObjectPool<GameObject>> pools = new Dictionary<GameObject, ObjectPool<GameObject>>();
     private readonly Dictionary<GameObject, GameObject> instanceToPrefab = new Dictionary<GameObject, GameObject>();
-    private readonly Dictionary<GameObject, PooledParticleInstance> instanceToParticleState = new Dictionary<GameObject, PooledParticleInstance>();
+    private readonly Dictionary<GameObject, IPoolable> instanceToPoolables = new Dictionary<GameObject, IPoolable>();
 
     public static bool HasInstance => instance != null;
 
@@ -117,14 +117,12 @@ public class PoolManager : MonoBehaviour
         GameObject createdInstance = Instantiate(prefab, transform);
         createdInstance.name = prefab.name;
         instanceToPrefab[createdInstance] = prefab;
-        PooledParticleInstance particleState = createdInstance.GetComponent<PooledParticleInstance>();
-        if (particleState == null)
+
+        if (createdInstance.TryGetComponent<IPoolable>(out var poolable))
         {
-            particleState = createdInstance.AddComponent<PooledParticleInstance>();
+            instanceToPoolables[createdInstance] = poolable;
         }
 
-        particleState.Cache();
-        instanceToParticleState[createdInstance] = particleState;
         createdInstance.SetActive(false);
 
         return createdInstance;
@@ -135,43 +133,54 @@ public class PoolManager : MonoBehaviour
         if (pooledInstance != null)
         {
             instanceToPrefab.Remove(pooledInstance);
-            instanceToParticleState.Remove(pooledInstance);
+            instanceToPoolables.Remove(pooledInstance);
             PrepareInstanceForRelease(pooledInstance);
         }
     }
 
     private void PrepareInstanceForUse(GameObject instanceFromPool)
     {
-        if (instanceToParticleState.TryGetValue(instanceFromPool, out PooledParticleInstance particleState) && particleState != null)
+        if (instanceToPoolables.TryGetValue(instanceFromPool, out IPoolable poolable))
         {
-            particleState.PrepareForUse();
-            return;
+            poolable.OnSpawn();
         }
-
-        PooledParticleInstance fallbackState = instanceFromPool.GetComponent<PooledParticleInstance>();
-        if (fallbackState != null)
+        else if (instanceFromPool.TryGetComponent<IPoolable>(out poolable))
         {
-            instanceToParticleState[instanceFromPool] = fallbackState;
-            fallbackState.PrepareForUse();
+            instanceToPoolables[instanceFromPool] = poolable;
+            poolable.OnSpawn();
         }
     }
 
     private void PrepareInstanceForRelease(GameObject instanceFromPool)
     {
-        if (instanceToParticleState.TryGetValue(instanceFromPool, out PooledParticleInstance particleState) && particleState != null)
+        if (instanceToPoolables.TryGetValue(instanceFromPool, out IPoolable poolable))
         {
-            particleState.PrepareForRelease();
-            return;
+            poolable.OnDespawn();
         }
-
-        PooledParticleInstance fallbackState = instanceFromPool.GetComponent<PooledParticleInstance>();
-        if (fallbackState != null)
+        else if (instanceFromPool.TryGetComponent<IPoolable>(out poolable))
         {
-            instanceToParticleState[instanceFromPool] = fallbackState;
-            fallbackState.PrepareForRelease();
-            return;
+            instanceToPoolables[instanceFromPool] = poolable;
+            poolable.OnDespawn();
         }
 
         instanceFromPool.SetActive(false);
+    }
+
+    public void ReleaseAllActiveObjects()
+    {
+        // 為了避免在 foreach 迴圈中因為 Release 改變了 active 狀態或集合，先收集一份名單
+        List<GameObject> activeObjects = new List<GameObject>();
+        foreach (var obj in instanceToPrefab.Keys)
+        {
+            if (obj != null && obj.activeInHierarchy)
+            {
+                activeObjects.Add(obj);
+            }
+        }
+        
+        foreach (var obj in activeObjects)
+        {
+            Release(obj);
+        }
     }
 }

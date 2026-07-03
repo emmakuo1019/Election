@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public sealed class PooledParticleInstance : MonoBehaviour
+public sealed class PooledParticleInstance : MonoBehaviour, IPoolable
 {
     private ParticleSystem[] particleSystems;
 
@@ -12,7 +12,7 @@ public sealed class PooledParticleInstance : MonoBehaviour
         }
     }
 
-    public void PrepareForUse()
+    public void OnSpawn()
     {
         Cache();
 
@@ -29,7 +29,7 @@ public sealed class PooledParticleInstance : MonoBehaviour
         }
     }
 
-    public void PrepareForRelease()
+    public void OnDespawn()
     {
         Cache();
 
@@ -43,7 +43,5 @@ public sealed class PooledParticleInstance : MonoBehaviour
 
             particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
-
-        gameObject.SetActive(false);
     }
 }

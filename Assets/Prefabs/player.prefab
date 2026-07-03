@@ -464,8 +464,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackDuration: 0.3
-  moveSpeed: 5
-  dashSpeed: 20
+  moveSpeed: 4
+  dashSpeed: 10
   dashDuration: 0.2
   dashCooldown: 0.5
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
@@ -487,10 +487,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afd866a78abbf44c08a62f3776a06563, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 4
-  attackAngle: 60
+  attackRange: 2
+  attackAngle: 40
   attackInfluence: 1
-  attackCooldown: 0.1
+  attackCooldown: 0.3
   convertChance: 1
   darkVoterConvertChance: 0.8
   attackRangeMesh: {fileID: 4360986305226485520}

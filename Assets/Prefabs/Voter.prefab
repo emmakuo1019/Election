@@ -5180,7 +5180,7 @@ GameObject:
   - component: {fileID: 5862975689292999562}
   - component: {fileID: 8013282526341333847}
   - component: {fileID: 6172947822698751728}
-  - component: {fileID: 7745532078033430802}
+  - component: {fileID: 8794478708423136623}
   m_Layer: 6
   m_Name: Voter
   m_TagString: Voter
@@ -5223,8 +5223,8 @@ MonoBehaviour:
   wanderIntervalMin: 2
   wanderIntervalMax: 5
   moveSpeed: 20
-  darkApproachStoppingDistance: 1.5
-  darkDestinationRefreshInterval: 0.28
+  darkApproachStoppingDistance: 1
+  darkDestinationRefreshInterval: 0.5
   knockbackDistance: 0.3
   knockbackDuration: 0.3
 --- !u!114 &5862975689292999562
@@ -5256,7 +5256,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: be8b95e0e806f4965904c8237e0f9a29, type: 3}
   - {fileID: 21300000, guid: 55e2a32cf218a461d94de0870dc4cdad, type: 3}
   - {fileID: 21300000, guid: 7ce32b620528d44718a6fc0e4f986a96, type: 3}
-  waverShakeAmplitude: 0.05
+  waverShakeAmplitude: 0.1
   waverShakeFrequency: 15
 --- !u!195 &8013282526341333847
 NavMeshAgent:
@@ -5303,7 +5303,7 @@ CapsuleCollider:
   m_Height: 1.6675533
   m_Direction: 1
   m_Center: {x: 0.073158056, y: 0.8412488, z: 0}
---- !u!114 &7745532078033430802
+--- !u!114 &8794478708423136623
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5316,13 +5316,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoterData
   config: {fileID: 0}
-  primaryLabel: 0
-  secondaryLabel: 0
+  voterLabel: 0
   voterAttribute: 0
   normalMoveSpeed: 1.2
   darkMoveSpeed: 2
-  MaxSupportValue: 10
-  apathyAvoidanceRadius: 5
+  MaxSupportValue: 5
+  apathyAvoidanceRadius: 3
   apatheticEscapeSpeedMultiplier: 3
   _currentPosition: 0
   _convertedSide: 0

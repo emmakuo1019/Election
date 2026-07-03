@@ -130,11 +130,11 @@ MonoBehaviour:
     m_Bits: 64
   target: {fileID: 0}
   factionSign: -1
-  moveSpeed: 10
+  moveSpeed: 8
   attackRange: 2
   attackInfluence: -3
-  detectionRange: 50
-  escapeRange: 30
+  detectionRange: 30
+  escapeRange: 40
   attackHitRadius: 1
   attackHitOffset: {x: 0, y: 0, z: 0}
   attackDuration: 1
