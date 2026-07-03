@@ -343,7 +343,6 @@ GameObject:
   m_Component:
   - component: {fileID: 791982393808381288}
   - component: {fileID: 4301370479251906322}
-  - component: {fileID: 5073905417636021098}
   - component: {fileID: 8606236126724025911}
   - component: {fileID: 7095031572979110621}
   - component: {fileID: 5242680767156421125}
@@ -399,20 +398,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.9, z: 0}
---- !u!114 &5073905417636021098
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403555500550337343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c8c4a5066f334ca89f04b9093ca4106, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxMP: 100
-  currentMP: 100
 --- !u!114 &8606236126724025911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -512,6 +497,9 @@ MonoBehaviour:
   voterLayer:
     serializedVersion: 2
     m_Bits: 64
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!114 &3016036086028709808
 MonoBehaviour:
   m_ObjectHideFlags: 0

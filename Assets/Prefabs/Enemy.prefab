@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2538185110753480166}
   - component: {fileID: 5636245655671424398}
   - component: {fileID: 8874614300515229391}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -129,6 +129,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   target: {fileID: 0}
+  factionSign: -1
   moveSpeed: 10
   attackRange: 2
   attackInfluence: -3
@@ -151,7 +152,7 @@ GameObject:
   - component: {fileID: 9129761316343825226}
   - component: {fileID: 4838547971399417402}
   - component: {fileID: 7081915337751549930}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: AttackRange
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -256,7 +257,7 @@ GameObject:
   - component: {fileID: 3146650173815152346}
   - component: {fileID: 3658033242400712837}
   - component: {fileID: 2571794595514145987}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: EnemySprit
   m_TagString: Untagged
   m_Icon: {fileID: 0}

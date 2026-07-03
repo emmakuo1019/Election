@@ -29,6 +29,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public EnemyIdleState IdleState { get; private set; }
     public EnemyMoveState MoveState { get; private set; }
     public EnemyAttackState AttackState { get; private set; }
+    public EnemyStunState StunState { get; private set; }
 
     // ==========================================
     // 共享數據與參考 (供各個 State 讀取/寫入)
@@ -40,6 +41,10 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
     [Tooltip("目前鎖定的目標。若一開始就拖曳指定，將不會進行範圍掃描。")]
     public Transform target;
+
+    [Header("Faction")]
+    [Tooltip("代表該敵人的陣營符號，預設為對應 VoterData 的敵方陣營 (-1)")]
+    public int factionSign = -1;
 
     [Header("Combat Stats")]
     [Tooltip("移動速度 (會自動覆蓋 NavMeshAgent 的 Speed)")]
@@ -88,6 +93,27 @@ public class EnemyController : MonoBehaviour, IAttackSource
     }
 
     // ==========================================
+    // 受擊與中斷機制
+    // ==========================================
+
+    /// <summary>
+    /// 敵人受到傷害或控制技能時呼叫。
+    /// 扣除血量並強制切換至硬直狀態，中斷當前行為。
+    /// </summary>
+    public void TakeDamage(int damage, float stunTime = 0.5f)
+    {
+        // 若未來有血量系統 (HP)，可以在此處實作扣血邏輯
+        // currentHP -= damage;
+        // if (currentHP <= 0) { Die(); return; }
+
+        Debug.Log($"Enemy: 受到 {damage} 點傷害，將硬直 {stunTime} 秒！");
+        
+        // 賦予硬直時間並強制切換狀態
+        StunState.SetStunDuration(stunTime);
+        StateMachine.ChangeState(StunState);
+    }
+
+    // ==========================================
     // Unity 生命週期
     // ==========================================
 
@@ -116,6 +142,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
         IdleState = new EnemyIdleState(this, StateMachine);
         MoveState = new EnemyMoveState(this, StateMachine);
         AttackState = new EnemyAttackState(this, StateMachine);
+        StunState = new EnemyStunState(this, StateMachine);
     }
 
     private void Start()
@@ -159,8 +186,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
         // 1. 避開深色與冷感選民
         if (voter.Data.HasDarkAttribute || voter.Data.HasColdAttribute) return false;
         
-        // 2. 避開已經被敵方轉化的選民
-        if (voter.Data.ConvertedSide == VoterData.EnemySideSign) return false;
+        // 2. 避開已經被敵方轉化的選民 (已是自己人)
+        if (voter.Data.ConvertedSide == factionSign) return false;
         
         return true;
     }
@@ -223,6 +250,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter != null)
             {
+                // 【陣營防呆】如果該選民已經是自己人，直接跳過，不進行拉票與干擾
+                if (voter.Data != null && voter.Data.ConvertedSide == factionSign)
+                {
+                    continue;
+                }
+
                 // 計算敵人指向該選民的水平向量
                 Vector3 dirToTarget = (voter.transform.position - transform.position);
                 dirToTarget.y = 0;

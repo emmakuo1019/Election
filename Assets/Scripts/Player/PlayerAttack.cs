@@ -33,6 +33,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     [Header("Layer")]
     public LayerMask voterLayer;
+    [Tooltip("敵人的圖層，供玩家攻擊與中斷")]
+    public LayerMask enemyLayer;
 
     void Awake()
     {
@@ -155,7 +157,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             transform.position,
             currentAttackRange,
             hitBuffer,
-            voterLayer
+            voterLayer | enemyLayer
         );
 
         for (int i = 0; i < hitCount; i++)
@@ -164,18 +166,15 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             if (hit == null) continue;
 
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
-            if (voter == null)
-            {
-                continue;
-            }
+            EnemyController enemy = hit.GetComponentInParent<EnemyController>();
 
-            VoterData voterData = voter.Data;
-            if (voterData != null && voterData.HasDarkAttribute)
-            {
-                continue;
-            }
+            Transform targetTransform = null;
+            if (voter != null) targetTransform = voter.transform;
+            else if (enemy != null) targetTransform = enemy.transform;
+            else continue; // 既不是選民也不是敵人，略過
 
-            Vector3 toTarget = voter.transform.position - transform.position;
+            // 計算向量與距離防呆
+            Vector3 toTarget = targetTransform.position - transform.position;
             toTarget.y = 0f;
 
             if (toTarget.sqrMagnitude <= 0.0001f)
@@ -185,11 +184,30 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
             Vector3 dirToTarget = toTarget.normalized;
 
+            // 判斷是否在攻擊扇形範圍內
             if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
             {
-                voter.OnInfluence(attackInfluence, false, transform.position);
-                TryConvert(voterData);
-                hitAny = true;
+                // 如果是敵人，直接打斷並造成硬直
+                if (enemy != null)
+                {
+                    enemy.TakeDamage(10, 1.0f);
+                    hitAny = true;
+                }
+                // 如果是選民，則進行原本的拉票邏輯
+                else if (voter != null)
+                {
+                    VoterData voterData = voter.Data;
+                    
+                    // 深色選民免疫玩家普攻
+                    if (voterData != null && voterData.HasDarkAttribute)
+                    {
+                        continue;
+                    }
+
+                    voter.OnInfluence(attackInfluence, false, transform.position);
+                    TryConvert(voterData);
+                    hitAny = true;
+                }
             }
         }
 
