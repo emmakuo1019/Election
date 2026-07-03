@@ -29,6 +29,11 @@ public class VoterVisuals : MonoBehaviour
     public Color playerColor;
     public Color opponentColor;
 
+    [Header("Attribute Overrides")]
+    [SerializeField] private Color darkMultiplier = new Color(0.5f, 0.5f, 0.5f, 1f); // 預設讓顏色變深
+    [SerializeField] private Color apatheticHeadColor = Color.cyan; // 預設讓頭變淡藍色
+    private Color defaultHeadColor; // 用於記錄原本的頭部顏色
+
     [Header("顏色過渡")]
     public float colorTransitionDuration = 0.8f;
 
@@ -65,6 +70,8 @@ public class VoterVisuals : MonoBehaviour
 
         if (bodyRenderer == null) bodyRenderer = GetComponent<SpriteRenderer>();
         if (headRenderer == null) headRenderer = transform.Find("Head")?.GetComponent<SpriteRenderer>();
+
+        if (headRenderer != null) defaultHeadColor = headRenderer.color;
 
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
     }
@@ -168,13 +175,48 @@ public class VoterVisuals : MonoBehaviour
 
     private Color ResolveHeadColor(int position)
     {
-        // 只有成功被轉化時才改變顏色，否則維持中立顏色
-        if (data == null || !data.isConverted)
+        // 1. 先計算基礎顏色 (轉化色或中立色)
+        Color baseColor = neutralColor;
+        if (data != null && data.isConverted)
         {
-            return neutralColor;
+            baseColor = data.ConvertedSide == VoterData.PlayerSideSign ? playerColor : opponentColor;
         }
 
-        return data.ConvertedSide == VoterData.PlayerSideSign ? playerColor : opponentColor;
+        // 2. 疊加屬性覆蓋
+        if (data != null)
+        {
+            if (data.Attribute == VoterAttribute.Dark)
+            {
+                return baseColor * darkMultiplier; // 深色選民：基礎色疊加乘數
+            }
+            else if (data.Attribute == VoterAttribute.Cold && !data.isConverted)
+            {
+                return apatheticHeadColor; // 冷感選民：未轉化前強制覆蓋為特定顏色，成功轉化後維持陣營顏色
+            }
+        }
+
+        return baseColor; // 一般選民：回傳基礎顏色
+    }
+
+    /// <summary>
+    /// 供外部 (或事件) 呼叫，專門處理轉化成功後的視覺變色更新。
+    /// 內部實際上呼叫 ApplyCurrentVisualState() 進行全面視覺同步。
+    /// </summary>
+    public void ApplyConversionVisuals()
+    {
+        ApplyCurrentVisualState();
+    }
+
+    /// <summary>
+    /// 強制刷新頭部視覺屬性 (例如動態更改選民屬性時呼叫)
+    /// </summary>
+    public void UpdateAttributeVisuals(VoterAttribute attribute)
+    {
+        if (headRenderer == null) return;
+        
+        // 此處我們利用 ResolveHeadColor 統一處理了基礎色與疊加色
+        Color targetColor = ResolveHeadColor(data != null ? data.CurrentPosition : 0);
+        SetSpriteColor(headRenderer, targetColor);
     }
 
 

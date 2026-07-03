@@ -5222,7 +5222,7 @@ MonoBehaviour:
   wanderRadius: 7
   wanderIntervalMin: 2
   wanderIntervalMax: 5
-  moveSpeed: 10
+  moveSpeed: 20
   darkApproachStoppingDistance: 1.5
   darkDestinationRefreshInterval: 0.28
   knockbackDistance: 0.3
@@ -5246,6 +5246,8 @@ MonoBehaviour:
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
   opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}
+  darkMultiplier: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  apatheticHeadColor: {r: 0, g: 1, b: 1, a: 1}
   colorTransitionDuration: 0.8
   voteParticles: {fileID: 7308372082724177588}
   emoteRenderer: {fileID: 6137966727394157213}
@@ -5320,6 +5322,8 @@ MonoBehaviour:
   normalMoveSpeed: 1.2
   darkMoveSpeed: 2
   MaxSupportValue: 10
+  apathyAvoidanceRadius: 5
+  apatheticEscapeSpeedMultiplier: 3
   _currentPosition: 0
   _convertedSide: 0
   isConverted: 0

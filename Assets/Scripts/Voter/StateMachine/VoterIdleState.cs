@@ -31,6 +31,17 @@ public class VoterIdleState : IState
     {
         if (_controller.Data == null) return;
 
+        // 【安全防護】如果是未被轉化的冷感選民，偵測玩家距離進行逃跑
+        if (!_controller.Data.isConverted && _controller.Data.Attribute == VoterAttribute.Cold && _controller.PlayerTransform != null)
+        {
+            float distanceToPlayer = Vector3.Distance(_controller.transform.position, _controller.PlayerTransform.position);
+            if (distanceToPlayer < _controller.Data.apathyAvoidanceRadius)
+            {
+                _controller.StateMachine.ChangeState(new VoterApatheticState(_controller));
+                return;
+            }
+        }
+
         // 【安全防護】判斷是否進入搖擺狀態。
         // 注意：如果你使用 <= 0.5f，代表 0 (絕對中立) 也會一直處於搖擺！
         // 這裡幫你加上條件，只在「有偏向但尚未轉化」時搖擺（你可以根據企劃需求決定用 >= 還是 <=）

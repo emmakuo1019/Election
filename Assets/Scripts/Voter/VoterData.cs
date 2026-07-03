@@ -39,6 +39,12 @@ public class VoterData : MonoBehaviour
     [SerializeField] private float darkMoveSpeed = 2f;
     [Tooltip("單邊的最大值。例如 5 代表玩家滿值為 +5，敵人為 -5")]
     public int MaxSupportValue = 5;
+    
+    [Header("冷感迴避設定")]
+    [Tooltip("冷感選民看見玩家後開始迴避的距離半徑")]
+    public float apathyAvoidanceRadius = 3f;
+    [Tooltip("冷感選民逃跑時的速度倍率")]
+    public float apatheticEscapeSpeedMultiplier = 2f;
 
     [Header("立場資料")]
     [Tooltip("-5 = 敵方完全支持，+5 = 玩家完全支持。")]

@@ -148,6 +148,9 @@ public class VoterLogic : MonoBehaviour
     {
         if (!IsGameActive || Data == null) return;
 
+        // 若為深色選民 (Hardcore/Dark)，且不是由技能觸發，則不處理立場變更
+        if (Data.Attribute == VoterAttribute.Dark && !isSkill) return;
+
         int finalAmount = amount * Mathf.Max(1, 1 + Data.EmotionLabelCount);
         Data.CurrentPosition = Mathf.Clamp(
             Data.CurrentPosition + finalAmount,
@@ -161,7 +164,15 @@ public class VoterLogic : MonoBehaviour
 
         if (HasUsableNavMeshAgent && attackerPosition != default)
         {
-            StateMachine.ChangeState(new VoterHitState(this, attackerPosition));
+            // 冷感選民在未被轉化前，受到攻擊不會陷入硬直 (不會進入 VoterHitState)，繼續逃跑
+            if (Data.Attribute == VoterAttribute.Cold && !Data.isConverted)
+            {
+                Visuals?.PlayHitAnimation();
+            }
+            else
+            {
+                StateMachine.ChangeState(new VoterHitState(this, attackerPosition));
+            }
         }
         else
         {
@@ -298,8 +309,13 @@ public class VoterLogic : MonoBehaviour
 
     private void HandleConversionSuccess(int side)
     {
+        // 觸發全域事件
+        BattleEventManager.TriggerOnVoterConverted(side);
+
         // 顯示成功轉化的 UI
         Visuals?.ShowEmote(EmoteType.Success);
+        
+        // 備註：視覺變色 (僅頭部) 已透過 VoterVisuals 訂閱 data.OnDataUpdated 自動呼叫 ResolveHeadColor() 完成！
 
         // 如果目前處於 WaverState，強制切換回 Idle (或 Follow)
         if (StateMachine.CurrentState is VoterWaverState)

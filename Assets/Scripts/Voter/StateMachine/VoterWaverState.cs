@@ -35,6 +35,17 @@ public class VoterWaverState : IState
 
     public void Update()
     {
+        // 【安全防護】如果是未被轉化的冷感選民，偵測玩家距離進行逃跑
+        if (_controller.Data != null && !_controller.Data.isConverted && _controller.Data.Attribute == VoterAttribute.Cold && _controller.PlayerTransform != null)
+        {
+            float distanceToPlayer = Vector3.Distance(_controller.transform.position, _controller.PlayerTransform.position);
+            if (distanceToPlayer < _controller.Data.apathyAvoidanceRadius)
+            {
+                _controller.StateMachine.ChangeState(new VoterApatheticState(_controller));
+                return;
+            }
+        }
+
         // 如果立場已經被轉化（無論是玩家還是敵人），就離開搖擺狀態
         if (_controller.Data != null && _controller.Data.isConverted)
         {
