@@ -17,7 +17,7 @@ void Start()
 
     void backBtnOnClick()
     {
-        SceneManager.LoadScene("S0");
+        GameFlowManager.Instance.ChangeState(new MainMenuState());
     }
 }
 }

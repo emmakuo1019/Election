@@ -15,6 +15,9 @@ public static class BattleEventManager
 
     // 遊戲結束，玩家確認返回總部事件
     public static event Action OnReturnToHQConfirmed;
+    
+    // 選民被轉化成功事件 (int side 陣營: 1=玩家, -1=敵人)
+    public static event Action<int> OnVoterConverted;
 
     /// <summary>
     /// 當最後一隻怪物死亡，或達成過關條件時呼叫
@@ -41,5 +44,14 @@ public static class BattleEventManager
     {
         Debug.Log("[BattleEventManager] 觸發確認返回總部事件 (OnReturnToHQConfirmed)");
         OnReturnToHQConfirmed?.Invoke();
+    }
+
+    /// <summary>
+    /// 當有選民成功轉化為任何一方支持者時呼叫
+    /// </summary>
+    /// <param name="side">1 為玩家，-1 為敵人</param>
+    public static void TriggerOnVoterConverted(int side)
+    {
+        OnVoterConverted?.Invoke(side);
     }
 }

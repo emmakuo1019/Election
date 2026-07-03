@@ -32,6 +32,12 @@ public class EnemyIdleState : IState
         // 持續更新 Sprite 朝向
         ctx.UpdateFacingDirection();
 
+        // 確保目標合法，如果不合法就清空
+        if (!ctx.IsTargetValid(ctx.target))
+        {
+            ctx.target = null;
+        }
+
         // 1. 如果目前沒有目標，尋找最近的選民
         if (ctx.target == null)
         {

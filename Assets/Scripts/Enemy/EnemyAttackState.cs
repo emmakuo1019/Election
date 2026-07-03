@@ -9,8 +9,6 @@ public class EnemyAttackState : IState
     private StateMachine stateMachine;
 
     private float attackTimer;
-    private readonly float attackDuration = 1.5f; // 動畫總長度
-    private readonly float hitTime = 0.5f;        // 傷害判定點 (前搖結束時機)
     private bool hasHit;                          // 是否已造成傷害的布林值
 
     public EnemyAttackState(EnemyController controller, StateMachine stateMachine)
@@ -50,14 +48,14 @@ public class EnemyAttackState : IState
         attackTimer += Time.deltaTime;
 
         // 2. 當到達判定點，且尚未發動拉票時，執行物理偵測與拉票
-        if (attackTimer >= hitTime && !hasHit)
+        if (attackTimer >= ctx.attackHitTime && !hasHit)
         {
             hasHit = true;
             ctx.PerformAttackHit();
         }
 
         // 3. 當動畫總時長結束時，切換狀態
-        if (attackTimer >= attackDuration)
+        if (attackTimer >= ctx.attackDuration)
         {
             // 攻擊結束後，強制重新尋找下一個最近的選民
             ctx.FindNearestVoter();

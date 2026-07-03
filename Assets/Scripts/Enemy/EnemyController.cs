@@ -14,6 +14,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public StateMachine StateMachine { get; private set; }
     public Animator Animator { get; private set; }
     public NavMeshAgent Agent { get; private set; }
+    
+    private Camera mainCamera;
 
     [Header("Visuals")]
     [Tooltip("用於控制翻面的 SpriteRenderer (建議放在子物件上)")]
@@ -40,7 +42,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public Transform target;
 
     [Header("Combat Stats")]
-    [Tooltip("攻擊距離")]
+    [Tooltip("移動速度 (會自動覆蓋 NavMeshAgent 的 Speed)")]
+    public float moveSpeed = 4.5f;
+    [Tooltip("攻擊距離 (決定何時停下腳步發動攻擊)")]
     public float attackRange = 2f;
     [Tooltip("每次拉票(攻擊)的影響力數值，對手方為負值")]
     public int attackInfluence = -1;
@@ -50,10 +54,16 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public float escapeRange = 15f;
 
     [Header("Attack Hit Detection")]
-    [Tooltip("攻擊判定的球體半徑")]
-    public float attackHitRadius = 1f;
+    [Tooltip("攻擊判定的球體半徑 ")]
+    public float attackHitRadius = 2f;
     [Tooltip("攻擊判定球體的本地位移")]
-    public Vector3 attackHitOffset = new Vector3(0, 1f, 1f);
+    public Vector3 attackHitOffset = new Vector3(0, 1f, 0f);
+
+    [Header("Attack Timing")]
+    [Tooltip("攻擊動畫總時長 (秒) - 決定攻擊頻率")]
+    public float attackDuration = 1.0f;
+    [Tooltip("傷害判定點 (秒) - 決定前搖有多長")]
+    public float attackHitTime = 0.3f;
 
     // ==========================================
     // IAttackSource 實作
@@ -64,8 +74,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public event System.Action<float, float> OnAttackShapeChanged;
 
     [Header("Attack Shape")]
-    [Tooltip("視覺上的攻擊扇形角度 (例如普通攻擊 90 度，大招 180 度)")]
-    [SerializeField] private float attackAngle = 90f;
+    [Tooltip("視覺上的攻擊扇形角度 (例如普通攻擊 360 度，大招 180 度)")]
+    [SerializeField] private float attackAngle = 360f;
 
     /// <summary>
     /// 供技能系統動態改變攻擊形狀 (半徑與角度)，並通知 AttackRangeMesh 重新生成網格。
@@ -86,11 +96,18 @@ public class EnemyController : MonoBehaviour, IAttackSource
         // 取得核心組件 (Animator 支援放在子物件)
         Animator = GetComponentInChildren<Animator>();
         Agent = GetComponent<NavMeshAgent>();
+        mainCamera = Camera.main;
         
+        // 防呆：避免之前編譯錯誤時 Inspector 把數值存成了 0，導致狀態機死循環
+        if (attackDuration <= 0.1f) attackDuration = 1.0f;
+        if (attackHitTime <= 0f) attackHitTime = 0.3f;
+        if (moveSpeed <= 0f) moveSpeed = 4.5f;
+
         // 關閉導航代理的自動旋轉，確保根節點不會因為尋路而轉向 (解決 Sprite 穿幫問題)
         if (Agent != null)
         {
             Agent.updateRotation = false;
+            Agent.speed = moveSpeed; // 套用自定義的移動速度
         }
 
         StateMachine = new StateMachine();
@@ -133,6 +150,21 @@ public class EnemyController : MonoBehaviour, IAttackSource
     // 戰鬥邏輯與物理偵測
     // ==========================================
     
+    public bool IsTargetValid(Transform t)
+    {
+        if (t == null) return false;
+        VoterLogic voter = t.GetComponentInParent<VoterLogic>();
+        if (voter == null || voter.Data == null) return false;
+        
+        // 1. 避開深色與冷感選民
+        if (voter.Data.HasDarkAttribute || voter.Data.HasColdAttribute) return false;
+        
+        // 2. 避開已經被敵方轉化的選民
+        if (voter.Data.ConvertedSide == VoterData.EnemySideSign) return false;
+        
+        return true;
+    }
+
     /// <summary>
     /// 尋找偵測範圍內最近的選民 (Voter)。
     /// 供狀態機在閒置或攻擊結束後呼叫，重新鎖定目標。
@@ -145,6 +177,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         foreach (var hit in hits)
         {
+            if (!IsTargetValid(hit.transform)) continue;
+
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter != null)
             {
@@ -189,6 +223,24 @@ public class EnemyController : MonoBehaviour, IAttackSource
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter != null)
             {
+                // 計算敵人指向該選民的水平向量
+                Vector3 dirToTarget = (voter.transform.position - transform.position);
+                dirToTarget.y = 0;
+                
+                if (dirToTarget.sqrMagnitude > 0.001f)
+                {
+                    dirToTarget.Normalize();
+                    
+                    // 計算與當前攻擊面向的夾角
+                    float angleToTarget = Vector3.Angle(AttackDirection, dirToTarget);
+                    
+                    // 若角度大於扇形的一半，代表在扇形範圍外，忽略該選民
+                    if (angleToTarget > AttackAngle / 2f)
+                    {
+                        continue;
+                    }
+                }
+
                 Debug.Log($"敵人對選民 {voter.name} 發動了拉票！");
                 // 呼叫選民改變支持度的方法 (使用 attackInfluence)
                 voter.OnInfluence(attackInfluence, false, transform.position);
@@ -231,10 +283,22 @@ public class EnemyController : MonoBehaviour, IAttackSource
             }
         }
 
+        // 執行 Billboard (廣告牌) 效果，確保 Sprite 永遠面向攝影機
+        if (spriteRenderer != null && mainCamera != null)
+        {
+            spriteRenderer.transform.forward = mainCamera.transform.forward;
+        }
+
         // 將計算出的方向存入 AttackDirection 供 IAttackSource 讀取
         if (currentDir.sqrMagnitude > 0.001f)
         {
             AttackDirection = currentDir;
+            
+            // 讓攻擊視覺網格精準指向目前的攻擊方向
+            if (attackRangeMesh != null)
+            {
+                attackRangeMesh.transform.rotation = Quaternion.LookRotation(currentDir);
+            }
         }
     }
 

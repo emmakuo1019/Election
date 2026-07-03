@@ -9,7 +9,6 @@ public class HQState : IState
     public void Enter()
     {
         Debug.Log("[HQState] Enter - 進入總部 (移動、選技能)");
-        if (UIManager.Instance != null) UIManager.Instance.ShowHQPanel();
 
         // 啟動非同步場景載入
         if (GameFlowManager.Instance != null)
@@ -27,6 +26,7 @@ public class HQState : IState
             {
                 yield return null;
             }
+            if (UIManager.Instance != null) UIManager.Instance.ShowHQPanel();
             Debug.Log($"[HQState] 場景 {hqSceneName} 載入完成！");
         }
         else

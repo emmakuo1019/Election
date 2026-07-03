@@ -8,29 +8,29 @@ public class PlayerAnimationController : MonoBehaviour
     // ==========================================
     // 1. 動畫狀態 Hash 集中管理（效能優化與防呆）
     // ==========================================
-    // 待機動畫四向 (暫時先全部接同一支 Male_idle 動畫，等美術圖補齊後再改回四方向)
-    private static readonly int IdleUpHash = Animator.StringToHash("Male_idle");
-    private static readonly int IdleDownHash = Animator.StringToHash("Male_idle");
-    private static readonly int IdleLeftHash = Animator.StringToHash("Male_idle");
-    private static readonly int IdleRightHash = Animator.StringToHash("Male_idle");
+    // 待機動畫四向 (暫時先全部接同一支 Idle 動畫，等美術圖補齊後再改回四方向)
+    private static readonly int IdleUpHash = Animator.StringToHash("Idle");
+    private static readonly int IdleDownHash = Animator.StringToHash("Idle");
+    private static readonly int IdleLeftHash = Animator.StringToHash("Idle");
+    private static readonly int IdleRightHash = Animator.StringToHash("Idle");
 
-    // 走路動畫四向 (暫時先全部接同一支 Male_Move 動畫，等美術圖補齊後再改回四方向)
-    private static readonly int WalkUpHash = Animator.StringToHash("Male_Move");
-    private static readonly int WalkDownHash = Animator.StringToHash("Male_Move");
-    private static readonly int WalkLeftHash = Animator.StringToHash("Male_Move");
-    private static readonly int WalkRightHash = Animator.StringToHash("Male_Move");
+    // 走路動畫四向 (暫時先全部接同一支 Move 動畫，等美術圖補齊後再改回四方向)
+    private static readonly int WalkUpHash = Animator.StringToHash("Move");
+    private static readonly int WalkDownHash = Animator.StringToHash("Move");
+    private static readonly int WalkLeftHash = Animator.StringToHash("Move");
+    private static readonly int WalkRightHash = Animator.StringToHash("Move");
 
-    // 攻擊動畫四向 (暫時先全部接同一支 Male_Attack 動畫，等美術圖補齊後再改回四方向)
-    private static readonly int AttackUpHash = Animator.StringToHash("Male_Attack");
-    private static readonly int AttackDownHash = Animator.StringToHash("Male_Attack");
-    private static readonly int AttackLeftHash = Animator.StringToHash("Male_Attack");
-    private static readonly int AttackRightHash = Animator.StringToHash("Male_Attack");
+    // 攻擊動畫四向 (暫時先全部接同一支 Attack 動畫，等美術圖補齊後再改回四方向)
+    private static readonly int AttackUpHash = Animator.StringToHash("Attack");
+    private static readonly int AttackDownHash = Animator.StringToHash("Attack");
+    private static readonly int AttackLeftHash = Animator.StringToHash("Attack");
+    private static readonly int AttackRightHash = Animator.StringToHash("Attack");
 
-    // 衝刺動畫四向 (暫時先全部接同一支 dash 動畫，等美術圖補齊後再改回四方向)
-    private static readonly int DashUpHash = Animator.StringToHash("Male_Dash");
-    private static readonly int DashDownHash = Animator.StringToHash("Male_Dash");
-    private static readonly int DashLeftHash = Animator.StringToHash("Male_Dash");
-    private static readonly int DashRightHash = Animator.StringToHash("Male_Dash");
+    // 衝刺動畫四向 (暫時先全部接同一支 Dash 動畫，等美術圖補齊後再改回四方向)
+    private static readonly int DashUpHash = Animator.StringToHash("Dash");
+    private static readonly int DashDownHash = Animator.StringToHash("Dash");
+    private static readonly int DashLeftHash = Animator.StringToHash("Dash");
+    private static readonly int DashRightHash = Animator.StringToHash("Dash");
 
 
 

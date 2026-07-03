@@ -30,9 +30,10 @@ public class EnemyMoveState : IState
         // 持續更新 Sprite 朝向
         ctx.UpdateFacingDirection();
 
-        // 如果沒有選民目標，退回 IdleState
-        if (ctx.target == null)
+        // 如果沒有選民目標，或是目標變得不合法 (已被轉化)，退回 IdleState 重新索敵
+        if (!ctx.IsTargetValid(ctx.target))
         {
+            ctx.target = null;
             stateMachine.ChangeState(ctx.IdleState);
             return;
         }

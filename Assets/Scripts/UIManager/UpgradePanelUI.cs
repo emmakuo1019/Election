@@ -71,7 +71,7 @@ public class UpgradePanelUI : MonoBehaviour
             DogezaSkillData runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkillData>();
             runtimeDogezaSkill.skillName = "悲情土下座";
             runtimeDogezaSkill.cooldown = 5f;
-            runtimeDogezaSkill.animationTriggerName = "Male_Begging";
+            runtimeDogezaSkill.animationTriggerName = "Begging";
             dogezaSkill = runtimeDogezaSkill;
         }
     }

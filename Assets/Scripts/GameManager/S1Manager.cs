@@ -19,6 +19,6 @@ public class S1Manager : MonoBehaviour
 
     private void OnSkipButtonClick()
     {
-        SceneManager.LoadScene("headquarters");
+        GameFlowManager.Instance.ChangeState(new HQState());
     }
 }
