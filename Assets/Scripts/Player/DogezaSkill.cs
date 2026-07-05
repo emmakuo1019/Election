@@ -43,14 +43,19 @@ public class DogezaSkill : SkillData
         GameDB.Instance?.Run.ModifyMP(-mpCost);
 
         // 自訂的特效生成邏輯 (取代 base.ExecuteSkill)
-        if (skillEffectPrefab != null)
+        if (vfxPrefab != null)
         {
             Quaternion effectRotation = useCasterRotation ? caster.transform.rotation : Quaternion.identity;
             Vector3 effectPosition = caster.transform.TransformPoint(effectSpawnOffset);
-            GameObject effectInstance = PoolManager.Instance.Get(skillEffectPrefab, effectPosition, effectRotation);
+            GameObject effectInstance = PoolManager.Instance.Get(vfxPrefab, effectPosition, effectRotation);
             
             if (effectInstance != null)
             {
+                if (effectInstance.TryGetComponent<PooledVFXInstance>(out var vfxInstance))
+                {
+                    vfxInstance.duration = vfxDuration;
+                }
+
                 FollowTargetWhileActive followTarget = effectInstance.GetComponent<FollowTargetWhileActive>();
                 if (followTarget == null)
                 {

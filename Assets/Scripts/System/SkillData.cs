@@ -11,7 +11,9 @@ public class SkillData : ScriptableObject, ISkillData
     
     [Header("動畫與表現")]
     public string animationTriggerName;
-    public GameObject skillEffectPrefab;
+    [UnityEngine.Serialization.FormerlySerializedAs("skillEffectPrefab")]
+    public GameObject vfxPrefab;
+    public float vfxDuration = 0f;
     
     // 實作 ISkillData 介面屬性
     public string AnimationTriggerName => animationTriggerName;
@@ -21,15 +23,21 @@ public class SkillData : ScriptableObject, ISkillData
     // 實作執行邏輯（將原本在 Manager 的實體化邏輯移過來，封裝在自身）
     public virtual void ExecuteSkill(GameObject caster)
     {
-        if (skillEffectPrefab != null && caster != null)
+        if (vfxPrefab != null && caster != null)
         {
+            GameObject effectInstance = null;
             if (PoolManager.HasInstance)
             {
-                PoolManager.Instance.Get(skillEffectPrefab, caster.transform.position, caster.transform.rotation);
+                effectInstance = PoolManager.Instance.Get(vfxPrefab, caster.transform.position, caster.transform.rotation);
             }
             else
             {
-                Instantiate(skillEffectPrefab, caster.transform.position, caster.transform.rotation);
+                effectInstance = Instantiate(vfxPrefab, caster.transform.position, caster.transform.rotation);
+            }
+
+            if (effectInstance != null && effectInstance.TryGetComponent<PooledVFXInstance>(out var vfxInstance))
+            {
+                vfxInstance.duration = vfxDuration;
             }
         }
         Debug.Log($"[SkillData] 執行技能邏輯：{skillName}");

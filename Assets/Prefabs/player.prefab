@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 103116504331528238}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08715578, y: 0, z: 0, w: 0.9961947}
-  m_LocalPosition: {x: 0.19, y: 0.893, z: 0}
+  m_LocalPosition: {x: 0, y: 0.893, z: 0}
   m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -465,7 +465,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackDuration: 0.3
   moveSpeed: 4
-  dashSpeed: 10
+  dashSpeed: 15
   dashDuration: 0.2
   dashCooldown: 0.5
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
@@ -488,7 +488,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackRange: 2
-  attackAngle: 40
+  attackAngle: 60
   attackInfluence: 1
   attackCooldown: 0.3
   convertChance: 1
