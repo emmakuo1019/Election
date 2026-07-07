@@ -101,20 +101,6 @@ public class PlayerController : MonoBehaviour
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
     }
 
-    private void OnDestroy()
-    {
-    }
-
-    private void OnDash(InputAction.CallbackContext _)
-    {
-        // 留空，改為在 Update 輪詢
-    }
-    
-    private void OnAttack(InputAction.CallbackContext _)
-    {
-        // 留空，改為在 Update 輪詢
-    }
-
     private void Start()
     {
         // 初始化狀態機，給予起始狀態

@@ -13,19 +13,15 @@ public class PlayerSkillManager : MonoBehaviour
     [Header("政黨大招 (L)")]
     [SerializeField] private SkillData currentPartySkill;
     
-    // 供跨場景讀取的靜態變數
-    private static SkillData equippedPartySkill;
+    // (已移除舊的靜態變數，全面改用 GameDB 進行跨場景存取)
     #endregion
 
     #region 屬性區 (Properties)
     public bool HasPartySkill => currentPartySkill != null;
     public SkillData CurrentPartySkill => currentPartySkill;
-    public static bool HasEquippedPartySkill => equippedPartySkill != null;
-    public static SkillData EquippedPartySkill => equippedPartySkill;
     #endregion
 
     #region 舊有攻擊保留區 (Legacy Attack)
-    // 注意：目前一般攻擊已由 AttackState 與 PlayerAttack 處理，這裡僅暫作保留防編譯錯誤
     [Header("一般攻擊 (舊有保留)")]
     [SerializeField] private PlayerAttack speechAttack;
 
@@ -45,12 +41,18 @@ public class PlayerSkillManager : MonoBehaviour
     #region 生命週期 (Lifecycle)
     private void Awake()
     {
-        // 確保場景載入時，能正確讀取跨場景的裝備技能
-        // 依照您的需求，將選單選擇的技能改為裝備到 J 鍵 (baseSkillJ)
-        if (baseSkillJ == null && equippedPartySkill != null)
+        // 確保場景載入時，從 GameDB 讀取跨場景的裝備技能
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
         {
-            baseSkillJ = equippedPartySkill;
-            Debug.Log($"[PlayerSkillManager] 場景載入：已將跨場景技能 {equippedPartySkill.skillName} 裝備至 J 鍵");
+            if (GameDB.Instance.Player.BaseSkillJ != null)
+            {
+                baseSkillJ = GameDB.Instance.Player.BaseSkillJ;
+                Debug.Log($"[PlayerSkillManager] 場景載入：已從 GameDB 讀取技能 {baseSkillJ.skillName} 並裝備至 J 鍵");
+            }
+            if (GameDB.Instance.Player.EquippedPartySkill != null)
+            {
+                currentPartySkill = GameDB.Instance.Player.EquippedPartySkill;
+            }
         }
     }
     #endregion
@@ -66,8 +68,6 @@ public class PlayerSkillManager : MonoBehaviour
     {
         if (skillData == null) return false;
 
-        // 注意：統一為 SkillData 後，資源扣除與條件檢查建議未來實作於 SkillData 內部
-        // 這裡負責純粹的冷卻時間計算
         if (skillLastUseTime.TryGetValue(skillData, out float lastTime))
         {
             if (Time.time < lastTime + skillData.Cooldown)
@@ -91,39 +91,35 @@ public class PlayerSkillManager : MonoBehaviour
     #endregion
 
     #region 裝備管理區 (Equipment Management)
-    // 讓 UI 可以直接將技能裝備到 J 鍵，並保存至靜態變數以供跨場景讀取
     public void EquipSkillJ(SkillData skillData)
     {
         baseSkillJ = skillData;
-        equippedPartySkill = skillData; // 同步儲存至跨場景變數
-        Debug.Log($"[PlayerSkillManager] 已將 {skillData.skillName} 裝備至 J 鍵 (並寫入跨場景靜態變數)");
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
+        {
+            GameDB.Instance.Player.EquipBaseSkillJ(skillData);
+        }
+        Debug.Log($"[PlayerSkillManager] 已將 {skillData.skillName} 裝備至 J 鍵 (並寫入 GameDB 跨場景靜態變數)");
     }
 
     public void EquipPartySkill(SkillData skillData)
     {
-        SetEquippedPartySkill(skillData);
-        currentPartySkill = equippedPartySkill;
+        currentPartySkill = skillData;
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
+        {
+            GameDB.Instance.Player.EquipPartySkill(skillData);
+        }
     }
 
     public void ClearPartySkill()
     {
         currentPartySkill = null;
-        equippedPartySkill = null;
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
+        {
+            GameDB.Instance.Player.EquipPartySkill(null);
+        }
     }
 
-    public static void SetEquippedPartySkill(SkillData skillData)
-    {
-        equippedPartySkill = skillData;
-        ClearPendingMapSkillSelection();
-    }
-
-    public static void ResetSavedPartySkill()
-    {
-        equippedPartySkill = null;
-        PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
-        PlayerPrefs.Save();
-    }
-
+    // 保留部分 PlayerPrefs 的標記邏輯供 UpgradePanelUI 繼續使用
     public static void MarkPendingMapSkillSelection()
     {
         PlayerPrefs.SetInt(PendingMapSkillSelectionKey, 1);
