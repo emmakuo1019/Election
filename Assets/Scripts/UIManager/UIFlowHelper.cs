@@ -11,11 +11,6 @@ public class UIFlowHelper : MonoBehaviour
         GameFlowManager.Instance.ChangeState(new MainMenuState());
     }
 
-    public void GoToCharacterSelect()
-    {
-        GameFlowManager.Instance.ChangeState(new CharacterSelectState());
-    }
-
     public void GoToHQ()
     {
         GameFlowManager.Instance.ChangeState(new HQState());

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
@@ -10,9 +11,18 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance { get; private set; }
 
     [Header("UI Panels")]
+    [Tooltip("全螢幕淡入淡出遮罩")]
+    [SerializeField] private CanvasGroup fadeCanvasGroup;
+
     public GameObject mainMenuPanel;
-    public GameObject characterSelectPanel;
     public GameObject hqPanel;
+
+    [Tooltip("總部 - 選角介面")]
+    [SerializeField] private GameObject candidatePanel;
+    
+    [Tooltip("總部 - 選技能介面")]
+    [SerializeField] private GameObject skillPanel;
+
     public GameObject gameplayHUDPanel;
     public GameObject stageClearPanel;
     public GameObject gameEndPanel;
@@ -49,19 +59,35 @@ public class UIManager : MonoBehaviour
         // 強制解鎖並顯示游標，確保在執行檔中不會因為全螢幕或預設行為而消失
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+
+        // 初始化漸變面板狀態
+        if (fadeCanvasGroup != null)
+        {
+            fadeCanvasGroup.alpha = 0f;
+            fadeCanvasGroup.blocksRaycasts = false;
+        }
     }
 
     // Main Menu
     public void ShowMainMenu() { if (mainMenuPanel != null) mainMenuPanel.SetActive(true); }
     public void HideMainMenu() { if (mainMenuPanel != null) mainMenuPanel.SetActive(false); }
 
-    // Character Select
-    public void ShowCharacterSelect() { if (characterSelectPanel != null) characterSelectPanel.SetActive(true); }
-    public void HideCharacterSelect() { if (characterSelectPanel != null) characterSelectPanel.SetActive(false); }
-
     // HQ
-    public void ShowHQPanel() { if (hqPanel != null) hqPanel.SetActive(true); }
-    public void HideHQPanel() { if (hqPanel != null) hqPanel.SetActive(false); }
+    public void ShowHQPanel() 
+    { 
+        if (hqPanel != null) hqPanel.SetActive(true); 
+        
+        // 進入總部時，初始化子面板狀態：開啟選角介面、關閉技能介面
+        if (candidatePanel != null) candidatePanel.SetActive(true);
+        if (skillPanel != null) skillPanel.SetActive(false);
+    }
+
+    public void HideHQPanel() 
+    { 
+        if (hqPanel != null) hqPanel.SetActive(false); 
+        if (candidatePanel != null) candidatePanel.SetActive(false);
+        if (skillPanel != null) skillPanel.SetActive(false);
+    }
 
     // Gameplay HUD
     public void ShowGameplayHUD() 
@@ -220,5 +246,99 @@ public class UIManager : MonoBehaviour
         HideStageClearPanel();
         onStageClearSequenceComplete?.Invoke();
         onStageClearSequenceComplete = null;
+    }
+
+    // ==========================================
+    // 漸變轉場與流程控制 (Fade & Flow Control)
+    // ==========================================
+
+    /// <summary>
+    /// 執行畫面淡出，變黑後觸發回呼
+    /// </summary>
+    /// <param name="duration">漸變所需時間(秒)</param>
+    /// <param name="onComplete">淡出完成後執行的動作</param>
+    public void FadeOut(float duration, Action onComplete)
+    {
+        if (fadeCanvasGroup == null)
+        {
+            Debug.LogWarning("[UIManager] FadeCanvasGroup 未設定！直接執行 onComplete。");
+            onComplete?.Invoke();
+            return;
+        }
+        
+        StartCoroutine(FadeOutRoutine(duration, onComplete));
+    }
+
+    private IEnumerator FadeOutRoutine(float duration, Action onComplete)
+    {
+        // 防呆：在淡出期間擋住後面所有的 UI 點擊
+        fadeCanvasGroup.blocksRaycasts = true;
+        
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            fadeCanvasGroup.alpha = Mathf.Clamp01(timer / duration);
+            yield return null;
+        }
+
+        fadeCanvasGroup.alpha = 1f;
+        
+        // 畫面已全黑，執行回呼
+        onComplete?.Invoke();
+    }
+
+    /// <summary>
+    /// 執行畫面淡入 (從全黑變為透明)
+    /// </summary>
+    /// <param name="duration">漸變所需時間(秒)</param>
+    /// <param name="onComplete">淡入完成後執行的動作(可選)</param>
+    public void FadeIn(float duration, Action onComplete = null)
+    {
+        if (fadeCanvasGroup == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+        
+        StartCoroutine(FadeInRoutine(duration, onComplete));
+    }
+
+    private IEnumerator FadeInRoutine(float duration, Action onComplete)
+    {
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            fadeCanvasGroup.alpha = 1f - Mathf.Clamp01(timer / duration);
+            yield return null;
+        }
+
+        fadeCanvasGroup.alpha = 0f;
+        fadeCanvasGroup.blocksRaycasts = false;
+        
+        onComplete?.Invoke();
+    }
+
+    // ==========================================
+    // 總部 UI 流程連動邏輯 (HQ UI Flow)
+    // ==========================================
+
+    /// <summary>
+    /// 顯示選角操作提示 (純 UI 顯示，邏輯交由 HQState 處理)
+    /// </summary>
+    public void ShowCandidateHint()
+    {
+        if (candidatePanel != null) candidatePanel.SetActive(true);
+        if (skillPanel != null) skillPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// 顯示選技能操作提示 (純 UI 顯示，邏輯交由 HQState 處理)
+    /// </summary>
+    public void ShowSkillHint()
+    {
+        if (candidatePanel != null) candidatePanel.SetActive(false);
+        if (skillPanel != null) skillPanel.SetActive(true);
     }
 }

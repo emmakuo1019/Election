@@ -476,3 +476,58 @@ Assets/Scripts/
 - **徹底解耦**：原本揉合了血量、倍率、社會風氣的 `PolicyEffectRuntimeManager` 已經被完全刪除。
 - **`PolicyManager`**：現在只專職負責 `AttackRadiusMultiplier` 等「政策卡增益倍率」的管理，並提供唯讀 Getter 供 `PlayerAttack` 等戰鬥邏輯調用。
 - **`PlayerHealthSystem`**：作為生命 Proxy，現在不僅負責 `TakeDamage()` 與 `Heal()`（並將之轉交給 GameDB），更成功訂閱了 `GameDB.Instance.Run.OnIntegrityHpChanged`。當生命歸零時，會主動發送 `BattleEventManager.TriggerPlayerDied()` 給全域狀態機，完美達成事件驅動設計！
+
+---
+
+## 🧹 重構總結 (技能特效池化與 SocketBuilder 雙軌生成系統)
+> 紀錄時間：2026-07-05
+
+為了達成高效能與靈活的編輯環境，進行了以下優化與擴充：
+
+### 1. 技能特效池化 (Skill VFX Pooling)
+- **`SkillData.cs`**：將 `skillEffectPrefab` 更新為 `vfxPrefab` (利用 `FormerlySerializedAs` 保持相容性)，並新增 `vfxDuration` 統一管理特效生命週期。修改 `ExecuteSkill()` 直接對接 `PoolManager` 取出特效實體。
+- **`PooledVFXInstance.cs`**：建立新的特效自動回收腳本，實作 `IPoolable` 介面。支援基於時間 (`duration`) 或是 ParticleSystem 的 `OnParticleSystemStopped` 回呼來自動執行 `Release`。
+- **特殊技能適配**：修改 `DogezaSkill.cs` 等繼承自 `SkillData` 的特規技能，使其自訂的 `ExecuteSkill` 也遵循新的物件池取用規範。
+
+### 2. 建築配件自動生成器 (`SocketBuilder.cs`)
+- **雙軌生成與回收機制**：
+  - **Play Mode**：透過 `PoolManager` 取出與回收 (`Get`/`Release`)。
+  - **Edit Mode**：為了支援美術人員預覽，結合了 `#if UNITY_EDITOR` 與 `UnityEditor.PrefabUtility.InstantiatePrefab()`，保留藍色的 Prefab 連結。並支援了 `Undo.RegisterCreatedObjectUndo`（Ctrl+Z 復原機制）。回收則使用 `DestroyImmediate()` 處理。
+- **美術防變形規範**：所有生成的配件在 SetParent 後，會自動重置 `localPosition = Vector3.zero` 與 `localRotation = Quaternion.identity`（不強制縮放，尊重 Prefab 原始比例），確保建築物不管怎麼形變，配件都能完美對齊 Socket 不變形。
+
+---
+
+## 🧹 重構總結 (總部重構與鍵盤驅動流程)
+> 紀錄時間：2026-07-08
+
+完成了總部 (Headquarters) 場景的 UI 與運鏡重構，主要改動如下：
+
+### 1. 純鍵盤驅動流程 (`HQState.cs`)
+- 徹底移除了總部內的 UI 按鈕點擊依賴，改為透過 `Keyboard.current` 進行全鍵盤操作。
+- **選角階段**：使用 `A` / `D` 切換角色鏡頭，`Enter` 確認進入選技能。
+- **選技能階段**：使用 `W` / `S` 切換技能企劃書，`Enter` 寫入 `GameDB` 並觸發 `FadeOut` 進入戰鬥關卡，`Esc` 退回選角階段。
+- **物理隔離**：進入 `HQState` 時主動停用 `PlayerController`，完全阻斷玩家在總部內的實體移動與攻擊。
+
+### 2. 鏡頭大腦升級 (`HQSceneController.cs`)
+- 實作「重置與碾壓法 (Reset & Elevate)」：透過迴圈將所有相機權重壓低 (Priority 10)，再單獨拉高目標相機 (Priority 20)，解決了 Cinemachine 鏡頭切換殘留的問題。
+- 提供了對外部全域狀態機非常友善的乾淨 API：`FocusMale()`、`FocusFemale()`、`FocusDesk()`。
+
+### 3. UI 漸變與解耦 (`UIManager.cs`)
+- `UIManager` 內部實作了 `FadeOut()` 與 `FadeIn()` 的 Coroutine 方法，供全域狀態機跨場景呼叫，確保轉場過程中的黑畫面遮罩與點擊阻斷。
+- 貫徹 SSOT：技能選擇完畢後直接寫入 `GameDB.Instance.Player.EquipBaseSkillJ`，徹底擺脫了對場景內 Player 實體的依賴。
+- **流程合併精簡**：將原本獨立的 `CharacterSelectState` 與對應的 `CharacterSelectPanel` 徹底刪除，完全併入總部 (`HQState`) 的選角介面中，簡化了狀態機的複雜度。
+
+## 🧹 重構總結 (技能系統擴充與 SSOT 裝備落實)
+
+完成了「理性流派」新技能的實作，並徹底清理了技能管理器的跨場景相依，主要改動如下：
+
+### 1. 新技能：放置人形立牌 (`StandeeSkillData`)
+- **Fire-and-forget 架構**：新增 `StandeeSkillData` (繼承自 `SkillData`) 與 `StandeeBehavior`。技能施放後於玩家前方實例化立牌，由立牌自行利用 Coroutine 計時並透過 `Physics.OverlapSphere` 掃描，強制轉化周圍的 `Rational` 理性選民。該設計完美實現了技能持續效果與玩家本體邏輯的解耦。
+
+### 2. 徹底落實 GameDB 跨場景資料 (SSOT)
+- **拔除靜態依賴**：完全移除了 `PlayerSkillManager` 中的 `static equippedPartySkill` 等靜態快取變數。
+- **統一讀寫入口**：總部裝備技能時，一律寫入 `GameDB.Instance.Player.EquipBaseSkillJ`。當戰鬥場景載入時 (`Awake`)，由 `PlayerSkillManager` 主動向 `GameDB` 讀取當前裝備，徹底杜絕了多場景切換與重啟造成的資料脫鉤。
+
+### 3. UI 單一職責重構
+- **隔離邏輯**：新增 `HQSkillSelectionUI` 專門負責綁定總部的技能按鈕點擊，單純負責 UI 反饋與寫入 `GameDB`。
+- **依賴清理**：同步更新了舊有的 `UpgradePanelUI` 與 `HeadquartersManager`，修正了所有因全域靜態變數移除而產生的過期呼叫，維護了專案的 Clean Architecture 規範。

@@ -34,14 +34,23 @@ public class GameDB : MonoBehaviour
     }
 
     /// <summary>
-    /// 重新開始遊戲時，重置單局資料 (RunData)
-    /// 注意：如果是在遊戲中重置，請確保 UI 有重新抓取參考或重新訂閱。
+    /// 重新開始遊戲時，重置單局資料 (RunData)。
     /// 通常在離開結算畫面、回到主選單，或新局開始時呼叫。
     /// </summary>
     public void ResetRunData()
     {
         Run = new RunData();
         Debug.Log("[GameDB] RunData 已重置");
+    }
+
+    /// <summary>
+    /// 重置戰役進度 (CampaignData)，回到遊戲最開始的狀態。
+    /// 通常在回到主選單 / 總部場景時呼叫。
+    /// </summary>
+    public void ResetCampaignData()
+    {
+        Campaign = new CampaignData();
+        Debug.Log("[GameDB] CampaignData 已重置");
     }
 }
 
@@ -167,14 +176,6 @@ public class RunData
         }
     }
 
-    public void ApplyClimateDelta(int delta)
-    {
-        // 依照設計，正數代表增加情緒 (往負值走)，負數代表增加理性 (往正值走)
-        // 注意：這裡我將原版 `ApplyClimateDelta` 邏輯簡化為單純的加減，你可以根據需求將其改為直接 ModifyAtmosphere(-delta)
-        // 原始設定 delta > 0 時，呼叫 AddEmotion(delta) 也就是 ModifyAtmosphere(-delta)
-        ModifyAtmosphere(-delta);
-    }
-
     public void ResetAtmosphere()
     {
         int oldValue = SocialAtmosphere;
@@ -213,28 +214,97 @@ public class RunData
 }
 
 /// <summary>
-/// 戰役/推進進度資料 (保留目前 PlayerPrefs 處理的關卡狀態)
+/// 戰役/推進進度資料，取代原本分散在 BlockProgressManager 與
+/// CampaignProgressManager 裡的 PlayerPrefs 儲存。
+/// 所有欄位存活於 GameDB (DontDestroyOnLoad)，遊戲崩潰不會留下殘留狀態。
 /// </summary>
 [System.Serializable]
 public class CampaignData
 {
-    public int CompletedBlocks { get; private set; }
-    public int CurrentBlockIndex { get; private set; } = 1;
-    public int CurrentRoomCount { get; private set; } = 0;
-    public int MaxRoomsInBlock { get; private set; } = 5;
+    // ── 已完成的 Block 數量 ──────────────────────────────────────────
+    public int CompletedBlocks { get; private set; } = 0;
 
-    public event Action<int, int> OnRoomProgressChanged;
+    // ── 當前 Block 進度 ──────────────────────────────────────────────
+    public int CurrentBlockIndex   { get; private set; } = 1;
+    public int CurrentRoomCount    { get; private set; } = 0;
+    public int MaxRoomsInBlock     { get; private set; } = 5;
 
-    public void SetCampaignProgress(int completedBlocks, int currentBlockIndex)
+    // 當前 Block 的房間場景序列，例如 ["TestMVP","TestSpecial","TestMVP",...]
+    public string[] RoomSequence   { get; private set; } = System.Array.Empty<string>();
+
+    // 用於強制覆蓋下一間房間要載入的場景 (例如失敗跳結算畫面)
+    public string NextSceneOverride { get; private set; } = string.Empty;
+
+    // ── 事件 ─────────────────────────────────────────────────────────
+    public event System.Action<int, int> OnRoomProgressChanged;
+
+    // ── CompletedBlocks ──────────────────────────────────────────────
+    public void AddCompletedBlock()
     {
-        CompletedBlocks = completedBlocks;
-        CurrentBlockIndex = currentBlockIndex;
+        CompletedBlocks++;
     }
 
-    public void SetRoomProgress(int roomCount, int maxRooms)
+    public void ResetCompletedBlocks()
     {
-        CurrentRoomCount = roomCount;
-        MaxRoomsInBlock = maxRooms;
+        CompletedBlocks = 0;
+    }
+
+    // ── Block 初始化 ─────────────────────────────────────────────────
+    public void InitBlock(int maxRooms, int blockIndex)
+    {
+        CurrentRoomCount = 0;
+        MaxRoomsInBlock  = Mathf.Max(1, maxRooms);
+        CurrentBlockIndex = Mathf.Max(1, blockIndex);
+        RoomSequence     = System.Array.Empty<string>();
+        NextSceneOverride = string.Empty;
         OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
+    }
+
+    public void SetRoomSequence(string[] sequence)
+    {
+        RoomSequence = sequence ?? System.Array.Empty<string>();
+    }
+
+    // ── 房間推進 ─────────────────────────────────────────────────────
+    public void EnterNextRoom()
+    {
+        CurrentRoomCount++;
+        OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
+    }
+
+    // ── 查詢 ─────────────────────────────────────────────────────────
+    public bool HasBlockProgress() => MaxRoomsInBlock > 0 && CurrentRoomCount > 0;
+
+    public bool IsLastRoomInBlock() => CurrentRoomCount >= MaxRoomsInBlock;
+
+    public string GetCurrentRoomSceneName()
+    {
+        if (RoomSequence.Length == 0) return string.Empty;
+        int idx = Mathf.Clamp(CurrentRoomCount - 1, 0, RoomSequence.Length - 1);
+        return RoomSequence[idx];
+    }
+
+    // ── 場景覆蓋 ─────────────────────────────────────────────────────
+    public void SetNextSceneOverride(string sceneName)
+    {
+        NextSceneOverride = sceneName ?? string.Empty;
+    }
+
+    /// <summary>取出並清除場景覆蓋，一次性使用。</summary>
+    public string ConsumeNextSceneOverride()
+    {
+        string scene = NextSceneOverride;
+        NextSceneOverride = string.Empty;
+        return scene;
+    }
+
+    // ── 清除 ─────────────────────────────────────────────────────────
+    public void ClearBlockProgress()
+    {
+        CurrentRoomCount  = 0;
+        MaxRoomsInBlock   = 0;
+        CurrentBlockIndex = 1;
+        RoomSequence      = System.Array.Empty<string>();
+        NextSceneOverride = string.Empty;
     }
 }

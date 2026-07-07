@@ -1,108 +1,84 @@
 using UnityEngine;
 
+/// <summary>
+/// 管理單次 Block (一組關卡房間) 的推進邏輯。
+/// 所有狀態存放於 GameDB.Campaign (DontDestroyOnLoad)，不再使用 PlayerPrefs，
+/// 遊戲崩潰時不會留下殘留狀態。
+/// </summary>
 public static class BlockProgressManager
 {
-    private const string ROOM_COUNT_KEY = "CurrentBlockRoomCount";
-    private const string MAX_ROOM_KEY = "CurrentBlockMaxRooms";
-    private const string ROOM_SEQUENCE_KEY = "CurrentBlockRoomSequence";
-    private const string NEXT_SCENE_OVERRIDE_KEY = "CurrentBlockNextSceneOverride";
-    private const string CURRENT_BLOCK_INDEX_KEY = "CurrentBlockIndex";
     private const int DefaultBlockRoomCount = 5;
     private const string NormalRoomSceneName = "TestMVP";
     private const string SpecialRoomSceneName = "TestSpecial";
     private const string MapSceneName = "MapScene";
     private const float SpecialRoomChance = 0.2f;
 
+    // ── 便捷存取 ─────────────────────────────────────────────────────
+
+    private static CampaignData Campaign => GameDB.Instance?.Campaign;
+
+    // ── 初始化與啟動 ─────────────────────────────────────────────────
+
     public static void InitBlock(int maxRooms, int blockIndex)
     {
-        PlayerPrefs.SetInt(ROOM_COUNT_KEY, 0);
-        PlayerPrefs.SetInt(MAX_ROOM_KEY, maxRooms);
-        PlayerPrefs.SetInt(CURRENT_BLOCK_INDEX_KEY, Mathf.Max(1, blockIndex));
-        PlayerPrefs.Save();
-
+        Campaign?.InitBlock(maxRooms, blockIndex);
     }
 
-    public static void EnterNextRoom()
-    {
-        int current = PlayerPrefs.GetInt(ROOM_COUNT_KEY, 0);
-        current++;
-        PlayerPrefs.SetInt(ROOM_COUNT_KEY, current);
-        PlayerPrefs.Save();
-
-    }
-
-    public static int GetCurrentRoomCount()
-    {
-        return PlayerPrefs.GetInt(ROOM_COUNT_KEY, 0);
-    }
-
-    public static bool HasBlockProgress()
-    {
-        return PlayerPrefs.HasKey(MAX_ROOM_KEY);
-    }
-
-    public static int GetCurrentBlockIndex()
-    {
-        return PlayerPrefs.GetInt(CURRENT_BLOCK_INDEX_KEY, 1);
-    }
-
-    public static int GetMaxRooms()
-    {
-        return PlayerPrefs.GetInt(MAX_ROOM_KEY, DefaultBlockRoomCount);
-    }
-
+    /// <summary>
+    /// 啟動指定 Block，生成房間序列並進入第一間房，回傳第一間房的場景名稱。
+    /// </summary>
     public static string StartRandomBlock(int blockIndex, int maxRooms = DefaultBlockRoomCount)
     {
-        int safeBlockIndex = Mathf.Clamp(blockIndex, 1, CampaignProgressManager.GetTotalBlockCount());
-        int safeMaxRooms = Mathf.Max(1, maxRooms);
+        if (Campaign == null)
+        {
+            Debug.LogError("[BlockProgressManager] GameDB.Instance 尚未初始化！");
+            return NormalRoomSceneName;
+        }
 
-        InitBlock(safeMaxRooms, safeBlockIndex);
-        SaveRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
-        EnterNextRoom();
+        int safeBlockIndex = Mathf.Clamp(blockIndex, 1, CampaignProgressManager.GetTotalBlockCount());
+        int safeMaxRooms   = Mathf.Max(1, maxRooms);
+
+        Campaign.InitBlock(safeMaxRooms, safeBlockIndex);
+        Campaign.SetRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
+        Campaign.EnterNextRoom();
 
         return GetCurrentRoomSceneName();
     }
 
+    /// <summary>
+    /// 依照戰役進度，啟動下一個 Block。
+    /// </summary>
     public static string StartNextCampaignBlock(int maxRooms = DefaultBlockRoomCount)
     {
         int nextBlockIndex = CampaignProgressManager.GetNextBlockIndex();
         return StartRandomBlock(nextBlockIndex, maxRooms);
     }
 
-    public static string GetCurrentRoomSceneName()
-    {
-        string[] roomSequence = LoadRoomSequence();
-        if (roomSequence.Length == 0)
-        {
-            return NormalRoomSceneName;
-        }
+    // ── 推進 ─────────────────────────────────────────────────────────
 
-        int roomIndex = Mathf.Clamp(GetCurrentRoomCount() - 1, 0, roomSequence.Length - 1);
-        return roomSequence[roomIndex];
+    public static void EnterNextRoom()
+    {
+        Campaign?.EnterNextRoom();
     }
 
+    /// <summary>
+    /// 前進到下一間房並回傳場景名稱；若已是最後一房則回傳 null。
+    /// </summary>
     public static string AdvanceToNextRoom()
     {
-        if (!HasBlockProgress() || IsLastRoomInBlock())
-        {
+        if (Campaign == null || !Campaign.HasBlockProgress() || Campaign.IsLastRoomInBlock())
             return null;
-        }
 
-        EnterNextRoom();
+        Campaign.EnterNextRoom();
         return GetCurrentRoomSceneName();
     }
 
-    public static bool IsLastRoomInBlock()
-    {
-        return GetCurrentRoomCount() >= GetMaxRooms();
-    }
+    // ── 完成 / 失敗 ──────────────────────────────────────────────────
 
     public static bool TryCompleteCurrentBlock()
     {
-        if (!HasBlockProgress() || !IsLastRoomInBlock())
-        {
+        if (Campaign == null || !Campaign.HasBlockProgress() || !Campaign.IsLastRoomInBlock())
             return false;
-        }
 
         CampaignProgressManager.AddCompletedBlock();
         PlayerSkillManager.MarkPendingMapSkillSelection();
@@ -115,20 +91,33 @@ public static class BlockProgressManager
         ClearBlockProgress();
     }
 
+    public static void ClearBlockProgress()
+    {
+        Campaign?.ClearBlockProgress();
+    }
+
+    // ── 場景覆蓋 ─────────────────────────────────────────────────────
+
+    public static void SetNextSceneOverride(string sceneName)
+    {
+        Campaign?.SetNextSceneOverride(sceneName);
+    }
+
+    /// <summary>
+    /// 根據目前進度決定離開房間後要載入哪個場景。
+    /// 若有場景覆蓋則優先使用（一次性消耗）。
+    /// </summary>
     public static string GetSceneAfterRoomExit()
     {
-        string nextSceneOverride = ConsumeNextSceneOverride();
-        if (!string.IsNullOrWhiteSpace(nextSceneOverride))
-        {
-            return nextSceneOverride;
-        }
+        if (Campaign == null) return null;
 
-        if (!HasBlockProgress())
-        {
-            return null;
-        }
+        string overrideScene = Campaign.ConsumeNextSceneOverride();
+        if (!string.IsNullOrWhiteSpace(overrideScene))
+            return overrideScene;
 
-        if (IsLastRoomInBlock())
+        if (!Campaign.HasBlockProgress()) return null;
+
+        if (Campaign.IsLastRoomInBlock())
         {
             bool completed = TryCompleteCurrentBlock();
             return completed ? MapSceneName : null;
@@ -137,69 +126,26 @@ public static class BlockProgressManager
         return AdvanceToNextRoom();
     }
 
-    public static void ClearBlockProgress()
-    {
-        PlayerPrefs.DeleteKey(ROOM_COUNT_KEY);
-        PlayerPrefs.DeleteKey(MAX_ROOM_KEY);
-        PlayerPrefs.DeleteKey(ROOM_SEQUENCE_KEY);
-        PlayerPrefs.DeleteKey(NEXT_SCENE_OVERRIDE_KEY);
-        PlayerPrefs.DeleteKey(CURRENT_BLOCK_INDEX_KEY);
-        PlayerPrefs.Save();
+    // ── 查詢 ─────────────────────────────────────────────────────────
 
-    }
+    public static bool HasBlockProgress()       => Campaign?.HasBlockProgress() ?? false;
+    public static bool IsLastRoomInBlock()      => Campaign?.IsLastRoomInBlock() ?? false;
+    public static int  GetCurrentRoomCount()    => Campaign?.CurrentRoomCount ?? 0;
+    public static int  GetMaxRooms()            => Campaign?.MaxRoomsInBlock ?? DefaultBlockRoomCount;
+    public static int  GetCurrentBlockIndex()   => Campaign?.CurrentBlockIndex ?? 1;
+    public static string GetCurrentRoomSceneName() => Campaign?.GetCurrentRoomSceneName() ?? NormalRoomSceneName;
 
-    public static void SetNextSceneOverride(string sceneName)
-    {
-        if (string.IsNullOrWhiteSpace(sceneName))
-        {
-            PlayerPrefs.DeleteKey(NEXT_SCENE_OVERRIDE_KEY);
-        }
-        else
-        {
-            PlayerPrefs.SetString(NEXT_SCENE_OVERRIDE_KEY, sceneName);
-        }
-
-        PlayerPrefs.Save();
-    }
+    // ── 內部輔助 ─────────────────────────────────────────────────────
 
     private static string[] GenerateRoomSequence(int blockIndex, int maxRooms)
     {
-        string[] roomSequence = new string[maxRooms];
-
+        string[] sequence = new string[maxRooms];
         for (int i = 0; i < maxRooms; i++)
         {
-            roomSequence[i] = Random.value < SpecialRoomChance
+            sequence[i] = Random.value < SpecialRoomChance
                 ? SpecialRoomSceneName
                 : NormalRoomSceneName;
         }
-
-        return roomSequence;
-    }
-
-    private static void SaveRoomSequence(string[] roomSequence)
-    {
-        PlayerPrefs.SetString(ROOM_SEQUENCE_KEY, string.Join("|", roomSequence));
-        PlayerPrefs.Save();
-    }
-
-    private static string[] LoadRoomSequence()
-    {
-        string serialized = PlayerPrefs.GetString(ROOM_SEQUENCE_KEY, string.Empty);
-        return string.IsNullOrWhiteSpace(serialized)
-            ? System.Array.Empty<string>()
-            : serialized.Split('|');
-    }
-
-    private static string ConsumeNextSceneOverride()
-    {
-        string sceneName = PlayerPrefs.GetString(NEXT_SCENE_OVERRIDE_KEY, string.Empty);
-        if (string.IsNullOrWhiteSpace(sceneName))
-        {
-            return string.Empty;
-        }
-
-        PlayerPrefs.DeleteKey(NEXT_SCENE_OVERRIDE_KEY);
-        PlayerPrefs.Save();
-        return sceneName;
+        return sequence;
     }
 }

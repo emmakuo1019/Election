@@ -5,7 +5,7 @@ public class RoomResultCalculator : MonoBehaviour
     [Header("房間結算 MP 設定")]
     [SerializeField] private int baseRoomMPReward = 20;
 
-    [Header("是否輸出詳細 Debug")]
+    [Header("Debug")]
     [SerializeField] private bool showDebugLog = true;
 
     public int CalculateAndRewardMP()
@@ -25,10 +25,6 @@ public class RoomResultCalculator : MonoBehaviour
         int rewardMP = Mathf.RoundToInt(baseRoomMPReward * supportRate);
 
         GameDB.Instance?.Run.ModifyMP(rewardMP);
-
-        if (showDebugLog)
-        {
-        }
 
         return rewardMP;
     }

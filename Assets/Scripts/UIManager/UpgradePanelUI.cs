@@ -53,7 +53,6 @@ public class UpgradePanelUI : MonoBehaviour
 
         if (dogezaButton != null)
             dogezaButton.onClick.RemoveListener(() => OnSelectPartySkill(dogezaSkill));
-
     }
 
     private void ResolveReferences()
@@ -103,9 +102,7 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void ClosePanel()
     {
-        bool hasSkillJ = playerSkillManager != null 
-            ? playerSkillManager.baseSkillJ != null 
-            : PlayerSkillManager.HasEquippedPartySkill;
+        bool hasSkillJ = GameDB.Instance != null && GameDB.Instance.Player != null && GameDB.Instance.Player.BaseSkillJ != null;
 
         if (PlayerSkillManager.HasPendingMapSkillSelection() && !hasSkillJ)
         {
@@ -132,15 +129,19 @@ public class UpgradePanelUI : MonoBehaviour
             return;
         }
 
+        // 直接寫入 SSOT GameDB
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
+        {
+            GameDB.Instance.Player.EquipBaseSkillJ(skillData);
+        }
+        
+        // 如果場景內剛好有 PlayerSkillManager，順便同步
         if (playerSkillManager != null)
         {
-            // 將技能裝備到 J 鍵 (而不是 L 鍵的 PartySkill)
             playerSkillManager.EquipSkillJ(skillData);
         }
-        else
-        {
-            PlayerSkillManager.SetEquippedPartySkill(skillData);
-        }
+
+        PlayerSkillManager.ClearPendingMapSkillSelection();
 
         ClosePanel();
         RefreshUI();
@@ -148,13 +149,8 @@ public class UpgradePanelUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        bool hasSkillJ = playerSkillManager != null 
-            ? playerSkillManager.baseSkillJ != null 
-            : PlayerSkillManager.HasEquippedPartySkill;
-            
-        SkillData equippedSkill = playerSkillManager != null
-            ? playerSkillManager.baseSkillJ
-            : PlayerSkillManager.EquippedPartySkill;
+        bool hasSkillJ = GameDB.Instance != null && GameDB.Instance.Player != null && GameDB.Instance.Player.BaseSkillJ != null;
+        SkillData equippedSkill = hasSkillJ ? GameDB.Instance.Player.BaseSkillJ : null;
 
         partyStatusText.text = hasSkillJ
             ? $"✅ 已裝備技能至 J 鍵: {GetSkillDisplayName(equippedSkill)}"
@@ -166,16 +162,9 @@ public class UpgradePanelUI : MonoBehaviour
 
     private void SetButtonLabel(Button button, string label)
     {
-        if (button == null)
-        {
-            return;
-        }
-
+        if (button == null) return;
         Text text = button.GetComponentInChildren<Text>(true);
-        if (text != null)
-        {
-            text.text = label;
-        }
+        if (text != null) text.text = label;
     }
 
     private string GetSkillDisplayName(SkillData skillData)

@@ -11,13 +11,29 @@ void Start()
     Time.timeScale = 1f;
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
-    PlayerSkillManager.ResetSavedPartySkill();
+    PlayerSkillManager.ClearPendingMapSkillSelection();
+    if (GameDB.Instance != null && GameDB.Instance.Player != null)
+    {
+        GameDB.Instance.Player.EquipPartySkill(null);
+        GameDB.Instance.Player.EquipBaseSkillJ(null);
+    }
     GameDB.Instance?.ResetRunData();
-    backBtn.onClick.AddListener(backBtnOnClick);
+    
+    if (backBtn != null)
+    {
+        backBtn.onClick.AddListener(backBtnOnClick);
+    }
+    else
+    {
+        Debug.LogWarning("[HeadquartersManager] backBtn 未在 Inspector 中綁定！(可能是因為已被 HQSceneController 取代)");
+    }
 
     void backBtnOnClick()
     {
-        GameFlowManager.Instance.ChangeState(new MainMenuState());
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.ChangeState(new MainMenuState());
+        }
     }
 }
 }
