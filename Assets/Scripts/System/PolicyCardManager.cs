@@ -1,24 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
-public class PolicyCardManager : MonoBehaviour
+public static class PolicyCardManager
 {
-    [Header("所有可抽政策卡")]
-    public List<PolicyCardData> allCards = new List<PolicyCardData>();
-
-    public List<PolicyCardData> GetRandomCards(int count)
+    public static List<PolicyCardData> GetRandomCards(int count)
     {
-        List<PolicyCardData> result = new List<PolicyCardData>();
+        var allCards = Resources.LoadAll<PolicyCardData>("PolicyCards");
         List<PolicyCardData> tempPool = new List<PolicyCardData>();
 
         foreach (PolicyCardData card in allCards)
         {
             if (card != null)
             {
-                tempPool.Add(card);
+                // 過濾掉已經擁有的政策卡
+                bool isAcquired = GameDB.Instance != null && GameDB.Instance.Run.AcquiredPolicyCards.Contains(card.cardName);
+                if (!isAcquired)
+                {
+                    tempPool.Add(card);
+                }
             }
         }
 
+        List<PolicyCardData> result = new List<PolicyCardData>();
         int drawCount = Mathf.Min(count, tempPool.Count);
 
         for (int i = 0; i < drawCount; i++)

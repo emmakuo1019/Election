@@ -133,16 +133,16 @@ public class Spawner : MonoBehaviour
         // 這裡將企劃描述的 0~100 (50為界) 完美映射至實際的 -100 ~ 100 系統中。
         int atmosphere = GameDB.Instance.Run.SocialAtmosphere;
 
-        if (atmosphere < 0)
+        if (atmosphere > 0)
         {
             // 偏向情緒 (對應企劃的 50~100 區間)
-            float emotionBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MinAtmosphere, atmosphere);
+            float emotionBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MaxAtmosphere, atmosphere);
             darkChance = Mathf.Lerp(0.1f, 0.7f, emotionBias);
         }
-        else if (atmosphere > 0)
+        else if (atmosphere < 0)
         {
             // 偏向理性 (對應企劃的 50~0 區間)
-            float rationalBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MaxAtmosphere, atmosphere);
+            float rationalBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MinAtmosphere, atmosphere);
             coldChance = Mathf.Lerp(0.1f, 0.5f, rationalBias);
         }
     }

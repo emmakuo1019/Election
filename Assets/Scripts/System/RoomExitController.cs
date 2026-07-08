@@ -43,6 +43,21 @@ public class RoomExitController : MonoBehaviour
         UpdateVisual();
     }
 
+    private void OnEnable()
+    {
+        BattleEventManager.OnSurvivalTimeUp += ActivateExitOnTimeUp;
+    }
+
+    private void OnDisable()
+    {
+        BattleEventManager.OnSurvivalTimeUp -= ActivateExitOnTimeUp;
+    }
+
+    private void ActivateExitOnTimeUp()
+    {
+        UnlockExit();
+    }
+
     public void UnlockExit()
     {
         isUnlocked = true;

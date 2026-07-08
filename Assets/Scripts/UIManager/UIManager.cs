@@ -178,10 +178,9 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        PolicyCardManager cardManager = FindAnyObjectByType<PolicyCardManager>();
-        if (cardManager != null)
+        var cards = PolicyCardManager.GetRandomCards(3);
+        if (cards.Count > 0)
         {
-            var cards = cardManager.GetRandomCards(3);
             foreach (var card in cards)
             {
                 var ui = Instantiate(rewardCardPrefab, rewardCardContainer);
@@ -191,7 +190,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[UIManager] 找不到 PolicyCardManager！");
+            Debug.LogWarning("[UIManager] 可選政策卡不足！");
         }
     }
 
@@ -215,6 +214,9 @@ public class UIManager : MonoBehaviour
             Debug.LogWarning("[UIManager] 尚未選擇任何政策卡！");
             return;
         }
+
+        // 記錄選擇的卡片到 GameDB 中
+        GameDB.Instance?.Run.AddPolicyCard(selectedRewardCard.cardName);
 
         // 確認選擇，發送事件給 StageClearState 套用卡片效果
         OnPolicyCardSelected?.Invoke(selectedRewardCard);

@@ -7,13 +7,26 @@ public class BattleSceneController : MonoBehaviour
     [SerializeField] private BattleFlowController battleFlowController;
     [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
 
-    private void Start()
+    private void Awake()
     {
         if (battleFlowController == null)
         {
             battleFlowController = FindFirstObjectByType<BattleFlowController>();
         }
+    }
 
+    private void OnEnable()
+    {
+        BattleEventManager.OnSurvivalTimeUp += HandleSurvivalTimeUp;
+    }
+
+    private void OnDisable()
+    {
+        BattleEventManager.OnSurvivalTimeUp -= HandleSurvivalTimeUp;
+    }
+
+    private void Start()
+    {
         if (initializeVoterIdentityOnStart)
         {
             InitializeSceneVoters();
@@ -23,13 +36,22 @@ public class BattleSceneController : MonoBehaviour
         {
             battleFlowController.StartBattle();
         }
-        else if (LevelTimer.Instance != null)
+    }
+
+    private void HandleSurvivalTimeUp()
+    {
+        VoterLogic[] voters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);
+        foreach (VoterLogic voter in voters)
         {
-            LevelTimer.Instance.StartTimer();
-        }
-        else
-        {
-            Debug.LogError("❌ 場景中找不到 LevelTimer，無法開始關卡計時");
+            if (PoolManager.Instance != null)
+            {
+                PoolManager.Instance.Release(voter.gameObject);
+            }
+            else
+            {
+                voter.OnDespawn();
+                voter.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -42,7 +64,6 @@ public class BattleSceneController : MonoBehaviour
 
         foreach (VoterData voter in voters)
         {
-            voter.InitializeFromConfig();
             VoterLabel label = GetRandomLabel();
             VoterAttribute attribute = GetRandomAttribute();
             int stance = VoterData.NeutralSideSign;
@@ -69,10 +90,11 @@ public class BattleSceneController : MonoBehaviour
         }
 
         // 將本場選民的初始票數加入跨場景累計
-        if (GameDB.Instance != null && (addedPlayerVotes > 0 || addedOpponentVotes > 0))
-        {
-            GameDB.Instance.Run.AddVote(addedPlayerVotes, addedOpponentVotes);
-        }
+        // if (GameDB.Instance != null && (addedPlayerVotes > 0 || addedOpponentVotes > 0))
+        // {
+        //     // 改為由 VoterLogic.OnSpawn/Start 自行上報初始票數，避免重複計算
+        //     // GameDB.Instance.Run.AddVote(addedPlayerVotes, addedOpponentVotes);
+        // }
     }
 
     private VoterLabel GetRandomLabel()

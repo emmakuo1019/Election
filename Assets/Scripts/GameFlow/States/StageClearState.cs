@@ -44,7 +44,8 @@ public class StageClearState : IState
 
     private void OnSequenceFinished()
     {
-        if (roomNumber == 15)
+        // 當完成第 14 關時，下一關即為第 15 關 (Boss 戰)
+        if (roomNumber == 14)
         {
             Debug.Log("[StageClearState] 序列結束，準備進入 Boss 戰！");
             GameFlowManager.Instance.ChangeState(new BossBattleState());

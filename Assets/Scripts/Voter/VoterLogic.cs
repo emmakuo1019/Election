@@ -33,6 +33,9 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     public bool CanReceiveSkillEffect => IsGameActive && Data != null;
 
+    private bool hasReportedInitialVote = false;
+    private bool isInitialized = false;
+
     private void Awake()
     {
         Data = GetComponent<VoterData>();
@@ -42,8 +45,6 @@ public class VoterLogic : MonoBehaviour, IPoolable
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         PlayerTransform = playerObject != null ? playerObject.transform : null;
 
-        Data?.InitializeFromConfig();
-
         if (Agent != null)
         {
             Agent.angularSpeed = 0f;
@@ -51,6 +52,11 @@ public class VoterLogic : MonoBehaviour, IPoolable
         }
 
         StateMachine = new StateMachine();
+    }
+
+    private void Start()
+    {
+        ReportInitialVote();
     }
 
     private void OnEnable()
@@ -89,9 +95,13 @@ public class VoterLogic : MonoBehaviour, IPoolable
             PlayerTransform = playerObject != null ? playerObject.transform : null;
         }
         
-        if (Data != null)
+        if (!isInitialized)
         {
-            Data.InitializeFromConfig();
+            if (Data != null)
+            {
+                Data.InitializeFromConfig();
+            }
+            isInitialized = true;
         }
 
         HasUsableNavMeshAgent = TryInitializeNavMeshAgent();
@@ -100,11 +110,27 @@ public class VoterLogic : MonoBehaviour, IPoolable
             RefreshMovementSpeed();
             StateMachine.Initialize(new VoterIdleState(this));
         }
+
+        ReportInitialVote();
+    }
+
+    private void ReportInitialVote()
+    {
+        if (hasReportedInitialVote || Data == null) return;
+        
+        if (Data.ConvertedSide != VoterData.NeutralSideSign && GameDB.Instance != null)
+        {
+            if (Data.ConvertedSide == VoterData.PlayerSideSign) GameDB.Instance.Run.AddVote(1, 0);
+            else if (Data.ConvertedSide == VoterData.EnemySideSign) GameDB.Instance.Run.AddVote(0, 1);
+        }
+        
+        hasReportedInitialVote = true;
     }
 
     public void OnDespawn()
     {
         IsGameActive = false;
+        hasReportedInitialVote = false; // 重置標記以便下次重新生成時計票
         if (Agent != null && Agent.isOnNavMesh)
         {
             Agent.isStopped = true;
@@ -146,6 +172,9 @@ public class VoterLogic : MonoBehaviour, IPoolable
         
         RefreshMovementSpeed();
         Visuals?.ApplyCurrentVisualState();
+
+        // 確保透過 BattleSceneController 給定初始陣營時，也能計入初始票數
+        ReportInitialVote();
     }
 
     public bool ApplySkillEffect(IVoterSkillEffect effect)

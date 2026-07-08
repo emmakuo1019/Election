@@ -10,6 +10,9 @@ public static class BattleEventManager
     // 怪物清空、過關事件
     public static event Action OnRoomCleared;
     
+    // 生存時間結束事件
+    public static event Action OnSurvivalTimeUp;
+    
     // 玩家死亡事件
     public static event Action OnPlayerDied;
 
@@ -26,6 +29,15 @@ public static class BattleEventManager
     {
         Debug.Log("[BattleEventManager] 觸發房間過關事件 (OnRoomCleared)");
         OnRoomCleared?.Invoke();
+    }
+
+    /// <summary>
+    /// 當生存房間時間結束時呼叫
+    /// </summary>
+    public static void TriggerOnSurvivalTimeUp()
+    {
+        Debug.Log("[BattleEventManager] 觸發生存時間結束事件 (OnSurvivalTimeUp)");
+        OnSurvivalTimeUp?.Invoke();
     }
 
     /// <summary>

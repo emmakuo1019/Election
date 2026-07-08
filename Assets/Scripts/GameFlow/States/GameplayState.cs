@@ -38,10 +38,17 @@ public class GameplayState : IState
             {
                 yield return null;
             }
+            
+            // 安全檢查：若狀態已經被切走，則中止協程
+            if (GameFlowManager.Instance.CurrentState != this) yield break;
+
             Debug.Log($"[GameplayState] 場景 {battleSceneName} 載入完成！");
 
-            // ⭐️ 在這裡才打開 HUD！因為此時場景已經載入，LevelTimer.Awake() 已經執行完畢
+            // 步驟 A: UI 先掛載並綁定
             if (UIManager.Instance != null) UIManager.Instance.ShowGameplayHUD();
+            
+            // 步驟 B: 動態給定 60 秒並啟動
+            if (LevelTimer.Instance != null) LevelTimer.Instance.StartTimer(60f);
         }
         else
         {
@@ -80,12 +87,13 @@ public class GameplayState : IState
             BattleEventManager.TriggerRoomCleared();
         }
 
-        // 按下 N 鍵：直接跳過結算 UI，進入下一關 roomNumber + 1 (如果是 15 則進入 Boss 戰)
+        // 按下 N 鍵：直接跳過結算 UI，進入下一關 roomNumber + 1 (如果是 14 則進入 Boss 戰)
         if (Input.GetKeyDown(KeyCode.N))
         {
             int nextRoom = roomNumber + 1;
             Debug.Log($"[GameplayState] 偵測到按下 N 鍵，直接跳過結算 UI！關卡切換: {roomNumber} -> {nextRoom}");
-            if (roomNumber == 15)
+            // 當完成第 14 關時，下一關即為第 15 關 (Boss 戰)
+            if (roomNumber == 14)
             {
                 GameFlowManager.Instance.ChangeState(new BossBattleState());
             }

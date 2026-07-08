@@ -86,6 +86,16 @@ public class PlayerData
 [System.Serializable]
 public class RunData
 {
+    public List<string> AcquiredPolicyCards { get; private set; } = new List<string>();
+
+    public void AddPolicyCard(string cardName)
+    {
+        if (!string.IsNullOrEmpty(cardName) && !AcquiredPolicyCards.Contains(cardName))
+        {
+            AcquiredPolicyCards.Add(cardName);
+        }
+    }
+
     #region 政治誠信 HP (Integrity HP)
     public float IntegrityHp { get; private set; } = 70f;
     public float MaxIntegrityHp { get; private set; } = 100f;
@@ -188,25 +198,22 @@ public class RunData
 
     public float GetDarkVoterRate()
     {
-        // 情緒動員越強，深色選民越常出現。
-        float emotionalBias = Mathf.InverseLerp(MaxAtmosphere, MinAtmosphere, SocialAtmosphere);
+        // 情緒動員越強 (正值)，深色選民越常出現。
+        float emotionalBias = Mathf.InverseLerp(MinAtmosphere, MaxAtmosphere, SocialAtmosphere);
         return Mathf.Lerp(0.1f, 0.6f, emotionalBias);
     }
 
     public string GetAtmosphereDescription()
     {
-        return SocialAtmosphere switch
-        {
-            < -70 => "🔴 強情緒動員",
-            < -30 => "🟠 傾向情感",
-            <= 30 => "⚪ 理性與情感平衡",
-            <= 70 => "🟢 傾向理性",
-            _ => "🟢 強理性政策"
-        };
+        if (SocialAtmosphere > 70) return "🔴 強情緒動員";
+        if (SocialAtmosphere > 30) return "🟠 傾向情感";
+        if (SocialAtmosphere >= -30) return "⚪ 理性與情感平衡";
+        if (SocialAtmosphere >= -70) return "🟢 傾向理性";
+        return "🟢 強理性政策";
     }
 
-    public bool IsRationalTendency() => SocialAtmosphere > 0;
-    public bool IsEmotionalTendency() => SocialAtmosphere < 0;
+    public bool IsRationalTendency() => SocialAtmosphere < 0;
+    public bool IsEmotionalTendency() => SocialAtmosphere > 0;
     public bool IsNeutral() => SocialAtmosphere == 0;
     #endregion
 

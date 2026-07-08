@@ -117,10 +117,7 @@ public class VoterData : MonoBehaviour
     public bool IsEnemyAligned => ConvertedSide == EnemySideSign;
     public bool ShouldFollowPlayer => HasDarkAttribute && IsPlayerAligned;
 
-    private void Awake()
-    {
-        InitializeFromConfig();
-    }
+
 
     private void OnValidate()
     {

@@ -9,6 +9,7 @@ public class LevelTimerUI : MonoBehaviour
 {
     [SerializeField] private TMP_Text timerText;
     private bool hasSubscribed = false;
+    private LevelTimer cachedTimer;
 
     private void OnEnable()
     {
@@ -30,8 +31,9 @@ public class LevelTimerUI : MonoBehaviour
             return;
         }
 
-        LevelTimer.Instance.OnTimerTick += OnTimerTick;
-        LevelTimer.Instance.OnTimerEnd += OnTimerEnd;
+        cachedTimer = LevelTimer.Instance;
+        cachedTimer.OnTimerTick += OnTimerTick;
+        cachedTimer.OnTimerEnd += OnTimerEnd;
         hasSubscribed = true;
 
         RefreshTimerDisplay();
@@ -41,13 +43,14 @@ public class LevelTimerUI : MonoBehaviour
     {
         if (!hasSubscribed) return;
 
-        if (LevelTimer.Instance != null)
+        if (cachedTimer != null)
         {
-            LevelTimer.Instance.OnTimerTick -= OnTimerTick;
-            LevelTimer.Instance.OnTimerEnd -= OnTimerEnd;
+            cachedTimer.OnTimerTick -= OnTimerTick;
+            cachedTimer.OnTimerEnd -= OnTimerEnd;
         }
 
         hasSubscribed = false;
+        cachedTimer = null;
     }
 
     private void OnTimerTick(float timeRemaining, float totalTime)

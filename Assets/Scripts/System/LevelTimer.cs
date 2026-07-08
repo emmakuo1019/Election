@@ -70,25 +70,21 @@ public class LevelTimer : MonoBehaviour
             isTimeUp = true;
             isActive = false;
 
+            BattleEventManager.TriggerOnSurvivalTimeUp();
             OnTimerEnd?.Invoke();
             OnTimeUpFinal?.Invoke();
 
-            // 若場景已由 BattleFlowController 接手結算，就不要在這裡直接跳獎勵，
-            // 避免重複顯示或在失敗時仍誤開獎勵面板。
-            if (BattleFlowController.Instance == null && rewardPanelController != null)
-            {
-                rewardPanelController.ShowRewardPanel();
-            }
         }
     }
 
-    public void StartTimer()
+    public void StartTimer(float duration)
     {
         if (isActive)
         {
             return;
         }
 
+        levelDuration = duration;
         EnsureValidDuration();
         isActive = true;
         isTimeUp = false;

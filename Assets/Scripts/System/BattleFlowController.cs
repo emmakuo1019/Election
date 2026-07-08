@@ -63,7 +63,7 @@ public class BattleFlowController : MonoBehaviour
         }
 
         CurrentState = BattleState.Fighting;
-        levelTimer?.StartTimer();
+        // levelTimer?.StartTimer(); // 交還給狀態機 (GameplayState) 控制
     }
 
     private void OnBattleTimeEnd()
