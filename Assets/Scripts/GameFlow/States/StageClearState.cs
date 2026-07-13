@@ -31,10 +31,10 @@ public class StageClearState : IState
     {
         Debug.Log($"[StageClearState] 選擇了政策卡: {card.cardName}");
         
-        // 呼叫 PolicyManager 發放獎勵
-        if (PolicyManager.HasInstance)
+        // 將獲得的卡牌記錄到 GameDB 並套用效果
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
         {
-            PolicyManager.Instance.ApplyCard(card);
+            GameDB.Instance.Run.AddPolicyCard(card);
         }
 
         // ⚠️ 修正：移除這裡的 OnSequenceFinished()。

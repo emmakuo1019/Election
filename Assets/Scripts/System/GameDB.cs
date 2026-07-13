@@ -87,13 +87,63 @@ public class PlayerData
 public class RunData
 {
     public List<string> AcquiredPolicyCards { get; private set; } = new List<string>();
+    
+    // 儲存玩家當前擁有的完整卡牌實體
+    public List<PolicyCardData> ActiveCards { get; private set; } = new List<PolicyCardData>();
+    
+    public PlayerStatsData Stats { get; private set; } = new PlayerStatsData();
 
+    public void AddPolicyCard(PolicyCardData card)
+    {
+        if (card != null && !AcquiredPolicyCards.Contains(card.cardName))
+        {
+            AcquiredPolicyCards.Add(card.cardName);
+            ActiveCards.Add(card);
+
+            // 套用卡牌效果
+            card.ApplyAllEffects();
+            
+            // 通知 UI 數值可能已變更
+            Stats.NotifyStatsChanged();
+        }
+    }
+
+    // 相容舊版 (可選)
     public void AddPolicyCard(string cardName)
     {
         if (!string.IsNullOrEmpty(cardName) && !AcquiredPolicyCards.Contains(cardName))
         {
             AcquiredPolicyCards.Add(cardName);
         }
+    }
+
+    /// <summary>
+    /// 從 Resources 載入所有政策卡，並過濾掉已經擁有的卡牌，隨機抽出指定數量。
+    /// </summary>
+    public List<PolicyCardData> DrawRandomPolicyCards(int count)
+    {
+        var allCards = Resources.LoadAll<PolicyCardData>("PolicyCards");
+        List<PolicyCardData> tempPool = new List<PolicyCardData>();
+
+        foreach (PolicyCardData card in allCards)
+        {
+            if (card != null && !AcquiredPolicyCards.Contains(card.cardName))
+            {
+                tempPool.Add(card);
+            }
+        }
+
+        List<PolicyCardData> result = new List<PolicyCardData>();
+        int drawCount = Mathf.Min(count, tempPool.Count);
+
+        for (int i = 0; i < drawCount; i++)
+        {
+            int randomIndex = UnityEngine.Random.Range(0, tempPool.Count);
+            result.Add(tempPool[randomIndex]);
+            tempPool.RemoveAt(randomIndex);
+        }
+
+        return result;
     }
 
     #region 政治誠信 HP (Integrity HP)

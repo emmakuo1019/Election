@@ -51,8 +51,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         RefreshAttackStats();
         SyncAttackRangeMeshRotation();
 
-        if (PolicyManager.HasInstance)
-            PolicyManager.Instance.OnEffectsChanged += RefreshAttackStats;
+        if (GameDB.Instance != null && GameDB.Instance.Run != null && GameDB.Instance.Run.Stats != null)
+            GameDB.Instance.Run.Stats.OnStatsChanged += RefreshAttackStats;
 
         if (playerController != null)
             playerController.OnDirectionChanged += OnDirectionChanged;
@@ -60,8 +60,8 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     void OnDisable()
     {
-        if (PolicyManager.HasInstance)
-            PolicyManager.Instance.OnEffectsChanged -= RefreshAttackStats;
+        if (GameDB.Instance != null && GameDB.Instance.Run != null && GameDB.Instance.Run.Stats != null)
+            GameDB.Instance.Run.Stats.OnStatsChanged -= RefreshAttackStats;
 
         if (playerController != null)
             playerController.OnDirectionChanged -= OnDirectionChanged;
@@ -88,11 +88,15 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
     private void RefreshAttackStats()
     {
-        PolicyManager effects = PolicyManager.Instance;
-        float policyAdjustedRange = effects != null ? effects.GetModifiedAttackRange(baseAttackRange) : baseAttackRange;
+        var stats = GameDB.Instance?.Run?.Stats;
+        
+        // 取得修改後的基礎攻擊範圍與冷卻 (從 Stats 讀取，若無則使用原始預設值)
+        float policyAdjustedRange = stats != null ? stats.ModifiedAttackRange : baseAttackRange;
         currentAttackRange = policyAdjustedRange * temporaryAttackRangeMultiplier;
-        currentAttackCooldown = effects != null ? effects.GetModifiedAttackCooldown(attackCooldown) : attackCooldown;
+        
+        currentAttackCooldown = stats != null ? stats.ModifiedAttackCooldown : attackCooldown;
         attackRange = currentAttackRange;
+        
         OnAttackShapeChanged?.Invoke(currentAttackRange, attackAngle);
     }
 
@@ -204,7 +208,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                         continue;
                     }
 
-                    voter.OnInfluence(attackInfluence, false, transform.position);
+                    // 從 Stats 讀取動態攻擊力/說服力
+                    var stats = GameDB.Instance?.Run?.Stats;
+                    int currentInfluence = stats != null 
+                        ? Mathf.RoundToInt(attackInfluence * stats.ModifiedAttackInfluence) 
+                        : attackInfluence;
+
+                    voter.OnInfluence(currentInfluence, false, transform.position);
                     TryConvert(voterData);
                     hitAny = true;
                 }
@@ -250,15 +260,20 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (voter == null)
             return;
 
-        PolicyManager effects = PolicyManager.Instance;
-        float chance = effects != null
-            ? effects.GetModifiedConvertChance(convertChance)
+        var stats = GameDB.Instance?.Run?.Stats;
+        
+        float chance = stats != null
+            ? stats.ModifiedConvertChance
             : convertChance;
 
         if (voter.HasDarkAttribute)
-            chance = effects != null
-                ? effects.GetModifiedConvertChance(darkVoterConvertChance)
+        {
+            // 如果我們有針對深色選民的特殊轉化率屬性，也可放在 Stats。
+            // 這裡暫時維持加上原本設定的差值或覆蓋。
+            chance = stats != null
+                ? stats.ModifiedConvertChance + (darkVoterConvertChance - convertChance) // 簡單處理
                 : darkVoterConvertChance;
+        }
 
         if (UnityEngine.Random.value < chance)
         {

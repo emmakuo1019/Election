@@ -548,3 +548,41 @@ Assets/Scripts/
 
 ### 2. 備註特殊設計
 - **敵人機制確認**：保留「敵人不死」為遊戲設計特色，排除相關除蟲項目。
+
+---
+
+## 🧹 重構總結 (政策卡系統與積木化)
+> 紀錄時間：2026-07-13
+
+**專案狀態更新**：[Status: Refactoring Completed, Ready for Gameplay Testing]
+
+### 1. 統一玩家數值與 SSOT 擴展
+- **`PlayerStatsData.cs`**：建立全新類別作為玩家戰鬥數值的單一真相來源 (SSOT)，包含 `ModifiedAttackRange`、`ModifiedAttackInfluence` 等屬性。
+- **`GameDB.cs`**：將 `PlayerStatsData` 實體以及當前生效的卡牌列表 (`ActiveCards`) 註冊至 `GameDB.RunData` 統一管理。
+
+### 2. 導入 Strategy Pattern (策略模式)
+- **`ICardEffect.cs`**：建立卡牌效果積木基礎介面。
+- **`StatModifierEffect.cs`**：實作第一個數值修改積木，支援加法與乘法計算，並可選擇不同的 `StatType` 進行數值變更。
+- **`PolicyCardData.cs`**：將舊版寫死的數值欄位全部移除，改用 `[SerializeReference]` 儲存 `ICardEffect` 列表，實現企劃可在 Inspector 中自由組裝卡牌效果的機制。
+
+### 3. 消滅 God Class 與依賴重構
+- **徹底拔除 `PolicyManager`**：刪除原有的 God Class，清空所有過度耦合的靜態依賴。
+- **重構依賴**：`PlayerAttack`、`VoterLogic` 等戰鬥邏輯，現在統一改為讀取 `GameDB.Instance.Run.Stats` 來獲取當前正確的戰鬥數值，達到真正的低耦合與高內聚。
+- **總結架構**：已完成從 God Class 轉向 ScriptableObject + Strategy Pattern 的重構，Stats 統一由 GameDB 管理。
+
+---
+
+## 🧹 待辦事項：專案掃除與清算 (Legacy Cleanup)
+> 紀錄時間：2026-07-13
+
+**任務狀態**：[Status: In Progress]
+
+### 1. 診斷結果與當前進度
+已完成隔離區建立，並將 `[Safe to Delete]` 檔案（如 `ScoreManagerSample.cs`）移至 `Obsolete`，且已將 `PolicyCardManager.cs` 的抽卡邏輯遷移至 GameDB，並將其檔案移至 `Obsolete`。目前正準備處理剩餘的進度管理器。
+經過全域掃描，專案中**沒有**殘留任何舊版的 `[MenuItem]` 編輯器擴充，也沒有 `Editor/` 資料夾下的專屬資料產生器工具，視覺化選單的斷捨離已達標。目前的 `PolicyCardData` 已完全使用 `[CreateAssetMenu(fileName = "PolicyCard", menuName = "Game/Policy Card V2")]` 作為唯一入口。
+
+### 2. 清理清單與依賴狀態
+- `ScoreManagerSample.cs`: **[Safe to Delete]** (完全無引用)。
+- `PolicyCardManager.cs`: **[Needs Migration]** (仍被 `UIManager.cs` L181 的抽卡邏輯 `GetRandomCards` 引用。需先將隨機抽卡邏輯轉移至 `GameDB.RunData`，方可刪除)。
+- `CampaignProgressManager.cs` 與 `BlockProgressManager.cs`: **[Needs Migration]** (深度耦合的舊版進度系統，違背 SSOT。需將相關依賴轉移至 `GameDB.Instance.Campaign` 與全域狀態機後刪除)。
+- `HeadquartersManager.cs`, `S0Manager.cs`, `S1Manager.cs`: **[Needs Migration]** (場景腳本，需將 Unity UI 事件轉綁給 `UIFlowHelper` 後拔除)。

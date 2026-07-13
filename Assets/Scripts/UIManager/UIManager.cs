@@ -178,7 +178,7 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        var cards = PolicyCardManager.GetRandomCards(3);
+        var cards = GameDB.Instance.Run.DrawRandomPolicyCards(3);
         if (cards.Count > 0)
         {
             foreach (var card in cards)

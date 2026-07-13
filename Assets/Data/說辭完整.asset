@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3434cf435ca834b85886e773060f7766, type: 3}
+  m_Name: "\u8AAA\u8FAD\u5B8C\u6574"
+  m_EditorClassIdentifier: Assembly-CSharp::PolicyCardData
+  cardName: "\u8AAA\u8FAD\u5B8C\u6574"
+  description: "\u7ACB\u724C\u8B77\u76FE\u4F7F\u7528\u6642\u591A\u64FA\u653E\u4E00\u500B"
+  Type: 0
+  Rarity: 0
+  socialClimateDelta: 5
+  Effects:
+  - rid: 1492401521481744388
+  references:
+    version: 2
+    RefIds:
+    - rid: 1492401521481744388
+      type: {class: SpawnObjectEffect, ns: , asm: Assembly-CSharp}
+      data:
+        prefabToSpawn: {fileID: 5831633753023714593, guid: df05be048f32b4da09784649efb3e1c1, type: 3}
+        spawnCount: 1
+        lifetime: 5

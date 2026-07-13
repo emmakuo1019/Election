@@ -324,13 +324,15 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void UpdateLoyaltyDecay()
     {
-        PolicyManager effects = PolicyManager.Instance;
-        if (effects == null || !Data.isConverted || effects.LoseControlRate <= 0f)
+        var stats = GameDB.Instance?.Run?.Stats;
+        float loseControlRate = stats != null ? stats.ModifiedLoseControlRate : 0f;
+
+        if (!Data.isConverted || loseControlRate <= 0f)
         {
             return;
         }
 
-        Data.loyalty = Mathf.Clamp01(Data.loyalty - effects.LoseControlRate * Time.deltaTime);
+        Data.loyalty = Mathf.Clamp01(Data.loyalty - loseControlRate * Time.deltaTime);
 
         if (Data.loyalty <= 0f)
         {
@@ -341,10 +343,12 @@ public class VoterLogic : MonoBehaviour, IPoolable
     private readonly Collider[] spreadHitBuffer = new Collider[32];
     private void SpreadInfluenceToNearbyVoters()
     {
-        PolicyManager effects = PolicyManager.Instance;
-        if (effects == null || effects.SpreadRadius <= 0f) return;
+        var stats = GameDB.Instance?.Run?.Stats;
+        float spreadRadius = stats != null ? stats.ModifiedSpreadRadius : 0f;
 
-        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, effects.SpreadRadius, spreadHitBuffer);
+        if (spreadRadius <= 0f) return;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, spreadRadius, spreadHitBuffer);
         for (int i = 0; i < hitCount; i++)
         {
             Collider hit = spreadHitBuffer[i];
