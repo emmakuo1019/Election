@@ -67,7 +67,7 @@ public class MoveState : IState
 
         Vector3 move = new Vector3(input.x, 0f, input.y);
         _ctx.LastMoveDirection = move.normalized;
-        _ctx.CharCon.Move(move * _ctx.moveSpeed * Time.deltaTime);
+        _ctx.CharCon.Move(move * _ctx.CurrentMoveSpeed * Time.deltaTime);
 
         if (_ctx.AnimController != null)
         {

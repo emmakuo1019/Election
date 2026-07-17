@@ -216,7 +216,7 @@ public class UIManager : MonoBehaviour
         }
 
         // 記錄選擇的卡片到 GameDB 中
-        GameDB.Instance?.Run.AddPolicyCard(selectedRewardCard.cardName);
+        GameDB.Instance?.Run.AddPolicyCard(selectedRewardCard);
 
         // 確認選擇，發送事件給 StageClearState 套用卡片效果
         OnPolicyCardSelected?.Invoke(selectedRewardCard);

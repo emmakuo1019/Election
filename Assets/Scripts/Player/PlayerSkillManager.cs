@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 public class PlayerSkillManager : MonoBehaviour
 {
-    private const string PendingMapSkillSelectionKey = "PendingMapSkillSelection";
-
     #region 技能槽區 (Skill Slots)
     [Header("一般戰鬥技能 (J, K)")]
     public SkillData baseSkillJ;
@@ -52,6 +50,29 @@ public class PlayerSkillManager : MonoBehaviour
             if (GameDB.Instance.Player.EquippedPartySkill != null)
             {
                 currentPartySkill = GameDB.Instance.Player.EquippedPartySkill;
+            }
+        }
+    }
+
+    private void Start()
+    {
+        // 讀取 GameDB.Instance.Campaign.UnlockedSkills 並自動掛載已解鎖的技能 (資料驅動)
+        if (GameDB.Instance != null && GameDB.Instance.Campaign != null)
+        {
+            foreach (var skill in GameDB.Instance.Campaign.UnlockedSkills)
+            {
+                if (skill != null)
+                {
+                    // 若已解鎖了悲情土下座 (DogezaSkill/DogezaSkillData)，且目前未裝備任何戰鬥技能，則自動掛載
+                    if (skill is DogezaSkill || skill is DogezaSkillData || skill.skillName == "悲情土下座")
+                    {
+                        if (baseSkillJ == null)
+                        {
+                            EquipSkillJ(skill);
+                            Debug.Log($"[PlayerSkillManager] 偵測到已解鎖技能 {skill.skillName}，自動掛載至 J 鍵");
+                        }
+                    }
+                }
             }
         }
     }

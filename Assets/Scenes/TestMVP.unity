@@ -1057,55 +1057,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a8159d8cd42b74207a7ef2ff7425c1f1, type: 3}
   m_PrefabInstance: {fileID: 600448968}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &608356170
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 608356172}
-  - component: {fileID: 608356171}
-  m_Layer: 0
-  m_Name: PolicyCardSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &608356171
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608356170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ea2e47dd804448ab9baac552bf51015, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  allCards:
-  - {fileID: 11400000, guid: dc0de1ad28ad04235883febe58e8b2d3, type: 2}
-  - {fileID: 11400000, guid: a6d87df453d5348e38efa39a93047273, type: 2}
-  - {fileID: 11400000, guid: fe62735dc916d48fa81294f737acfd92, type: 2}
-  - {fileID: 11400000, guid: c6dcbff3382dd490881e89a3f719bb02, type: 2}
---- !u!4 &608356172
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608356170}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1976119068}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &819017964
 GameObject:
   m_ObjectHideFlags: 0
@@ -1640,11 +1591,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fbc51c7e89f74306b9d29074fffdba6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelDuration: 30
-  remainingTime: 30
+  levelDuration: 10
+  remainingTime: 10
   isActive: 1
   isTimeUp: 0
-  rewardPanelController: {fileID: 1113263786}
 --- !u!114 &1067532212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1660,50 +1610,6 @@ MonoBehaviour:
   initializeVoterIdentityOnStart: 1
   battleFlowController: {fileID: 1427786501}
   coldAttributeChance: 0.25
---- !u!1 &1113263784
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1113263785}
-  - component: {fileID: 1113263786}
-  m_Layer: 0
-  m_Name: RewardSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1113263785
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113263784}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1976119068}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1113263786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1113263784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d293794b05be4ea49c0c8cf926300a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1163203710
 GameObject:
   m_ObjectHideFlags: 0
@@ -2622,7 +2528,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1638184980}
-  - component: {fileID: 1638184982}
   - component: {fileID: 1638184981}
   m_Layer: 0
   m_Name: RoomClearFlowController
@@ -2660,18 +2565,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseRoomMPReward: 20
   showDebugLog: 1
---- !u!114 &1638184982
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1638184978}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9605444b35e74c7b883d5650c798d9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1649870942
 GameObject:
   m_ObjectHideFlags: 0
@@ -2854,9 +2747,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1427786500}
-  - {fileID: 608356172}
   - {fileID: 1638184980}
-  - {fileID: 1113263785}
   - {fileID: 1199617885}
   - {fileID: 1540834728}
   m_Father: {fileID: 0}

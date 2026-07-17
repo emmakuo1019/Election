@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u8DD1\u6524\u9054\u4EBA"
   m_EditorClassIdentifier: Assembly-CSharp::PolicyCardData
   cardName: "\u8DD1\u6524\u9054\u4EBA"
-  description: 
+  description: "\u589E\u52A0\u79FB\u52D5\u901F\u5EA6"
   Type: 0
   Rarity: 0
   socialClimateDelta: 0

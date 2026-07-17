@@ -593,7 +593,7 @@ Assets/Scripts/
 ## 🧹 重構總結 (PlayerPrefs 消滅與 GameDB SSOT 大一統)
 > 紀錄時間：2026-07-17
 
-**專案狀態更新**：[Status: Completed, Next: 實作新政策卡積木 (SpawnObjectEffect) 與測試核心好玩度]
+**專案狀態更新**：[Status: Expanding Content, Implemented SpawnObjectEffect & Composite Effect System]
 
 我們已徹底消滅專案中散落的 `PlayerPrefs` 進度與狀態儲存，完成向 `GameDB` 的大一統收斂：
 
@@ -605,6 +605,86 @@ Assets/Scripts/
 - **搬移隔離**：已將 [HeadquartersManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/HeadquartersManager.cs)、[CampaignProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/CampaignProgressManager.cs)、與 [BlockProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/BlockProgressManager.cs) 連同其 `.meta` 檔案正式移入 `Assets/Scripts/Obsolete/`。
 - **維護 Clean Architecture**：核心系統與 UI（包括 `MapProgressUI`、`StartGame`、`BattleFlowController` 與 `MapNodeButton`）現在統一對齊 `GameDB` API，編譯 100% 成功。
 
-### 3. 下一步計畫
-- 🚀 **[To-Do: 實作新政策卡積木 (SpawnObjectEffect) 與測試核心好玩度]**
+---
+
+## 🧹 重構總結 (SpawnObjectEffect 與複合效果積木系統)
+> 紀錄時間：2026-07-17
+
+**專案狀態更新**：[Status: Completed, Next: 測試與好玩度微調]
+
+我們已成功擴充了政策卡牌的積木系統，並實作了持續性效果執行器：
+
+### 1. 持續性生成積木與執行器
+- **`PolicyEffectRuntimeManager.cs`**：新建此 MonoBehaviour，提供單例 (Singleton) 以便各處呼叫。其協程處理了所有註冊進來的 `SpawnObjectEffect`。在 `OnDestroy` 時實作了對所有已生成物件與運行中協程的強制清理，保證場景切換或遊戲重置時，完全沒有物件殘留 (No Memory Leak)。
+- **`SpawnObjectEffect.cs`**：新增 `spawnInterval` 欄位。當 `spawnInterval > 0` 時，其 `ApplyEffect` 和 `RemoveEffect` 會向 `PolicyEffectRuntimeManager` 進行註冊與註銷。
+
+### 2. Inspector 組合技驗證
+- 驗證了 `[SerializeReference]` 機制可以讓單張政策卡 (PolicyCardData) 的 `Effects` 列表中同時堆疊多個不同積木（如 `StatModifierEffect` 與 `SpawnObjectEffect`），實現了多重效果的「組合技」基礎。
+
+---
+
+## 🧹 重構總結 (舊版 Manager 清理與房間獎勵/技能解鎖大歸納)
+> 紀錄時間：2026-07-17
+
+**專案狀態更新**：[Status: Completed, Next: 核心遊戲機制微調與優化]
+
+我們已成功對「房間獎勵」與「總部技能解鎖」兩個核心點進行了深度的依賴清理與舊腳本隔離：
+
+### 1. 廢棄 Manager 隔離與清理
+- **廢棄腳本與 UI 搬移**：已將 [RoomClearFlowController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RoomClearFlowController.cs)、[RewardPanelController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RewardPanelController.cs) 與 [RewardPanelUI.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RewardPanelUI.cs) 移動至 `Assets/Scripts/Obsolete/` 目錄。
+- **清除殘留引用**：修改了 [LevelTimer.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/LevelTimer.cs)，清除了其中宣告的 `rewardPanelController` 變數，消除了 `CS0618` 廢棄警告。
+- **清理 PlayerPrefs 常數**：清除了 [PlayerSkillManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerSkillManager.cs) 內未使用的舊 Key 常數 `PendingMapSkillSelectionKey`。
+
+### 2. 房間獎勵結算 UI 資料源對齊
+- **資源路徑遷移**：將新版政策卡 SO 資源（`熱情拜票.asset`、`還可以接受.asset`、`跑攤達人.asset`、`說辭完整.asset`）移動至 `Assets/Resources/PolicyCards/` 目錄，使 `Resources.LoadAll` 可以正確加載。
+- **測試卡牌隔離**：將舊的 `test01.asset` - `test04.asset` 測試卡牌移出 Resources 目錄，存放到 `Assets/Obsolete/Cards/`，防止被 Resources 加載，確保結算畫面只會渲染新版政策卡數據。
+
+### 3. 總部技能解鎖解耦 (資料驅動)
+- **Activator 基底類別**：新增 [HQSkillActivator.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/GameFlow/HQSkillActivator.cs)，將碰撞解鎖與 `GameDB.Instance.Campaign.UnlockSkill` 綁定。
+- **Trigger 繼承重構**：重構 [HQSkillTrigger.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/GameFlow/HQSkillTrigger.cs) 繼承自 `HQSkillActivator`，移除冗餘欄位。此舉能自動繼承序列化欄位名稱，避免場景 Prefab 產生 Missing Reference 錯誤。
+- **自動裝備裝配**：於 [PlayerSkillManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerSkillManager.cs) 的 `Start()` 中偵測 `GameDB.Campaign.UnlockedSkills`，若符合條件則自動裝備，實現真正的資料驅動。
+
+### 4. 架構對齊與編譯驗證
+- 專案編譯測試 100% 成功，錯誤數為 0，且無任何與廢棄 Manager 相關的 Missing Reference 報錯。
+
+---
+
+## 🧹 重構總結 (SpawnObjectEffect 生命週期優化與 AutoDestroy 整合)
+> 紀錄時間：2026-07-17
+
+**專案狀態更新**：[Status: Implemented SpawnObjectEffect, Next: 核心遊戲平衡度測試]
+
+我們已成功優化政策生成物（如掃街車隊）的資源安全，實作了數據驅動的生命週期銷毀：
+
+### 1. 資源生命週期控制與防洩漏 (AutoDestroy)
+- **自動銷毀組件**：新增 [AutoDestroy.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Effects/AutoDestroy.cs) 元件，用於託管所有運行時生成的暫時性物件，在設定的 `lifetime` 結束時自動銷毀，避免轉場與長線運行時出現記憶體洩漏。
+- **積木與執行器對齊**：修改了 [SpawnObjectEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/SpawnObjectEffect.cs) 與 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs)，在生成實體物件時，若設定的存活時間大於 0，會動態為物件掛載並初始化 `AutoDestroy` 組件。
+
+### 2. 多層次 Cleanup 保障
+- **統一清理介面**：在 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs) 新增 `public void Cleanup()` 方法，支持由關卡結束或玩家死亡等流程大腦主動呼叫，以便一次性停止所有生成協程與摧毀所有未到期生成物。
+- **銷毀防呆**：在管理器 `OnDestroy()` 生命週期中自動調用 `Cleanup()`，多重確保場景卸載時的記憶體回收。
+
+### 3. 編譯驗證
+- 專案編譯測試 100% 成功，錯誤數為 0。
+
+---
+
+## 🧹 重構總結 (玩家屬性同步修復與卡牌數據流偵錯)
+> 紀錄時間：2026-07-17
+
+**專案狀態更新**：[Status: Completed, Next: 遊戲平衡度與關卡整合測試]
+
+我們已成功修復了玩家移動速度（MoveSpeed）因本地變數快取而未同步 GameDB SSOT 的 Bug，並在各效果積木中加入數據流 Console 偵錯日誌：
+
+### 1. 玩家移動速度同步修復
+- **PlayerController 動態屬性**：在 [PlayerController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerController.cs) 實作了 `CurrentMoveSpeed` 唯讀屬性，該屬性會即時讀取 `GameDB.Instance.Run.Stats.ModifiedMoveSpeed` 作為數值來源，若尚未初始化則 fallback 返回 Inspector 預設的 `moveSpeed`。
+- **狀態機移動對接**：修改了 [MoveState.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/StateMachine/MoveState.cs) 中的 `CharCon.Move` 計算，將原本寫死的 `_ctx.moveSpeed` 改為使用 `_ctx.CurrentMoveSpeed`，使玩家在取得速度政策卡後，移動速度能即時生效。
+
+### 2. 數值與生成偵錯日誌 (Console Data Flow)
+- **屬性變更日誌**：在 [StatModifierEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/StatModifierEffect.cs) 的 `ApplyEffect()` 中快取屬性變更前與變更後的值，並輸出詳細日誌（如 `[StatModifierEffect] 數值套用偵錯 => 屬性: MoveSpeed, 計算: Add, 數值: 2, 變更前: 5 -> 變更後: 7`），便於開發者直接在 Console 中校驗數值流。
+- **生成參數日誌**：分別在 [SpawnObjectEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/SpawnObjectEffect.cs) 的 `ExecuteSingleSpawn()` 與 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs) 的 `ExecuteSpawn()` 開頭加入 `Debug.Log`，明確輸出生成預製物名稱與其 `spawnCount` 參數，以便在 Console 追蹤生成流。
+
+### 3. 編譯驗證
+- 專案編譯測試 100% 成功，錯誤數為 0。
+
 

@@ -30,40 +30,61 @@ public class StatModifierEffect : ICardEffect
         if (GameDB.Instance == null) return;
         
         var stats = GameDB.Instance.Run.Stats;
+        float beforeValue = 0f;
+        float afterValue = 0f;
 
         // 根據不同的 StatType 取得當前值並套用修改
         switch (TargetStat)
         {
             case StatType.MaxIntegrityHp:
-                float currentMaxHp = GameDB.Instance.Run.MaxIntegrityHp;
-                float newMaxHp = CalculateModifiedValue(currentMaxHp);
+                beforeValue = GameDB.Instance.Run.MaxIntegrityHp;
+                float newMaxHp = CalculateModifiedValue(beforeValue);
                 GameDB.Instance.Run.SetMaxIntegrityHp(newMaxHp, false);
+                afterValue = GameDB.Instance.Run.MaxIntegrityHp;
                 break;
             case StatType.MoveSpeed:
-                stats.SetModifier(StatType.MoveSpeed, CalculateModifiedValue(stats.ModifiedMoveSpeed));
+                beforeValue = stats.ModifiedMoveSpeed;
+                stats.SetModifier(StatType.MoveSpeed, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedMoveSpeed;
                 break;
             case StatType.AttackRange:
-                stats.SetModifier(StatType.AttackRange, CalculateModifiedValue(stats.ModifiedAttackRange));
+                beforeValue = stats.ModifiedAttackRange;
+                stats.SetModifier(StatType.AttackRange, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedAttackRange;
                 break;
             case StatType.AttackInfluence:
-                stats.SetModifier(StatType.AttackInfluence, CalculateModifiedValue(stats.ModifiedAttackInfluence));
+                beforeValue = stats.ModifiedAttackInfluence;
+                stats.SetModifier(StatType.AttackInfluence, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedAttackInfluence;
                 break;
             case StatType.ConvertChance:
-                stats.SetModifier(StatType.ConvertChance, CalculateModifiedValue(stats.ModifiedConvertChance));
+                beforeValue = stats.ModifiedConvertChance;
+                stats.SetModifier(StatType.ConvertChance, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedConvertChance;
                 break;
             case StatType.AttackCooldown:
-                stats.SetModifier(StatType.AttackCooldown, CalculateModifiedValue(stats.ModifiedAttackCooldown));
+                beforeValue = stats.ModifiedAttackCooldown;
+                stats.SetModifier(StatType.AttackCooldown, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedAttackCooldown;
                 break;
             case StatType.GlobalNpcSpeed:
-                stats.SetModifier(StatType.GlobalNpcSpeed, CalculateModifiedValue(stats.ModifiedGlobalNpcSpeedMultiplier));
+                beforeValue = stats.ModifiedGlobalNpcSpeedMultiplier;
+                stats.SetModifier(StatType.GlobalNpcSpeed, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedGlobalNpcSpeedMultiplier;
                 break;
             case StatType.LoseControlRate:
-                stats.SetModifier(StatType.LoseControlRate, CalculateModifiedValue(stats.ModifiedLoseControlRate));
+                beforeValue = stats.ModifiedLoseControlRate;
+                stats.SetModifier(StatType.LoseControlRate, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedLoseControlRate;
                 break;
             case StatType.SpreadRadius:
-                stats.SetModifier(StatType.SpreadRadius, CalculateModifiedValue(stats.ModifiedSpreadRadius));
+                beforeValue = stats.ModifiedSpreadRadius;
+                stats.SetModifier(StatType.SpreadRadius, CalculateModifiedValue(beforeValue));
+                afterValue = stats.ModifiedSpreadRadius;
                 break;
         }
+
+        Debug.Log($"[StatModifierEffect] 數值套用偵錯 => 屬性: {TargetStat.ToString()}, 計算: {ModType.ToString()}, 數值: {Value}, 變更前: {beforeValue} -> 變更後: {afterValue} (SSOT GameDB已同步更新: {(beforeValue != afterValue)})");
     }
 
     public void RemoveEffect()

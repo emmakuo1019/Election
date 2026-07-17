@@ -12,6 +12,8 @@ public class GameDB : MonoBehaviour
     public static GameDB Instance { get; private set; }
 
     [Header("Data Modules")]
+    public List<PolicyCardData> allPolicyCards = new List<PolicyCardData>();
+    
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
     public CampaignData Campaign { get; private set; }
@@ -111,21 +113,31 @@ public class RunData
         }
     }
 
-    // 相容舊版 (可選)
-    public void AddPolicyCard(string cardName)
-    {
-        if (!string.IsNullOrEmpty(cardName) && !AcquiredPolicyCards.Contains(cardName))
-        {
-            AcquiredPolicyCards.Add(cardName);
-        }
-    }
+
 
     /// <summary>
-    /// 從 Resources 載入所有政策卡，並過濾掉已經擁有的卡牌，隨機抽出指定數量。
+    /// 從 GameDB.Instance.allPolicyCards 載入所有政策卡，並過濾掉已經擁有的卡牌，隨機抽出指定數量。
     /// </summary>
     public List<PolicyCardData> DrawRandomPolicyCards(int count)
     {
-        var allCards = Resources.LoadAll<PolicyCardData>("PolicyCards");
+#if UNITY_EDITOR
+        if (GameDB.Instance.allPolicyCards == null || GameDB.Instance.allPolicyCards.Count == 0)
+        {
+            Debug.LogWarning("[GameDB] allPolicyCards 為空！正在 Editor 模式下嘗試自動載入 Assets/Data/PolicyCards/ 內的卡牌...");
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:PolicyCardData", new[] { "Assets/Data/PolicyCards" });
+            foreach (string guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                PolicyCardData cardData = UnityEditor.AssetDatabase.LoadAssetAtPath<PolicyCardData>(path);
+                if (cardData != null)
+                {
+                    GameDB.Instance.allPolicyCards.Add(cardData);
+                }
+            }
+        }
+#endif
+
+        var allCards = GameDB.Instance.allPolicyCards;
         List<PolicyCardData> tempPool = new List<PolicyCardData>();
 
         foreach (PolicyCardData card in allCards)
@@ -147,6 +159,15 @@ public class RunData
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 隨機獲取單張未擁有的政策卡 (對接舊 UI 結算)
+    /// </summary>
+    public PolicyCardData GetRandomPolicyCard()
+    {
+        var cards = DrawRandomPolicyCards(1);
+        return cards.Count > 0 ? cards[0] : null;
     }
 
     #region 政治誠信 HP (Integrity HP)
@@ -302,6 +323,20 @@ public class CampaignData
 
     // 用於強制覆蓋下一間房間要載入的場景 (例如失敗跳結算畫面)
     public string NextSceneOverride { get; private set; } = string.Empty;
+
+    // ── 已解鎖技能列表 ────────────────────────────────────────────────
+    public List<SkillData> UnlockedSkills { get; private set; } = new List<SkillData>();
+    public event System.Action<SkillData> OnSkillUnlocked;
+
+    public void UnlockSkill(SkillData skill)
+    {
+        if (skill != null && !UnlockedSkills.Contains(skill))
+        {
+            UnlockedSkills.Add(skill);
+            OnSkillUnlocked?.Invoke(skill);
+            Debug.Log($"[CampaignData] 技能解鎖成功：{skill.skillName}");
+        }
+    }
 
     // ── 事件 ─────────────────────────────────────────────────────────
     public event System.Action<int, int> OnRoomProgressChanged;

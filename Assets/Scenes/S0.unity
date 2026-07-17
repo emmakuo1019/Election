@@ -5923,6 +5923,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1854772411}
   - component: {fileID: 1854772410}
+  - component: {fileID: 1854772412}
   m_Layer: 0
   m_Name: GameDB
   m_TagString: Untagged
@@ -5942,6 +5943,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00a74bef03ec74e52990d5c42f1633ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameDB
+  allPolicyCards:
+  - {fileID: 11400000, guid: 2048becb2ce044c3e86d829c995f993b, type: 2}
+  - {fileID: 11400000, guid: 0f0b80cba48814d4bbca591fb076450d, type: 2}
+  - {fileID: 11400000, guid: 460106e5b430c445db116d7d8c5c7b8b, type: 2}
+  - {fileID: 11400000, guid: 64f67ae81a3fe476aace267550a8e36e, type: 2}
 --- !u!4 &1854772411
 Transform:
   m_ObjectHideFlags: 0
@@ -5957,6 +5963,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1854772412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854772409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5028b001df4ef49a889fdbd55cfba66a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PolicyDebugUI
+  toggleKey: 114
+  panelWidth: 320
+  panelHeight: 360
+  panelMargin: 15
 --- !u!1 &1868438400
 GameObject:
   m_ObjectHideFlags: 0

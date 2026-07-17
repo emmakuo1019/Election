@@ -26,6 +26,18 @@ public class PlayerController : MonoBehaviour
     [Header("Animation")]
     public Animator characterAnimator;
 
+    public float CurrentMoveSpeed
+    {
+        get
+        {
+            if (GameDB.Instance != null && GameDB.Instance.Run != null)
+            {
+                return GameDB.Instance.Run.Stats.ModifiedMoveSpeed;
+            }
+            return moveSpeed;
+        }
+    }
+
     public CharacterController CharCon { get; private set; }
     public PlayerAttack PlayerAttack { get; private set; }
     public PlayerAnimationController AnimController { get; private set; }

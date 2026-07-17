@@ -27,4 +27,5 @@ MonoBehaviour:
       data:
         prefabToSpawn: {fileID: 5831633753023714593, guid: df05be048f32b4da09784649efb3e1c1, type: 3}
         spawnCount: 1
+        spawnInterval: 0
         lifetime: 5

@@ -2,15 +2,9 @@ using UnityEngine;
 using System;
 using UnityEngine.Serialization;
 
-/// <summary>
-/// 總部技能觸發器
-/// 將此腳本掛載在總部內的實體方塊上，並將方塊的 Collider 設為 IsTrigger = true
-/// </summary>
-public class HQSkillTrigger : MonoBehaviour
+public class HQSkillTrigger : HQSkillActivator
 {
-    [Header("要解鎖裝備的技能")]
-    [Tooltip("請將 Project 視窗中的 SkillData (例如情緒版或理性版) 拖曳到這裡")]
-    [SerializeField] private SkillData skillToUnlock;
+    // skillToUnlock 已繼承自 HQSkillActivator
 
     [Header("視覺回饋 (可選)")]
     [Tooltip("未被選中時的外觀 (例如原本普通的方塊)")]
@@ -87,14 +81,17 @@ public class HQSkillTrigger : MonoBehaviour
         {
             if (skillToUnlock != null && GameDB.Instance != null && GameDB.Instance.Player != null)
             {
-                // 將該技能寫入 GameDB
-                GameDB.Instance.Player.EquipBaseSkillJ(skillToUnlock);
-                Debug.Log($"[HQSkillTrigger] 玩家撞擊方塊！已成功裝備技能：{skillToUnlock.skillName}");
+                // 1. 呼叫基底類別解鎖技能 (資料驅動)
+                UnlockSkill();
 
-                // 1. 先把自己變成「已選擇」的外觀
+                // 2. 將該技能寫入 GameDB 進行裝備
+                GameDB.Instance.Player.EquipBaseSkillJ(skillToUnlock);
+                Debug.Log($"[HQSkillTrigger] 玩家撞擊方塊！已成功解鎖並裝備技能：{skillToUnlock.skillName}");
+
+                // 3. 先把自己變成「已選擇」的外觀
                 SetSelectedState(true);
 
-                // 2. 廣播告訴全世界：「我被選了！其他人請退回原本的樣子！」
+                // 4. 廣播告訴全世界：「我被選了！其他人請退回原本的樣子！」
                 OnAnySkillSelected?.Invoke(this);
             }
             else

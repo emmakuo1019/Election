@@ -18,7 +18,6 @@ public class LevelTimer : MonoBehaviour
     [SerializeField] private float remainingTime;
     [SerializeField] private bool isActive = false;
     [SerializeField] private bool isTimeUp = false;
-    [SerializeField] private RewardPanelController rewardPanelController;
 
     public delegate void TimerEventDelegate();
     public delegate void TimerTickDelegate(float timeRemaining, float totalTime);
