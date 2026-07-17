@@ -93,6 +93,9 @@ public class RunData
     
     public PlayerStatsData Stats { get; private set; } = new PlayerStatsData();
 
+    // 技能選擇掛起 (Pending) 狀態，取代舊有的 PlayerPrefs 標記
+    public bool HasPendingSkillSelection { get; set; } = false;
+
     public void AddPolicyCard(PolicyCardData card)
     {
         if (card != null && !AcquiredPolicyCards.Contains(card.cardName))
@@ -278,6 +281,14 @@ public class RunData
 [System.Serializable]
 public class CampaignData
 {
+    // ── 戰役常數與設定 ────────────────────────────────────────────────
+    public const int TotalBlockCount = 3;
+    public const int BossStageIndex = 4;
+
+    private const string NormalRoomSceneName = "TestMVP";
+    private const string SpecialRoomSceneName = "TestSpecial";
+    private const float SpecialRoomChance = 0.2f;
+
     // ── 已完成的 Block 數量 ──────────────────────────────────────────
     public int CompletedBlocks { get; private set; } = 0;
 
@@ -363,5 +374,87 @@ public class CampaignData
         CurrentBlockIndex = 1;
         RoomSequence      = System.Array.Empty<string>();
         NextSceneOverride = string.Empty;
+    }
+
+    // ── 戰役進度與 Block 推進移植 ──────────────────────────────────────
+
+    public int GetNextBlockIndex()
+    {
+        return Mathf.Clamp(CompletedBlocks + 1, 1, TotalBlockCount);
+    }
+
+    public bool IsBlockCompleted(int blockIndex)
+    {
+        int normalized = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
+        return CompletedBlocks >= normalized;
+    }
+
+    public bool CanEnterBlock(int blockIndex)
+    {
+        int normalized = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
+        return CompletedBlocks == normalized - 1;
+    }
+
+    public bool CanEnterBossStage()
+    {
+        return CompletedBlocks >= TotalBlockCount;
+    }
+
+    /// <summary>
+    /// 啟動指定 Block，生成房間序列並進入第一間房，回傳第一間房的場景名稱。
+    /// </summary>
+    public string StartRandomBlock(int blockIndex, int maxRooms = 5)
+    {
+        int safeBlockIndex = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
+        int safeMaxRooms   = Mathf.Max(1, maxRooms);
+
+        InitBlock(safeMaxRooms, safeBlockIndex);
+        SetRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
+        EnterNextRoom();
+
+        return GetCurrentRoomSceneName();
+    }
+
+    /// <summary>
+    /// 依照戰役進度，啟動下一個 Block。
+    /// </summary>
+    public string StartNextCampaignBlock(int maxRooms = 5)
+    {
+        int nextBlockIndex = GetNextBlockIndex();
+        return StartRandomBlock(nextBlockIndex, maxRooms);
+    }
+
+    public bool TryCompleteCurrentBlock()
+    {
+        if (!HasBlockProgress() || !IsLastRoomInBlock())
+            return false;
+
+        AddCompletedBlock();
+        
+        // 標記待選技能
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
+        {
+            GameDB.Instance.Run.HasPendingSkillSelection = true;
+        }
+
+        ClearBlockProgress();
+        return true;
+    }
+
+    public void FailCurrentBlock()
+    {
+        ClearBlockProgress();
+    }
+
+    private string[] GenerateRoomSequence(int blockIndex, int maxRooms)
+    {
+        string[] sequence = new string[maxRooms];
+        for (int i = 0; i < maxRooms; i++)
+        {
+            sequence[i] = UnityEngine.Random.value < SpecialRoomChance
+                ? SpecialRoomSceneName
+                : NormalRoomSceneName;
+        }
+        return sequence;
     }
 }

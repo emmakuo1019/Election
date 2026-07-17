@@ -573,16 +573,38 @@ Assets/Scripts/
 ---
 
 ## 🧹 待辦事項：專案掃除與清算 (Legacy Cleanup)
-> 紀錄時間：2026-07-13
+> 紀錄時間：2026-07-17
 
-**任務狀態**：[Status: In Progress]
+**任務狀態**：[Status: Completed]
 
 ### 1. 診斷結果與當前進度
-已完成隔離區建立，並將 `[Safe to Delete]` 檔案（如 `ScoreManagerSample.cs`）移至 `Obsolete`，且已將 `PolicyCardManager.cs` 的抽卡邏輯遷移至 GameDB，並將其檔案移至 `Obsolete`。目前正準備處理剩餘的進度管理器。
-經過全域掃描，專案中**沒有**殘留任何舊版的 `[MenuItem]` 編輯器擴充，也沒有 `Editor/` 資料夾下的專屬資料產生器工具，視覺化選單的斷捨離已達標。目前的 `PolicyCardData` 已完全使用 `[CreateAssetMenu(fileName = "PolicyCard", menuName = "Game/Policy Card V2")]` 作為唯一入口。
+已完成隔離區建立，並將 `[Safe to Delete]` 檔案（如 `ScoreManagerSample.cs`）移至 `Obsolete`，且已將 `PolicyCardManager.cs` 的抽卡邏輯遷移至 GameDB，並將其檔案移至 `Obsolete`。
+進一步將 `CampaignProgressManager.cs`、`BlockProgressManager.cs` 與 `HeadquartersManager.cs` 搬移至 `Obsolete` 進行隔離，專案核心進度系統已 100% 收斂至 GameDB，且 PlayerPrefs 與靜態 Manager 已完成解耦。
 
 ### 2. 清理清單與依賴狀態
-- `ScoreManagerSample.cs`: **[Safe to Delete]** (完全無引用)。
-- `PolicyCardManager.cs`: **[Needs Migration]** (仍被 `UIManager.cs` L181 的抽卡邏輯 `GetRandomCards` 引用。需先將隨機抽卡邏輯轉移至 `GameDB.RunData`，方可刪除)。
-- `CampaignProgressManager.cs` 與 `BlockProgressManager.cs`: **[Needs Migration]** (深度耦合的舊版進度系統，違背 SSOT。需將相關依賴轉移至 `GameDB.Instance.Campaign` 與全域狀態機後刪除)。
-- `HeadquartersManager.cs`, `S0Manager.cs`, `S1Manager.cs`: **[Needs Migration]** (場景腳本，需將 Unity UI 事件轉綁給 `UIFlowHelper` 後拔除)。
+- `ScoreManagerSample.cs`: **[Safe to Delete]** (已隔離，完全無引用)。
+- `PolicyCardManager.cs`: **[Needs Migration]** (已隔離，已被 GameDB.RunData 的抽卡邏輯取代)。
+- `CampaignProgressManager.cs` 與 `BlockProgressManager.cs`: **[Needs Migration]** (已隔離，相關進度數據完全移入 `GameDB.Instance.Campaign` 中)。
+- `HeadquartersManager.cs`: **[Needs Migration]** (已隔離，完全無引用，總部邏輯已被 `HQSceneController.cs` 替代)。
+- `S0Manager.cs`, `S1Manager.cs`: **[Needs Migration]** (場景腳本，需將 Unity UI 事件轉綁給 `UIFlowHelper` 後拔除)。
+
+---
+
+## 🧹 重構總結 (PlayerPrefs 消滅與 GameDB SSOT 大一統)
+> 紀錄時間：2026-07-17
+
+**專案狀態更新**：[Status: Completed, Next: 實作新政策卡積木 (SpawnObjectEffect) 與測試核心好玩度]
+
+我們已徹底消滅專案中散落的 `PlayerPrefs` 進度與狀態儲存，完成向 `GameDB` 的大一統收斂：
+
+### 1. 進度與狀態完全收斂至 GameDB
+- **`GameDB` (SSOT) 擴充**：於 `RunData` 中新增 `HasPendingSkillSelection` 暫存變數，於 `CampaignData` 中移植了 `TotalBlockCount` 常數、戰役完成度判定、隨機 Room 序列生成以及 Block 的 TryComplete 推進方法。
+- **無狀態化與解耦**：完全解除了對 `BlockProgressManager` 和 `CampaignProgressManager` 的靜態呼叫。
+
+### 2. 舊 Manager 徹底隔離
+- **搬移隔離**：已將 [HeadquartersManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/HeadquartersManager.cs)、[CampaignProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/CampaignProgressManager.cs)、與 [BlockProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/BlockProgressManager.cs) 連同其 `.meta` 檔案正式移入 `Assets/Scripts/Obsolete/`。
+- **維護 Clean Architecture**：核心系統與 UI（包括 `MapProgressUI`、`StartGame`、`BattleFlowController` 與 `MapNodeButton`）現在統一對齊 `GameDB` API，編譯 100% 成功。
+
+### 3. 下一步計畫
+- 🚀 **[To-Do: 實作新政策卡積木 (SpawnObjectEffect) 與測試核心好玩度]**
+

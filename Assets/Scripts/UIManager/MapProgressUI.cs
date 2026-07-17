@@ -19,7 +19,9 @@ public class MapProgressUI : MonoBehaviour
             return;
         }
 
-        int completed = CampaignProgressManager.GetCompletedBlockCount();
+        int completed = GameDB.Instance != null && GameDB.Instance.Campaign != null
+            ? GameDB.Instance.Campaign.CompletedBlocks
+            : 0;
         progressText.text = "已完成區塊：" + completed + " / 3";
 
     }

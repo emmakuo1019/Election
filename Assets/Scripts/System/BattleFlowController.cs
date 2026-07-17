@@ -68,7 +68,9 @@ public class BattleFlowController : MonoBehaviour
 
     private void OnBattleTimeEnd()
     {
-        bool isLastRoomInBlock = BlockProgressManager.HasBlockProgress() && BlockProgressManager.IsLastRoomInBlock();
+        bool isLastRoomInBlock = GameDB.Instance != null && GameDB.Instance.Campaign != null &&
+                                 GameDB.Instance.Campaign.HasBlockProgress() && 
+                                 GameDB.Instance.Campaign.IsLastRoomInBlock();
         int playerVotes = GameDB.Instance != null ? GameDB.Instance.Run.PlayerVotes : 0;
         int opponentVotes = GameDB.Instance != null ? GameDB.Instance.Run.OpponentVotes : 0;
         bool canClaimReward = playerVotes > opponentVotes;
@@ -84,8 +86,11 @@ public class BattleFlowController : MonoBehaviour
 
         if (isLastRoomInBlock && !canClaimReward)
         {
-            BlockProgressManager.SetNextSceneOverride("endGamePanel");
-            BlockProgressManager.FailCurrentBlock();
+            if (GameDB.Instance != null && GameDB.Instance.Campaign != null)
+            {
+                GameDB.Instance.Campaign.SetNextSceneOverride("endGamePanel");
+                GameDB.Instance.Campaign.FailCurrentBlock();
+            }
         }
 
         UnlockExitAndForceVotersLeave();

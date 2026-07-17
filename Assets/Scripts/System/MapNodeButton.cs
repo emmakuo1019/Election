@@ -77,19 +77,23 @@ public class MapNodeButton : MonoBehaviour
             return false;
         }
 
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
-        return CampaignProgressManager.IsBlockCompleted(normalizedBlockOrder);
+        if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return false;
+
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
+        return GameDB.Instance.Campaign.IsBlockCompleted(normalizedBlockOrder);
     }
 
     private bool IsAvailable()
     {
+        if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return false;
+
         if (routeType == RouteType.BossStage)
         {
-            return CampaignProgressManager.CanEnterBossStage();
+            return GameDB.Instance.Campaign.CanEnterBossStage();
         }
 
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
-        return CampaignProgressManager.CanEnterBlock(normalizedBlockOrder);
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
+        return GameDB.Instance.Campaign.CanEnterBlock(normalizedBlockOrder);
     }
 
     private string GetTargetSceneName()
@@ -99,7 +103,9 @@ public class MapNodeButton : MonoBehaviour
             return BossSceneName;
         }
 
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignProgressManager.GetTotalBlockCount());
-        return BlockProgressManager.StartRandomBlock(normalizedBlockOrder);
+        if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return "TestMVP";
+
+        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
+        return GameDB.Instance.Campaign.StartRandomBlock(normalizedBlockOrder);
     }
 }

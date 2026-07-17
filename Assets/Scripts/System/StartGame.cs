@@ -41,7 +41,9 @@ public class StartGame : MonoBehaviour
     
     private void OpenUpgradePanel()
     {
-        string firstRoomScene = BlockProgressManager.StartNextCampaignBlock();
+        string firstRoomScene = GameDB.Instance != null && GameDB.Instance.Campaign != null
+            ? GameDB.Instance.Campaign.StartNextCampaignBlock()
+            : "TestMVP";
         SceneManager.LoadScene(firstRoomScene);
     }
     

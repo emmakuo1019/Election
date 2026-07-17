@@ -119,20 +119,26 @@ public class PlayerSkillManager : MonoBehaviour
         }
     }
 
-    // 保留部分 PlayerPrefs 的標記邏輯供 UpgradePanelUI 繼續使用
+    // 改用 GameDB.Instance.Run.HasPendingSkillSelection 進行跨場景存取，消滅 PlayerPrefs
     public static void MarkPendingMapSkillSelection()
     {
-        PlayerPrefs.SetInt(PendingMapSkillSelectionKey, 1);
-        PlayerPrefs.Save();
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
+        {
+            GameDB.Instance.Run.HasPendingSkillSelection = true;
+        }
     }
 
-    public static bool HasPendingMapSkillSelection() =>
-        PlayerPrefs.GetInt(PendingMapSkillSelectionKey, 0) == 1;
+    public static bool HasPendingMapSkillSelection()
+    {
+        return GameDB.Instance != null && GameDB.Instance.Run != null && GameDB.Instance.Run.HasPendingSkillSelection;
+    }
 
     public static void ClearPendingMapSkillSelection()
     {
-        PlayerPrefs.DeleteKey(PendingMapSkillSelectionKey);
-        PlayerPrefs.Save();
+        if (GameDB.Instance != null && GameDB.Instance.Run != null)
+        {
+            GameDB.Instance.Run.HasPendingSkillSelection = false;
+        }
     }
     #endregion
 }
