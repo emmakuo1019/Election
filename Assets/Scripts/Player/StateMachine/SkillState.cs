@@ -134,7 +134,7 @@ public class SkillState : IState
             if (voterLogic == null || _hitVoters.Contains(voterLogic)) continue;
 
             _hitVoters.Add(voterLogic);
-            if (voterLogic.ApplySkillEffect(new DogezaVoterEffect(dogeza.StunTime, dogeza.ConvertChance)))
+            if (voterLogic.ApplySkillEffect(new DogezaVoterEffect(dogeza.StunTime, dogeza.ConvertChance, dogeza.AttackPower, dogeza.KnockbackDistance, dogeza.KnockbackDuration, _ctx.transform.position)))
             {
                 _hasHitVoter = true;
             }

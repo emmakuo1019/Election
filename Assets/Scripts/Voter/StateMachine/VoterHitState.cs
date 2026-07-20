@@ -9,10 +9,15 @@ public class VoterHitState : IState
     private Vector3 _startPos;
     private Vector3 _targetPos;
 
-    public VoterHitState(VoterLogic controller, Vector3 attackerPos)
+    private float _customDistance;
+    private float _customDuration;
+
+    public VoterHitState(VoterLogic controller, Vector3 attackerPos, float customDistance = -1f, float customDuration = -1f)
     {
         _controller = controller;
         _attackerPos = attackerPos;
+        _customDistance = customDistance >= 0f ? customDistance : controller.knockbackDistance;
+        _customDuration = customDuration >= 0f ? customDuration : controller.knockbackDuration;
     }
 
     public void Enter()
@@ -33,9 +38,9 @@ public class VoterHitState : IState
         direction.y = 0f;
 
         _startPos = _controller.transform.position;
-        _targetPos = _startPos + direction * _controller.knockbackDistance;
+        _targetPos = _startPos + direction * _customDistance;
 
-        if (NavMesh.SamplePosition(_targetPos, out NavMeshHit hit, _controller.knockbackDistance, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(_targetPos, out NavMeshHit hit, _customDistance, NavMesh.AllAreas))
         {
             _targetPos = hit.position;
         }
@@ -44,10 +49,11 @@ public class VoterHitState : IState
     public void Update()
     {
         // 僅保留擊退的物理 Lerp 運算，狀態切換交由 AnimationFinishTrigger
-        if (_timer < _controller.knockbackDuration)
+        if (_timer < _customDuration)
         {
             _timer += Time.deltaTime;
-            float t = _timer / _controller.knockbackDuration;
+            float duration = _customDuration > 0f ? _customDuration : 0.01f; // 避免除以零
+            float t = _timer / duration;
 
             if (_controller.Agent != null && _controller.Agent.isOnNavMesh)
             {
