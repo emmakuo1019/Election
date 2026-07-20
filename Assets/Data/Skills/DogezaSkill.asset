@@ -16,13 +16,17 @@ MonoBehaviour:
   cooldown: 5
   duration: 0.5
   animationTriggerName: Begging
-  skillEffectPrefab: {fileID: 7246763196193437300, guid: 268633b25e00646a7927c4266f63b6a6, type: 3}
+  vfxPrefab: {fileID: 7246763196193437300, guid: 268633b25e00646a7927c4266f63b6a6, type: 3}
+  vfxDuration: 0
   effectSpawnOffset: {x: 0, y: 0, z: 0}
   useCasterRotation: 1
   mpCost: 10
-  hpCost: 5
+  hpCost: 10
   dashDuration: 0.3
   dashSpeed: 15
   stunTime: 1.5
   convertChance: 0.5
   voterDetectionRadius: 1.5
+  attackPower: 20
+  knockbackDistance: 2
+  knockbackDuration: 0.2

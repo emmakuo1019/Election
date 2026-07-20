@@ -18,6 +18,11 @@ public class DogezaSkill : SkillData
     [SerializeField] private float convertChance = 0.5f;
     [SerializeField] private float voterDetectionRadius = 1.5f;
 
+    [Header("擊退與攻擊設定")]
+    [SerializeField] private int attackPower = 20;
+    [SerializeField] private float knockbackDistance = 3.0f;
+    [SerializeField] private float knockbackDuration = 0.2f;
+
     public int MpCost => mpCost;
     public float DashDuration => dashDuration;
     public float DashSpeed => dashSpeed;
@@ -25,6 +30,10 @@ public class DogezaSkill : SkillData
     public float ConvertChance => convertChance;
     public float VoterDetectionRadius => voterDetectionRadius;
     public int HpCost => hpCost;
+    public int AttackPower => attackPower;
+    public float KnockbackDistance => knockbackDistance;
+    public float KnockbackDuration => knockbackDuration;
+
     public override void ExecuteSkill(GameObject caster)
     {
         if (caster == null)
