@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerAnimationController : MonoBehaviour
 {
     private Animator _animator;
+    private SpriteRenderer _spriteRenderer;
 
     // ==========================================
     // 1. 動畫狀態 Hash 集中管理（效能優化與防呆）
@@ -38,6 +39,7 @@ public class PlayerAnimationController : MonoBehaviour
     {
         // 改為 GetComponentInChildren，因為 Animator 通常掛在子物件 (如 PlayerSprite) 上
         _animator = GetComponentInChildren<Animator>();
+        _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         if (_animator == null)
         {
             Debug.LogError("[PlayerAnimationController] 找不到 Animator 元件！請確保自身或子物件有 Animator。");
@@ -62,12 +64,33 @@ public class PlayerAnimationController : MonoBehaviour
     // 2. 動畫控制對外接口 (供狀態機呼叫)
     // ==========================================
 
+    private float _lastFlipX;
+
+    private void LateUpdate()
+    {
+        if (_animator != null && Mathf.Abs(_lastFlipX) > 0.01f)
+        {
+            Vector3 scale = _animator.transform.localScale;
+            scale.x = _lastFlipX < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
+            _animator.transform.localScale = scale;
+        }
+    }
+
+    private void UpdateFlip(Vector2 facingDirection)
+    {
+        if (Mathf.Abs(facingDirection.x) > 0.01f)
+        {
+            _lastFlipX = facingDirection.x;
+        }
+    }
+
     /// <summary>
     /// 播放移動動畫（依據傳入的最後面朝方向，精確判定播放上、下、左、右）
     /// </summary>
     /// <param name="facingDirection">玩家目前的 Vector2 朝向向量</param>
     public void PlayWalkAnimation(Vector2 facingDirection)
     {
+        UpdateFlip(facingDirection);
         // 優先判定 Y 軸（上、下）
         if (Mathf.Abs(facingDirection.y) >= Mathf.Abs(facingDirection.x))
         {
@@ -99,6 +122,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     public void PlayIdleAnimation(Vector2 facingDirection)
     {
+        UpdateFlip(facingDirection);
         if (Mathf.Abs(facingDirection.y) >= Mathf.Abs(facingDirection.x))
         {
             if (facingDirection.y > 0) ChangeAnimationState(IdleUpHash);
@@ -117,6 +141,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// <param name="facingDirection">玩家目前的 Vector2 朝向向量</param>
     public void PlayAttackAnimation(Vector2 facingDirection)
     {
+        UpdateFlip(facingDirection);
         if (Mathf.Abs(facingDirection.y) >= Mathf.Abs(facingDirection.x))
         {
             if (facingDirection.y > 0)
@@ -147,6 +172,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// <param name="facingDirection">玩家目前的 Vector2 朝向向量</param>
     public void PlayDashAnimation(Vector2 facingDirection)
     {
+        UpdateFlip(facingDirection);
         if (Mathf.Abs(facingDirection.y) >= Mathf.Abs(facingDirection.x))
         {
             if (facingDirection.y > 0)

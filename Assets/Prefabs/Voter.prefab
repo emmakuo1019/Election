@@ -5178,9 +5178,9 @@ GameObject:
   - component: {fileID: 1450660180870077598}
   - component: {fileID: 2554103976452375464}
   - component: {fileID: 5862975689292999562}
+  - component: {fileID: 8794478708423136623}
   - component: {fileID: 8013282526341333847}
   - component: {fileID: 6172947822698751728}
-  - component: {fileID: 8794478708423136623}
   m_Layer: 6
   m_Name: Voter
   m_TagString: Voter
@@ -5258,6 +5258,30 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 7ce32b620528d44718a6fc0e4f986a96, type: 3}
   waverShakeAmplitude: 0.1
   waverShakeFrequency: 15
+--- !u!114 &8794478708423136623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6195426068857833160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00aacf6a80f7a486bbc5f3eed92a15d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoterData
+  config: {fileID: 0}
+  voterLabel: 0
+  voterAttribute: 0
+  normalMoveSpeed: 1.2
+  darkMoveSpeed: 2
+  MaxSupportValue: 5
+  apathyAvoidanceRadius: 3
+  apatheticEscapeSpeedMultiplier: 3
+  _currentPosition: 0
+  _convertedSide: 0
+  isConverted: 0
+  loyalty: 1
 --- !u!195 &8013282526341333847
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -5303,27 +5327,3 @@ CapsuleCollider:
   m_Height: 1.6675533
   m_Direction: 1
   m_Center: {x: 0.073158056, y: 0.8412488, z: 0}
---- !u!114 &8794478708423136623
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6195426068857833160}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00aacf6a80f7a486bbc5f3eed92a15d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VoterData
-  config: {fileID: 0}
-  voterLabel: 0
-  voterAttribute: 0
-  normalMoveSpeed: 1.2
-  darkMoveSpeed: 2
-  MaxSupportValue: 5
-  apathyAvoidanceRadius: 3
-  apatheticEscapeSpeedMultiplier: 3
-  _currentPosition: 0
-  _convertedSide: 0
-  isConverted: 0
-  loyalty: 1

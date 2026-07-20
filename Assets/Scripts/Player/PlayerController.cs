@@ -15,6 +15,10 @@ public class PlayerController : MonoBehaviour
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
 
+    [Header("物理推擠設定")]
+    [SerializeField, Tooltip("玩家擠開選民的推力大小")] 
+    private float voterPushForce = 3.0f;
+
     [Header("Input")]
     public InputActionReference moveAction;
     public InputActionReference dashAction;
@@ -167,4 +171,26 @@ public class PlayerController : MonoBehaviour
 
 
     public string CurrentStateName => StateMachine.CurrentState?.GetType().Name ?? "None";
+
+    /// <summary>
+    /// 當 CharacterController 移動並撞擊到其他 Collider 時觸發。
+    /// 用於處理玩家擠開帶有 NavMeshAgent 的選民，解決被卡死的問題。
+    /// </summary>
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        // 檢查撞擊對象是否帶有 NavMeshAgent 組件 (如 VoterLogic)
+        UnityEngine.AI.NavMeshAgent agent = hit.collider.GetComponentInParent<UnityEngine.AI.NavMeshAgent>();
+
+        // 防呆機制：確保 agent 存在且啟用中，避免拋出錯誤
+        if (agent != null && agent.isActiveAndEnabled)
+        {
+            // 計算從玩家中心推向選民的方向，並忽略 Y 軸保持平面推擠
+            Vector3 pushDir = hit.point - transform.position;
+            pushDir.y = 0;
+            pushDir.Normalize();
+
+            // 透過 agent.Move 讓選民被輕微推開，不破壞 NavMesh 尋路狀態
+            agent.Move(pushDir * voterPushForce * Time.deltaTime);
+        }
+    }
 }

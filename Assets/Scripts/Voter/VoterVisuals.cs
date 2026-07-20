@@ -62,6 +62,9 @@ public class VoterVisuals : MonoBehaviour
 
     private static MaterialPropertyBlock _mpb;
 
+    private Vector3 _originalBodyLocalPos;
+    private Vector3 _originalHeadLocalPos;
+
     private void Awake()
     {
         logic = GetComponent<VoterLogic>();
@@ -71,7 +74,13 @@ public class VoterVisuals : MonoBehaviour
         if (bodyRenderer == null) bodyRenderer = GetComponent<SpriteRenderer>();
         if (headRenderer == null) headRenderer = transform.Find("Head")?.GetComponent<SpriteRenderer>();
 
-        if (headRenderer != null) defaultHeadColor = headRenderer.color;
+        if (headRenderer != null) 
+        {
+            defaultHeadColor = headRenderer.color;
+            _originalHeadLocalPos = headRenderer.transform.localPosition;
+        }
+
+        if (bodyRenderer != null) _originalBodyLocalPos = bodyRenderer.transform.localPosition;
 
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
     }
@@ -292,6 +301,26 @@ public class VoterVisuals : MonoBehaviour
         }
     }
 
+    private float _lastVelocityX;
+
+    public void UpdateFlip(float velocityX)
+    {
+        if (Mathf.Abs(velocityX) > 0.01f)
+        {
+            _lastVelocityX = velocityX;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (Mathf.Abs(_lastVelocityX) > 0.01f)
+        {
+            bool flip = _lastVelocityX < 0;
+            if (bodyRenderer != null) bodyRenderer.flipX = flip;
+            if (headRenderer != null) headRenderer.flipX = flip;
+        }
+    }
+
     public void SetMovingAnimation(bool isMoving)
     {
         if (Anim != null)
@@ -376,7 +405,11 @@ public class VoterVisuals : MonoBehaviour
         // 重置位置
         if (bodyRenderer != null)
         {
-            bodyRenderer.transform.localPosition = Vector3.zero;
+            bodyRenderer.transform.localPosition = _originalBodyLocalPos;
+        }
+        if (headRenderer != null)
+        {
+            headRenderer.transform.localPosition = _originalHeadLocalPos;
         }
     }
 
@@ -390,7 +423,16 @@ public class VoterVisuals : MonoBehaviour
 
             if (bodyRenderer != null)
             {
-                bodyRenderer.transform.localPosition = new Vector3(offsetX, 0f, 0f);
+                bodyRenderer.transform.localPosition = _originalBodyLocalPos + new Vector3(offsetX, 0f, 0f);
+            }
+            if (headRenderer != null)
+            {
+                // 若 head 剛好是 body 的子物件，這裡也不會錯，因為我們都是相對於自己原始的 localPosition 進行偏移，
+                // 只是可能會疊加兩次偏移。為了安全起見，我們判斷一下它是不是 body 的子物件。
+                if (bodyRenderer == null || headRenderer.transform.parent != bodyRenderer.transform)
+                {
+                    headRenderer.transform.localPosition = _originalHeadLocalPos + new Vector3(offsetX, 0f, 0f);
+                }
             }
 
             yield return null;

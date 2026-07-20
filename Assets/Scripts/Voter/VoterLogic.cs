@@ -148,6 +148,11 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
         UpdateLoyaltyDecay();
         StateMachine.CurrentState?.Update();
+
+        if (Visuals != null)
+        {
+            Visuals.UpdateFlip(Agent.velocity.x);
+        }
     }
 
     private void FixedUpdate()
