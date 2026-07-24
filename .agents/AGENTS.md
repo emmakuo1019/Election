@@ -1,8 +1,9 @@
 ## 架構守則
-1. 資料單一來源 (SSOT)：所有跨場景存活的數值嚴禁存在 Manager 中，必須在 GameDB.cs 註冊。
+1. 資料單一來源 (SSOT)：所有跨場景存活的數值嚴禁存在 Manager 中，必須在 GameDB.cs 註冊。絕對確保遊戲狀態大一統。
 2. 事件驅動 (Event-Driven)：UI 一律透過訂閱事件更新，嚴禁在 Update() 裡面輪詢。
 3. Proxy 模式：若現有 Manager 需保留，它只能作為 Proxy 轉接，不可存放狀態。
 4. 資料防呆：所有增減數值的方法必須包含邊界檢查（如除以零保護、負數防禦）。
+5. 模組化積木 (ScriptableObject)：所有政策卡、技能必須採用 Strategy Pattern 的 `ICardEffect` 介面積木設計。開發時不可寫死邏輯，需將 Proc（條件觸發）與數值效果拆分為獨立腳本，透過 Inspector 進行積木式組裝以拓展 Build 深度。
 
 ---
 
@@ -23,8 +24,14 @@
 - **目標客群**：15～30 歲，對戲謔諷刺有興趣的玩家
 - **開發階段**：Demo 製作中（大三下完成核心機制展示）
 
-### 核心主題
+### 核心主題與玩法收斂（三環結構配重）
 以「將政治博弈動作化」為核心，結合 Roguelite 成長感與政治選舉的即時性。透過戲謔荒謬的美術風格處理台灣政治認同議題，引導玩家反思選民決策與社會撕裂。
+
+> **重構設計更新：減法與配重**
+> 為了避免核心未收斂並增加 Build 深度，遊戲核心玩法已收斂為以下三環結構：
+> - **戰技（核心重心）**：房間內的即時戰鬥「拔除主動打牌機制」。玩家的注意力 100% 集中於精準走位、閃避記者干擾、以及施放基礎拜票/演說技能。
+> - **戰術（外圍輔助）**：政策卡從「動詞（主動動作）」轉變為「形容詞/副詞（被動外掛）」。卡牌的選擇移至房間外的「過場/商人/結算」階段進行配置（類似《黑帝斯》的祝福機制）。
+> - **戰略（資源管理）**：所有的遊戲資源收斂於「誠信值 (Integrity)」與「資金/選票」的單一矛盾管理。
 
 ---
 
@@ -73,7 +80,7 @@
 ```
 
 ### 遊戲流程狀態機 (GameFlow States)
-狀態類別對應：`BootState`、`MainMenuState`、`CharacterSelectState`、`HQState`、`GameplayState`、`SafeRoomState`、`StageClearState`、`BossBattleState`、`GameEndState`。
+狀態類別對應：`BootState`、`MainMenuState`、`HQState`、`GameplayState`、`SafeRoomState`、`StageClearState`、`BossBattleState`、`GameEndState`。
 以上狀態由全域的 `GameFlowManager` 負責管理與切換。
 
 ### 結局系統
@@ -86,10 +93,13 @@
 
 ---
 
-## Block 與 Room 結構
+## 遊戲流程與關卡結構
 
-- 全程共 **3 個區塊（Block）**，每個 Block 包含 **5 個房間（Room）**。
-- 房間類型由系統依權重隨機生成：
+- **Demo 流程長度**：全程鎖定為 **8 關**。
+  - **第 4 關與第 8 關**：固定為 Boss 戰。
+- **隨機房間、雙向選擇機制**：每次通關房間後，會出現兩扇門供玩家選擇。
+  - 門上需明確標示下一關的**獎勵預覽**（如：資金、政策卡、技能升級）。
+- **房間內部配置**：由系統依權重隨機生成。
 
 | 房間類型 | 生成物件 | 時限 |
 |----------|----------|------|
@@ -97,12 +107,7 @@
 | 特殊房間 | 恢復資金 或 恢復誠信 | 無限制 |
 | Boss 戰 | 選民 60、Boss 1、對手志工 3 | 180 秒 |
 
-- **第 5 個房間（最後一間）**：
-  - 第一區 → 解鎖技能二選一
-  - 第二區 → 解鎖大招選一
-  - 第三區 → Boss 戰（選前之夜）
-
-- 每區完成後返回**競選總部（headquarters）**，可繼承資源進入下一區或開新局。
+- 每個 Boss 戰（第 4、8 關）完成後返回**競選總部（headquarters）**，不可繼承資源進入下一階段或結算。
 
 ---
 
@@ -145,40 +150,44 @@
 - **Dark 屬性選民不會被普通演說範圍影響**（需特殊手段）。
 - 消耗 MP（資金）施放。
 
-### 6. 技能系統（PlayerSkillManager）
-技能採**階段解鎖**，每次解鎖為二選一，玩家自由搭配風格：
+### 6. 技能系統（PlayerSkillManager）與技能解鎖節奏 (Pacing)
+技能系統作為玩家的主動「戰技」，採用**強制進度節點**解鎖，與政策卡抽取機制完全分離。
 
-| 解鎖時機 | 技能 | 情緒版 | 理性版 |
-|----------|------|--------|--------|
-| 總部出發前 | 技能一 | 煽動情緒（短暫暈眩對手） | 政策論述（大範圍攻擊） |
-| 第一區完成後 | 技能二 | 側翼出擊（大幅減少對手選票） | 發表白白皮書（短暫暈眩對手） |
-| 第二區完成後 | 大招 | 群眾造勢（需深色選民，轉化支持者為深色選民） | 說明會（需深色選民，大範圍影響選民） |
+- **解鎖節奏 (Pacing)**：
+  - **第 2 關**：必定解鎖基礎技能。
+  - **第 5 關前**：必定保底出現第二技能解鎖選項。
+- 每次解鎖提供二選一，讓玩家自由搭配風格。
 
-- 技能鍵：J / K / L（分別對應技能一、技能二、大招）。
+| 技能階級 | 技能鍵 | 描述與範例 |
+|----------|--------|------------|
+| 技能一 | J | 基礎技能，如：煽動情緒（情緒版）或政策論述（理性版） |
+| 技能二 | K | 進階技能，如：側翼出擊（情緒版）或發表白皮書（理性版） |
+| 大招 | L | 強力技能，如：群眾造勢（情緒版）或說明會（理性版） |
+
 - 政黨技能（`PartySkillData`）有冷卻時間（`baseCooldown`）與資源消耗。
 - 目前程式中現有實作範例：`DogezaSkill`（土下座）——轉換 Cold 屬性選民的特殊技能。
 
-### 7. 政策卡系統（PolicyCard）
-通關房間後（票數 > 對手）可選擇政策卡，效果全局疊加：
+### 7. 政策卡系統（PolicyCard / 被動祝福機制）
+通關房間後（票數 > 對手）、過場或商人處可選擇配置政策卡。
+**重構聲明：政策卡不再是戰鬥中可主動施放的「技能」，而是作為「被動外掛/祝福」存在，用以建構深度的流派 (Build)。**
 
-| 政策卡 | 風格 | Buff | Debuff |
-|--------|------|------|--------|
-| 街頭造勢 | 情緒 | 範圍大 | 支持者容易流失 |
-| 政策說明會 | 理性 | 支持者不易流失 | 範圍小 |
-| 精準訴求 | 理性 | 攻擊力大幅提升 | 範圍小 |
-| 情緒動員 | 情緒 | 有機率擴散至其他選民 | 所有選民移動速度增加 |
-/待增
-PolicyCard 數值欄位（`PolicyEffectRuntimeManager` 管理）：
+#### 獎勵與抽卡機制 (Draft System)
+- **三選一介面 (Pick 1 of 3)**：獎勵結算時，系統會從卡池中隨機抽出三張政策卡供玩家選擇。
+- **重骰 (Reroll) 機制**：允許玩家消耗局內資源（如資金或誠信值）來刷新三選一的選項。
+- **道德代價**：政策卡的選擇必須綁定代價。高報酬的卡牌需附帶即時的屬性扣減（如扣除誠信值）或導致社會風氣惡化。
 
-| 欄位 | 說明 |
-|------|------|
-| `attackRadiusMultiplier` | 攻擊範圍倍率（相乘） |
-| `convertChanceDelta` | 轉化率加成（相加） |
-| `attackCooldownDelta` | 攻擊冷卻調整（相加） |
-| `loseControlRateDelta` | 選民流失率 |
-| `spreadRadius` | 影響擴散半徑 |
-| `globalNpcSpeedMultiplier` | 全體 NPC 速度倍率（相乘） |
-| `socialClimateDelta` | 社會風氣值變化 |
+#### 程式實作邏輯與 Build 流派標籤 (Archetypes)
+未來所有的政策卡資料 (ScriptableObjects) 都需基於以下三大流派 (Archetypes) 作為設計基礎：
+- **A. 情緒爆發流**：主打高風險近戰、依賴狂熱的社會風氣。
+- **B. 理性穩健流**：主打防禦、控場，依賴冷感的社會風氣。
+
+**程式架構支援**：
+1. **條件觸發機制 (Proc)**：
+   政策卡的效果必須與「玩家操作」或「遊戲狀態」綁定（例如「完美閃避後觸發」或「誠信低於30%時發動」）。實作上需將觸發器 (`IProcTrigger`) 與效果器分離。
+2. **標籤與風氣連動 (Tag & Climate)**：
+   每張卡牌帶有特定的「情緒」或「理性」標籤。玩家裝備卡牌會動態改變全域「社會風氣 (Social Atmosphere)」，進而改變選民 AI 的行為模式。
+
+*(開發提醒：請善用 `ICardEffect` 介面擴充觸發機制，所有設計必須遵循 GameDB (SSOT) 數值修改，發揮 ScriptableObject 自由組裝積木的優勢。)*
 
 ---
 
@@ -219,7 +228,16 @@ PolicyCard 數值欄位（`PolicyEffectRuntimeManager` 管理）：
 必須到一定的攻擊量
 
 ### 選民狀態機 (Voter States)
-狀態類別對應：`VoterIdleState`（閒置）、`VoterWanderState`（徘徊）、`VoterFollowState`（跟隨玩家）、`VoterHitState`（受擊）、`VoterStunState`（暈眩）、`VoterCheerState`（歡呼）。
+狀態類別對應：
+- `VoterIdleState`（閒置）：靜止等待，持續掃描周圍決定下一行為。
+- `VoterWanderState`（徘徊）：在場地內隨機遊走。
+- `VoterFollowState`（跟隨玩家）：被轉化後跟隨玩家移動。
+- `VoterHitState`（受擊）：被攻擊時的短暫受擊反應。
+- `VoterStunState`（暈眩）：被暈眩技能命中後的無法行動狀態。
+- `VoterCheerState`（歡呼）：完全轉化後的慶祝狀態。
+- `VoterApatheticState`（冷感逃跑）：冷感屬性選民專用，偵測到玩家靠近時加速逃離，距離足夠後回到 Idle。
+- `VoterWaverState`（動搖）：立場搖擺中，速度減半、停止尋路並顯示問號表情，對冷感選民仍會觸發逃跑邏輯。
+
 以上狀態由 `VoterLogic` 內建的 `StateMachine` 進行切換與管理。
 
 ---
@@ -289,7 +307,6 @@ Stun（暈眩）
 | `S0` | 開始畫面 / 主選單 |
 | `S1` | 前導劇情 |
 | `headquarters` | 競選總部（區塊間休息、技能選擇、繼承資源） |
-| `MapScene` | 地圖節點選擇（單線隨機節點生成） |
 | `TestMVP` | 普通 Battle 關卡（主要開發場景） |
 | `TestSpecial` | 特殊房間（恢復資金或誠信，20% 機率出現） |
 | `TestSmallBoss` | 小 Boss 測試場景 |
@@ -438,253 +455,26 @@ Assets/Scripts/
 
 ---
 
-## 🧹 重構總結 (GameDB 統一數值管理)
-> 紀錄時間：2026-07-02
 
-我們已經成功將專案中散落的數值與 Manager 集中至 `GameDB`，以下是歸檔與確認狀態：
+## 🧹 開發日誌 (Development Log)
+> 紀錄格式已依日期排列，方便後續直接更新至工作室網頁
 
-### 1. 殘留引用掃描結果
-- **掃描目標**：`PlayerMPSystem`、`VoteManager`、`PolicyEffectRuntimeManager` 等舊版全域實例，以及直接操作 `HP` / `MP` / `Vote` 的外流代碼。
-- **掃描結果**：**乾淨無殘留**！
-  - 所有的 UI (`MPBarUI`, `HPBarUI`, `VoteDisplayUI`, `LevelTimerUI`, `RewardPanelUI`, `MiniSettlementUI`) 已經正確改為訂閱 `GameDB.Instance.Run` 的事件 (`OnMPChanged`, `OnVotesChanged` 等)。
-  - `VoterLogic.cs` 與 `VoterData.cs` 中呼叫陣營與影響力的邏輯，皆已安全轉向 `GameDB.Instance.Run` 或 `PolicyManager`。
-  - `DogezaSkillData` 等技能邏輯也正確掛載至 `GameDB.Instance.Run.ModifyMP`，包含防呆與邊界檢查。
+### 📅 2026-07-17：系統大清洗與效能優化 (Legacy Cleanup & Optimization)
+- **錯誤修復**：修正計票系統重複計算、關卡房號 off-by-one 錯誤、玩家速度未即時同步等核心 Bug。
+- **舊代碼隔離**：將廢棄的 Manager (如 `PolicyCardManager`, `BlockProgressManager` 等) 徹底隔離並搬移至 `Obsolete` 資料夾，維持專案 100% 編譯成功與零缺失引用。
+- **生命週期管理**：實作 `AutoDestroy` 組件並與 `PolicyEffectRuntimeManager` 整合，確保動態生成物件能自動銷毀，解決轉場時潛在的記憶體洩漏 (Memory Leak)。
 
-### 2. Obsolete 歸檔狀態
-- 🗑️ `VoteManager.cs`：已徹底移除，由 `GameDB.RunData.AddVote()` 負責計票。
-- 🗑️ `PlayerMPSystem.cs`：已徹底移除，由 `GameDB.RunData.ModifyMP()` 取代。
-- 📦 `PolicyEffectRuntimeManager.cs`：已歸檔至 `Assets/Scripts/Obsolete/`，被新的 `PolicyManager` 正式取代。
-核心邏輯的遷移完全符合 Clean Architecture 與 SSOT 原則。
+### 📅 2026-07-13：政策卡牌系統積木化 (Strategy Pattern)
+- **架構重構**：全面導入 `ICardEffect` 介面，實作了數值修改 (`StatModifierEffect`) 與物件生成 (`SpawnObjectEffect`) 等邏輯積木，支援玩家在遊戲中使用多重卡牌效果組合技。
 
-### 3. 測試腳本生成
-- 建立 `GameDBTest.cs` 於 `Assets/Scripts/System/GameDBTest.cs`。
-- 功能：每幀安全地監控 `GameDB.Instance.Run` 的 HP、MP 與選票狀態，確保跨場景資料存活正確無誤。
+### 📅 2026-07-08：UI 重構與流程解耦
+- **純鍵盤總部**：完成總部場景純鍵盤操作重構 (`HQState`)，並升級鏡頭大腦 (`HQSceneController`) 改善運鏡。
+- **UI 解耦**：各項遊戲 UI 徹底改為「訂閱 GameDB 事件」更新機制，使 UI 切換與全域狀態機 (GameFlowManager) 達成完全解耦。
 
----
+### 📅 2026-07-05：技能與戰鬥系統擴充
+- **特效與實體生成**：實作技能特效物件池 (`PoolManager`) 與建築配件自動生成器 (`SocketBuilder`)，同時支援 Play Mode 與 Edit Mode 預覽。
+- **技能機制**：新增「放置立牌」等全新技能，並實現基於 GameDB 資料驅動的總部技能解鎖與自動裝備，解除場景間的相依性。
 
-## 🧹 重構總結 (社會風氣與政策倍率職責拆解)
-> 紀錄時間：2026-07-03
-
-我們接續了 GameDB 的集中化重構，成功將「社會風氣 (Social Atmosphere)」與「政策卡倍率」的職責徹底解耦：
-
-### 1. 社會風氣全域繼承 (`GameDB.RunData`)
-- **完全取代**：舊有的 `SocialAtmosphereManager` 已被徹底刪除。
-- **資料中心化**：`SocialAtmosphere` 的數值上下限、邊界保護以及 `OnAtmosphereChanged` 事件，全部移入 `GameDB.Instance.Run` 中。
-- **純函數轉換**：影響深色選民生成率的 `GetDarkVoterRate()`，已重構為直接向 GameDB 取值的唯讀方法。`Spawner` 等生成器現已完美對接 GameDB。
-
-### 2. 政策倍率拆分 (`PolicyManager` 與 `PlayerHealthSystem`)
-- **徹底解耦**：原本揉合了血量、倍率、社會風氣的 `PolicyEffectRuntimeManager` 已經被完全刪除。
-- **`PolicyManager`**：現在只專職負責 `AttackRadiusMultiplier` 等「政策卡增益倍率」的管理，並提供唯讀 Getter 供 `PlayerAttack` 等戰鬥邏輯調用。
-- **`PlayerHealthSystem`**：作為生命 Proxy，現在不僅負責 `TakeDamage()` 與 `Heal()`（並將之轉交給 GameDB），更成功訂閱了 `GameDB.Instance.Run.OnIntegrityHpChanged`。當生命歸零時，會主動發送 `BattleEventManager.TriggerPlayerDied()` 給全域狀態機，完美達成事件驅動設計！
-
----
-
-## 🧹 重構總結 (技能特效池化與 SocketBuilder 雙軌生成系統)
-> 紀錄時間：2026-07-05
-
-為了達成高效能與靈活的編輯環境，進行了以下優化與擴充：
-
-### 1. 技能特效池化 (Skill VFX Pooling)
-- **`SkillData.cs`**：將 `skillEffectPrefab` 更新為 `vfxPrefab` (利用 `FormerlySerializedAs` 保持相容性)，並新增 `vfxDuration` 統一管理特效生命週期。修改 `ExecuteSkill()` 直接對接 `PoolManager` 取出特效實體。
-- **`PooledVFXInstance.cs`**：建立新的特效自動回收腳本，實作 `IPoolable` 介面。支援基於時間 (`duration`) 或是 ParticleSystem 的 `OnParticleSystemStopped` 回呼來自動執行 `Release`。
-- **特殊技能適配**：修改 `DogezaSkill.cs` 等繼承自 `SkillData` 的特規技能，使其自訂的 `ExecuteSkill` 也遵循新的物件池取用規範。
-
-### 2. 建築配件自動生成器 (`SocketBuilder.cs`)
-- **雙軌生成與回收機制**：
-  - **Play Mode**：透過 `PoolManager` 取出與回收 (`Get`/`Release`)。
-  - **Edit Mode**：為了支援美術人員預覽，結合了 `#if UNITY_EDITOR` 與 `UnityEditor.PrefabUtility.InstantiatePrefab()`，保留藍色的 Prefab 連結。並支援了 `Undo.RegisterCreatedObjectUndo`（Ctrl+Z 復原機制）。回收則使用 `DestroyImmediate()` 處理。
-- **美術防變形規範**：所有生成的配件在 SetParent 後，會自動重置 `localPosition = Vector3.zero` 與 `localRotation = Quaternion.identity`（不強制縮放，尊重 Prefab 原始比例），確保建築物不管怎麼形變，配件都能完美對齊 Socket 不變形。
-
----
-
-## 🧹 重構總結 (總部重構與鍵盤驅動流程)
-> 紀錄時間：2026-07-08
-
-完成了總部 (Headquarters) 場景的 UI 與運鏡重構，主要改動如下：
-
-### 1. 純鍵盤驅動流程 (`HQState.cs`)
-- 徹底移除了總部內的 UI 按鈕點擊依賴，改為透過 `Keyboard.current` 進行全鍵盤操作。
-- **選角階段**：使用 `A` / `D` 切換角色鏡頭，`Enter` 確認進入選技能。
-- **選技能階段**：使用 `W` / `S` 切換技能企劃書，`Enter` 寫入 `GameDB` 並觸發 `FadeOut` 進入戰鬥關卡，`Esc` 退回選角階段。
-- **物理隔離**：進入 `HQState` 時主動停用 `PlayerController`，完全阻斷玩家在總部內的實體移動與攻擊。
-
-### 2. 鏡頭大腦升級 (`HQSceneController.cs`)
-- 實作「重置與碾壓法 (Reset & Elevate)」：透過迴圈將所有相機權重壓低 (Priority 10)，再單獨拉高目標相機 (Priority 20)，解決了 Cinemachine 鏡頭切換殘留的問題。
-- 提供了對外部全域狀態機非常友善的乾淨 API：`FocusMale()`、`FocusFemale()`、`FocusDesk()`。
-
-### 3. UI 漸變與解耦 (`UIManager.cs`)
-- `UIManager` 內部實作了 `FadeOut()` 與 `FadeIn()` 的 Coroutine 方法，供全域狀態機跨場景呼叫，確保轉場過程中的黑畫面遮罩與點擊阻斷。
-- 貫徹 SSOT：技能選擇完畢後直接寫入 `GameDB.Instance.Player.EquipBaseSkillJ`，徹底擺脫了對場景內 Player 實體的依賴。
-- **流程合併精簡**：將原本獨立的 `CharacterSelectState` 與對應的 `CharacterSelectPanel` 徹底刪除，完全併入總部 (`HQState`) 的選角介面中，簡化了狀態機的複雜度。
-
-## 🧹 重構總結 (技能系統擴充與 SSOT 裝備落實)
-
-完成了「理性流派」新技能的實作，並徹底清理了技能管理器的跨場景相依，主要改動如下：
-
-### 1. 新技能：放置人形立牌 (`StandeeSkillData`)
-- **Fire-and-forget 架構**：新增 `StandeeSkillData` (繼承自 `SkillData`) 與 `StandeeBehavior`。技能施放後於玩家前方實例化立牌，由立牌自行利用 Coroutine 計時並透過 `Physics.OverlapSphere` 掃描，強制轉化周圍的 `Rational` 理性選民。該設計完美實現了技能持續效果與玩家本體邏輯的解耦。
-
-### 2. 徹底落實 GameDB 跨場景資料 (SSOT)
-- **拔除靜態依賴**：完全移除了 `PlayerSkillManager` 中的 `static equippedPartySkill` 等靜態快取變數。
-- **統一讀寫入口**：總部裝備技能時，一律寫入 `GameDB.Instance.Player.EquipBaseSkillJ`。當戰鬥場景載入時 (`Awake`)，由 `PlayerSkillManager` 主動向 `GameDB` 讀取當前裝備，徹底杜絕了多場景切換與重啟造成的資料脫鉤。
-
-### 3. UI 單一職責重構
-- **隔離邏輯**：新增 `HQSkillSelectionUI` 專門負責綁定總部的技能按鈕點擊，單純負責 UI 反饋與寫入 `GameDB`。
-- **依賴清理**：同步更新了舊有的 `UpgradePanelUI` 與 `HeadquartersManager`，修正了所有因全域靜態變數移除而產生的過期呼叫，維護了專案的 Clean Architecture 規範。
-
----
-
-## 🧹 重構總結 (專案大清洗與架構除蟲)
-> 紀錄時間：2026-07-08
-
-**專案狀態更新**：Stable / Clean (零重大架構風險)
-
-### 1. 已完成的除蟲與優化任務
-- **核心計票系統重構**：解決選票重複與物件池初始化問題。
-- **關卡邏輯重構**：修正房號 off-by-one 錯誤與 Boss 關切換時序。
-- **生存時間過關機制實作**：時間到 $\rightarrow$ 選民自動退場 $\rightarrow$ 開門。
-- **政策卡資料持久化**：遷移至 `GameDB`，移除場景依賴，改用靜態讀取。
-- **社會風氣正負號邏輯校正**：確保正負極端完美對應情緒與理性設定。
-
-### 2. 備註特殊設計
-- **敵人機制確認**：保留「敵人不死」為遊戲設計特色，排除相關除蟲項目。
-
----
-
-## 🧹 重構總結 (政策卡系統與積木化)
-> 紀錄時間：2026-07-13
-
-**專案狀態更新**：[Status: Refactoring Completed, Ready for Gameplay Testing]
-
-### 1. 統一玩家數值與 SSOT 擴展
-- **`PlayerStatsData.cs`**：建立全新類別作為玩家戰鬥數值的單一真相來源 (SSOT)，包含 `ModifiedAttackRange`、`ModifiedAttackInfluence` 等屬性。
-- **`GameDB.cs`**：將 `PlayerStatsData` 實體以及當前生效的卡牌列表 (`ActiveCards`) 註冊至 `GameDB.RunData` 統一管理。
-
-### 2. 導入 Strategy Pattern (策略模式)
-- **`ICardEffect.cs`**：建立卡牌效果積木基礎介面。
-- **`StatModifierEffect.cs`**：實作第一個數值修改積木，支援加法與乘法計算，並可選擇不同的 `StatType` 進行數值變更。
-- **`PolicyCardData.cs`**：將舊版寫死的數值欄位全部移除，改用 `[SerializeReference]` 儲存 `ICardEffect` 列表，實現企劃可在 Inspector 中自由組裝卡牌效果的機制。
-
-### 3. 消滅 God Class 與依賴重構
-- **徹底拔除 `PolicyManager`**：刪除原有的 God Class，清空所有過度耦合的靜態依賴。
-- **重構依賴**：`PlayerAttack`、`VoterLogic` 等戰鬥邏輯，現在統一改為讀取 `GameDB.Instance.Run.Stats` 來獲取當前正確的戰鬥數值，達到真正的低耦合與高內聚。
-- **總結架構**：已完成從 God Class 轉向 ScriptableObject + Strategy Pattern 的重構，Stats 統一由 GameDB 管理。
-
----
-
-## 🧹 待辦事項：專案掃除與清算 (Legacy Cleanup)
-> 紀錄時間：2026-07-17
-
-**任務狀態**：[Status: Completed]
-
-### 1. 診斷結果與當前進度
-已完成隔離區建立，並將 `[Safe to Delete]` 檔案（如 `ScoreManagerSample.cs`）移至 `Obsolete`，且已將 `PolicyCardManager.cs` 的抽卡邏輯遷移至 GameDB，並將其檔案移至 `Obsolete`。
-進一步將 `CampaignProgressManager.cs`、`BlockProgressManager.cs` 與 `HeadquartersManager.cs` 搬移至 `Obsolete` 進行隔離，專案核心進度系統已 100% 收斂至 GameDB，且 PlayerPrefs 與靜態 Manager 已完成解耦。
-
-### 2. 清理清單與依賴狀態
-- `ScoreManagerSample.cs`: **[Safe to Delete]** (已隔離，完全無引用)。
-- `PolicyCardManager.cs`: **[Needs Migration]** (已隔離，已被 GameDB.RunData 的抽卡邏輯取代)。
-- `CampaignProgressManager.cs` 與 `BlockProgressManager.cs`: **[Needs Migration]** (已隔離，相關進度數據完全移入 `GameDB.Instance.Campaign` 中)。
-- `HeadquartersManager.cs`: **[Needs Migration]** (已隔離，完全無引用，總部邏輯已被 `HQSceneController.cs` 替代)。
-- `S0Manager.cs`, `S1Manager.cs`: **[Needs Migration]** (場景腳本，需將 Unity UI 事件轉綁給 `UIFlowHelper` 後拔除)。
-
----
-
-## 🧹 重構總結 (PlayerPrefs 消滅與 GameDB SSOT 大一統)
-> 紀錄時間：2026-07-17
-
-**專案狀態更新**：[Status: Expanding Content, Implemented SpawnObjectEffect & Composite Effect System]
-
-我們已徹底消滅專案中散落的 `PlayerPrefs` 進度與狀態儲存，完成向 `GameDB` 的大一統收斂：
-
-### 1. 進度與狀態完全收斂至 GameDB
-- **`GameDB` (SSOT) 擴充**：於 `RunData` 中新增 `HasPendingSkillSelection` 暫存變數，於 `CampaignData` 中移植了 `TotalBlockCount` 常數、戰役完成度判定、隨機 Room 序列生成以及 Block 的 TryComplete 推進方法。
-- **無狀態化與解耦**：完全解除了對 `BlockProgressManager` 和 `CampaignProgressManager` 的靜態呼叫。
-
-### 2. 舊 Manager 徹底隔離
-- **搬移隔離**：已將 [HeadquartersManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/HeadquartersManager.cs)、[CampaignProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/CampaignProgressManager.cs)、與 [BlockProgressManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/BlockProgressManager.cs) 連同其 `.meta` 檔案正式移入 `Assets/Scripts/Obsolete/`。
-- **維護 Clean Architecture**：核心系統與 UI（包括 `MapProgressUI`、`StartGame`、`BattleFlowController` 與 `MapNodeButton`）現在統一對齊 `GameDB` API，編譯 100% 成功。
-
----
-
-## 🧹 重構總結 (SpawnObjectEffect 與複合效果積木系統)
-> 紀錄時間：2026-07-17
-
-**專案狀態更新**：[Status: Completed, Next: 測試與好玩度微調]
-
-我們已成功擴充了政策卡牌的積木系統，並實作了持續性效果執行器：
-
-### 1. 持續性生成積木與執行器
-- **`PolicyEffectRuntimeManager.cs`**：新建此 MonoBehaviour，提供單例 (Singleton) 以便各處呼叫。其協程處理了所有註冊進來的 `SpawnObjectEffect`。在 `OnDestroy` 時實作了對所有已生成物件與運行中協程的強制清理，保證場景切換或遊戲重置時，完全沒有物件殘留 (No Memory Leak)。
-- **`SpawnObjectEffect.cs`**：新增 `spawnInterval` 欄位。當 `spawnInterval > 0` 時，其 `ApplyEffect` 和 `RemoveEffect` 會向 `PolicyEffectRuntimeManager` 進行註冊與註銷。
-
-### 2. Inspector 組合技驗證
-- 驗證了 `[SerializeReference]` 機制可以讓單張政策卡 (PolicyCardData) 的 `Effects` 列表中同時堆疊多個不同積木（如 `StatModifierEffect` 與 `SpawnObjectEffect`），實現了多重效果的「組合技」基礎。
-
----
-
-## 🧹 重構總結 (舊版 Manager 清理與房間獎勵/技能解鎖大歸納)
-> 紀錄時間：2026-07-17
-
-**專案狀態更新**：[Status: Completed, Next: 核心遊戲機制微調與優化]
-
-我們已成功對「房間獎勵」與「總部技能解鎖」兩個核心點進行了深度的依賴清理與舊腳本隔離：
-
-### 1. 廢棄 Manager 隔離與清理
-- **廢棄腳本與 UI 搬移**：已將 [RoomClearFlowController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RoomClearFlowController.cs)、[RewardPanelController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RewardPanelController.cs) 與 [RewardPanelUI.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Obsolete/RewardPanelUI.cs) 移動至 `Assets/Scripts/Obsolete/` 目錄。
-- **清除殘留引用**：修改了 [LevelTimer.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/LevelTimer.cs)，清除了其中宣告的 `rewardPanelController` 變數，消除了 `CS0618` 廢棄警告。
-- **清理 PlayerPrefs 常數**：清除了 [PlayerSkillManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerSkillManager.cs) 內未使用的舊 Key 常數 `PendingMapSkillSelectionKey`。
-
-### 2. 房間獎勵結算 UI 資料源對齊
-- **資源路徑遷移**：將新版政策卡 SO 資源（`熱情拜票.asset`、`還可以接受.asset`、`跑攤達人.asset`、`說辭完整.asset`）移動至 `Assets/Resources/PolicyCards/` 目錄，使 `Resources.LoadAll` 可以正確加載。
-- **測試卡牌隔離**：將舊的 `test01.asset` - `test04.asset` 測試卡牌移出 Resources 目錄，存放到 `Assets/Obsolete/Cards/`，防止被 Resources 加載，確保結算畫面只會渲染新版政策卡數據。
-
-### 3. 總部技能解鎖解耦 (資料驅動)
-- **Activator 基底類別**：新增 [HQSkillActivator.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/GameFlow/HQSkillActivator.cs)，將碰撞解鎖與 `GameDB.Instance.Campaign.UnlockSkill` 綁定。
-- **Trigger 繼承重構**：重構 [HQSkillTrigger.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/GameFlow/HQSkillTrigger.cs) 繼承自 `HQSkillActivator`，移除冗餘欄位。此舉能自動繼承序列化欄位名稱，避免場景 Prefab 產生 Missing Reference 錯誤。
-- **自動裝備裝配**：於 [PlayerSkillManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerSkillManager.cs) 的 `Start()` 中偵測 `GameDB.Campaign.UnlockedSkills`，若符合條件則自動裝備，實現真正的資料驅動。
-
-### 4. 架構對齊與編譯驗證
-- 專案編譯測試 100% 成功，錯誤數為 0，且無任何與廢棄 Manager 相關的 Missing Reference 報錯。
-
----
-
-## 🧹 重構總結 (SpawnObjectEffect 生命週期優化與 AutoDestroy 整合)
-> 紀錄時間：2026-07-17
-
-**專案狀態更新**：[Status: Implemented SpawnObjectEffect, Next: 核心遊戲平衡度測試]
-
-我們已成功優化政策生成物（如掃街車隊）的資源安全，實作了數據驅動的生命週期銷毀：
-
-### 1. 資源生命週期控制與防洩漏 (AutoDestroy)
-- **自動銷毀組件**：新增 [AutoDestroy.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Effects/AutoDestroy.cs) 元件，用於託管所有運行時生成的暫時性物件，在設定的 `lifetime` 結束時自動銷毀，避免轉場與長線運行時出現記憶體洩漏。
-- **積木與執行器對齊**：修改了 [SpawnObjectEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/SpawnObjectEffect.cs) 與 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs)，在生成實體物件時，若設定的存活時間大於 0，會動態為物件掛載並初始化 `AutoDestroy` 組件。
-
-### 2. 多層次 Cleanup 保障
-- **統一清理介面**：在 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs) 新增 `public void Cleanup()` 方法，支持由關卡結束或玩家死亡等流程大腦主動呼叫，以便一次性停止所有生成協程與摧毀所有未到期生成物。
-- **銷毀防呆**：在管理器 `OnDestroy()` 生命週期中自動調用 `Cleanup()`，多重確保場景卸載時的記憶體回收。
-
-### 3. 編譯驗證
-- 專案編譯測試 100% 成功，錯誤數為 0。
-
----
-
-## 🧹 重構總結 (玩家屬性同步修復與卡牌數據流偵錯)
-> 紀錄時間：2026-07-17
-
-**專案狀態更新**：[Status: Completed, Next: 遊戲平衡度與關卡整合測試]
-
-我們已成功修復了玩家移動速度（MoveSpeed）因本地變數快取而未同步 GameDB SSOT 的 Bug，並在各效果積木中加入數據流 Console 偵錯日誌：
-
-### 1. 玩家移動速度同步修復
-- **PlayerController 動態屬性**：在 [PlayerController.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/PlayerController.cs) 實作了 `CurrentMoveSpeed` 唯讀屬性，該屬性會即時讀取 `GameDB.Instance.Run.Stats.ModifiedMoveSpeed` 作為數值來源，若尚未初始化則 fallback 返回 Inspector 預設的 `moveSpeed`。
-- **狀態機移動對接**：修改了 [MoveState.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/Player/StateMachine/MoveState.cs) 中的 `CharCon.Move` 計算，將原本寫死的 `_ctx.moveSpeed` 改為使用 `_ctx.CurrentMoveSpeed`，使玩家在取得速度政策卡後，移動速度能即時生效。
-
-### 2. 數值與生成偵錯日誌 (Console Data Flow)
-- **屬性變更日誌**：在 [StatModifierEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/StatModifierEffect.cs) 的 `ApplyEffect()` 中快取屬性變更前與變更後的值，並輸出詳細日誌（如 `[StatModifierEffect] 數值套用偵錯 => 屬性: MoveSpeed, 計算: Add, 數值: 2, 變更前: 5 -> 變更後: 7`），便於開發者直接在 Console 中校驗數值流。
-- **生成參數日誌**：分別在 [SpawnObjectEffect.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/SpawnObjectEffect.cs) 的 `ExecuteSingleSpawn()` 與 [PolicyEffectRuntimeManager.cs](file:///Users/guoyutang/Desktop/Election/Assets/Scripts/System/Cards/PolicyEffectRuntimeManager.cs) 的 `ExecuteSpawn()` 開頭加入 `Debug.Log`，明確輸出生成預製物名稱與其 `spawnCount` 參數，以便在 Console 追蹤生成流。
-
-### 3. 編譯驗證
-- 專案編譯測試 100% 成功，錯誤數為 0。
-
-
+### 📅 2026-07-02 ~ 2026-07-03：核心架構升級 (GameDB & SSOT)
+- **統一真相來源**：成功將專案中散落的進度、數值、玩家狀態與社會風氣，統一交由 `GameDB` 作為單一真相來源 (SSOT) 集中管理。
+- **消滅舊儲存**：徹底拔除舊版 Manager 依賴與 `PlayerPrefs` 儲存機制，落實 Clean Architecture 開發規範。

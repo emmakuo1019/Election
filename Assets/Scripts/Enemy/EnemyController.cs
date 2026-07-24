@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+// TODO: [BattleEventManager] Add TriggerOnPlayerStunned(float duration)
+// and call it from EnemySkillData after ApplyStun(). Pending UI/SFX integration.
+
 /// <summary>
 /// 敵人的基礎控制器，負責持有組件參考、共用資料，並將生命週期委派給狀態機。
 /// (已加入 GC 優化：預先實例化所有狀態)
@@ -16,6 +19,10 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public NavMeshAgent Agent { get; private set; }
     
     private Camera mainCamera;
+
+    private float _skillCooldownTimer = 0f;
+    private EnemySkillState _skillState;          // 預先實例化（GC 優化）
+    private PlayerController _cachedPlayer;       // 快取玩家參考
 
     [Header("Visuals")]
     [Tooltip("用於控制翻面的 SpriteRenderer (建議放在子物件上)")]
@@ -82,6 +89,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("視覺上的攻擊扇形角度 (例如普通攻擊 360 度，大招 180 度)")]
     [SerializeField] private float attackAngle = 360f;
 
+    [Header("技能系統")]
+    public EnemySkillData equippedSkill;          // 裝備的技能 ScriptableObject
+    [SerializeField] private LayerMask playerLayerMask; // 玩家偵測 Layer
+    [SerializeField] private float skillCooldown = 8f;  // 技能冷卻時間（秒）
+
     /// <summary>
     /// 供技能系統動態改變攻擊形狀 (半徑與角度)，並通知 AttackRangeMesh 重新生成網格。
     /// </summary>
@@ -143,6 +155,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
         MoveState = new EnemyMoveState(this, StateMachine);
         AttackState = new EnemyAttackState(this, StateMachine);
         StunState = new EnemyStunState(this, StateMachine);
+
+        _skillState = new EnemySkillState(this, StateMachine);
+        _cachedPlayer = FindObjectOfType<PlayerController>();
     }
 
     private void Start()
@@ -166,6 +181,18 @@ public class EnemyController : MonoBehaviour, IAttackSource
     private void Update()
     {
         StateMachine.CurrentState?.Update();
+
+        // 技能冷卻計時（僅在非技能狀態時累加）
+        if (equippedSkill != null && 
+            StateMachine.CurrentState is not EnemySkillState)
+        {
+            _skillCooldownTimer += Time.deltaTime;
+            if (_skillCooldownTimer >= skillCooldown)
+            {
+                _skillCooldownTimer = 0f;
+                StateMachine.ChangeState(_skillState);
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -279,6 +306,15 @@ public class EnemyController : MonoBehaviour, IAttackSource
                 voter.OnInfluence(attackInfluence, false, transform.position);
             }
         }
+    }
+
+    /// <summary>
+    /// 由 EnemySkillState 在前搖結束時呼叫，執行技能判定
+    /// </summary>
+    public void PerformSkillHit()
+    {
+        if (equippedSkill == null) return;
+        equippedSkill.ExecuteSkill(gameObject);
     }
 
     /// <summary>

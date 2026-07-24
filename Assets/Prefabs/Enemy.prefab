@@ -140,6 +140,11 @@ MonoBehaviour:
   attackDuration: 1
   attackHitTime: 0.3
   attackAngle: 90
+  equippedSkill: {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
+  playerLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  skillCooldown: 5
 --- !u!1 &1568685876034101917
 GameObject:
   m_ObjectHideFlags: 0
