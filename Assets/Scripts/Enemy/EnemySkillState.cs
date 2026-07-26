@@ -33,10 +33,15 @@ public class EnemySkillState : IState
         _hasExecuted = false;
 
         // 3. 顯示範圍提示預覽
+        // 注意：不可呼叫 Show() 或 ShowIdle()，兩者內部都會用 IAttackSource 的值
+        // 覆蓋掉我們剛設好的 blastRadius/blastAngle。
+        // 直接 SetShape 後手動啟用 MeshRenderer，繞過覆蓋問題。
         if (_ctx.attackRangeMesh != null && _ctx.equippedSkill != null)
         {
             _ctx.attackRangeMesh.SetShape(_ctx.equippedSkill.blastRadius, _ctx.equippedSkill.blastAngle);
-            _ctx.attackRangeMesh.ShowIdle();
+            MeshRenderer mr = _ctx.attackRangeMesh.GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = true;
+            Debug.Log($"[SkillState] 範圍圈已顯示。blastRadius={_ctx.equippedSkill.blastRadius}, angle={_ctx.equippedSkill.blastAngle}");
         }
 
         // 4. 觸發技能動畫
@@ -92,11 +97,13 @@ public class EnemySkillState : IState
             _ctx.Agent.isStopped = false;
         }
 
-        // 2. 隱藏範圍提示圈並恢復原狀
+        // 2. 隱藏範圍提示圈，恢復普通攻擊的形狀
         if (_ctx.attackRangeMesh != null)
         {
-            _ctx.attackRangeMesh.Hide();
-            _ctx.attackRangeMesh.ShowIdle();
+            // 先恢復普通攻擊的 shape，再隱藏
+            _ctx.attackRangeMesh.SetShape(_ctx.AttackRange, _ctx.AttackAngle);
+            MeshRenderer mr = _ctx.attackRangeMesh.GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = false;
         }
 
         // 3. 重置標記

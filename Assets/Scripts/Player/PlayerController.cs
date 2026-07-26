@@ -8,6 +8,10 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
+    [Header("暈眩特效")]
+    public GameObject stunVfxPrefab;         // 暈眩時生成的 VFX Prefab
+    public Vector3 stunVfxOffset = new Vector3(0f, 2f, 0f); // VFX 相對玩家的偏移（預設頭頂）
+
     [Header("攻擊設定")]
     public float attackDuration = 0.2f;
     public float moveSpeed = 5f;
@@ -165,7 +169,7 @@ public class PlayerController : MonoBehaviour
     // 委派給當前狀態，讓狀態決定是否要被打斷
     public void ApplyStun(float duration)
     {
-        StateMachine.CurrentState?.OnStunned(duration);
+        StateMachine.ChangeState(new StunState(this, duration));
     }
 
 

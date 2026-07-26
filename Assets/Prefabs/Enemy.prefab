@@ -140,11 +140,13 @@ MonoBehaviour:
   attackDuration: 1
   attackHitTime: 0.3
   attackAngle: 90
+  stunVfxPrefab: {fileID: 1171678833857807218, guid: 2b25135aae7404d37a47543c9919b0eb, type: 3}
+  stunVfxOffset: {x: 0, y: 2, z: 0}
   equippedSkill: {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
   playerLayerMask:
     serializedVersion: 2
     m_Bits: 8
-  skillCooldown: 5
+  skillCooldown: 4
 --- !u!1 &1568685876034101917
 GameObject:
   m_ObjectHideFlags: 0
@@ -174,7 +176,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.224, z: 0}
-  m_LocalScale: {x: 0.17, y: 0.17, z: 0.17}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 6228465154643208686}

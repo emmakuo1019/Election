@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6323985380732180678}
   - component: {fileID: 5944936880033719447}
   - component: {fileID: 2848256576126276319}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: PlayerSprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -138,7 +138,7 @@ GameObject:
   - component: {fileID: 7249639539393358112}
   - component: {fileID: 998358957010087563}
   - component: {fileID: 3849494056143927830}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: CinemachineCamera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -239,7 +239,7 @@ GameObject:
   - component: {fileID: 3428415994707766147}
   - component: {fileID: 3910269159202547917}
   - component: {fileID: 4360986305226485520}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: AttackRange
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -347,7 +347,7 @@ GameObject:
   - component: {fileID: 7095031572979110621}
   - component: {fileID: 5242680767156421125}
   - component: {fileID: 3016036086028709808}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -463,11 +463,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0e5ce2e7fe4e49fd86978dd0f2fa4b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stunVfxPrefab: {fileID: 1171678833857807218, guid: 2b25135aae7404d37a47543c9919b0eb, type: 3}
+  stunVfxOffset: {x: 0, y: 2, z: 0}
   attackDuration: 0.5
   moveSpeed: 4
   dashSpeed: 15
   dashDuration: 0.2
   dashCooldown: 0.5
+  voterPushForce: 3
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   dashAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   attackAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
@@ -529,7 +532,7 @@ GameObject:
   - component: {fileID: 1729396488018127674}
   - component: {fileID: 8006716694075265403}
   - component: {fileID: 8643603949296448256}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: MainCamera
   m_TagString: Untagged
   m_Icon: {fileID: 0}

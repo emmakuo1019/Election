@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: EnemySkill_Gift
   m_EditorClassIdentifier: Assembly-CSharp::EnemySkillData
   skillName: "\u767C\u9001\u7AF6\u9078\u5C0F\u7269"
-  cooldown: 5
-  duration: 1
+  cooldown: 4
+  duration: 2
   animationTriggerName: 
   vfxPrefab: {fileID: 0}
   vfxDuration: 0.8
@@ -28,4 +28,4 @@ MonoBehaviour:
   playerLayerMask:
     serializedVersion: 2
     m_Bits: 8
-  skillWindupTime: 0.8
+  skillWindupTime: 1.5

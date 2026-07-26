@@ -17,15 +17,10 @@ public class EnemySkillData : SkillData
 
     public override void ExecuteSkill(GameObject caster)
     {
-        // 1. 顯示範圍提示圈
-        AttackRangeMesh rangeMesh = caster.GetComponent<AttackRangeMesh>();
-        if (rangeMesh != null)
-        {
-            rangeMesh.SetShape(blastRadius, blastAngle);
-            rangeMesh.Show();
-        }
+        // 範圍提示圈的顯示/隱藏生命週期由 EnemySkillState 全權管理
+        // ExecuteSkill 只負責判定邏輯，不觸碰 AttackRangeMesh
 
-        // 2. 對範圍內選民施加影響
+        // 1. 對範圍內選民施加影響
         Collider[] voterHits = Physics.OverlapSphere(caster.transform.position, blastRadius, voterLayerMask);
         foreach (var col in voterHits)
         {
@@ -36,7 +31,7 @@ public class EnemySkillData : SkillData
             }
         }
 
-        // 3. 對範圍內玩家施加暈眩（playerStunDuration > 0 才判定）
+        // 2. 對範圍內玩家施加暈眩（playerStunDuration > 0 才判定）
         if (playerStunDuration > 0f)
         {
             Collider[] playerHits = Physics.OverlapSphere(caster.transform.position, blastRadius, playerLayerMask);
@@ -50,14 +45,7 @@ public class EnemySkillData : SkillData
             }
         }
 
-        // 4. 隱藏範圍提示圈
-        if (rangeMesh != null)
-        {
-            rangeMesh.Hide();
-            rangeMesh.ShowIdle();
-        }
-
-        // 5. 播放 VFX（若有設定）
+        // 3. 播放 VFX（若有設定）
         if (vfxPrefab != null)
         {
             GameObject vfx = Instantiate(vfxPrefab, caster.transform.position, Quaternion.identity);

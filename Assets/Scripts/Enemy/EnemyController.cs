@@ -89,10 +89,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("視覺上的攻擊扇形角度 (例如普通攻擊 360 度，大招 180 度)")]
     [SerializeField] private float attackAngle = 360f;
 
-    [Header("技能系統")]
+    [Header("暈眩特效")]
+    public GameObject stunVfxPrefab;         // 暈眩時生成的 VFX Prefab
+    public Vector3 stunVfxOffset = new Vector3(0f, 2f, 0f); // VFX 相對角色的偏移（預設頭頂）
     public EnemySkillData equippedSkill;          // 裝備的技能 ScriptableObject
     [SerializeField] private LayerMask playerLayerMask; // 玩家偵測 Layer
-    [SerializeField] private float skillCooldown = 8f;  // 技能冷卻時間（秒）
+    // 冷卻時間統一由 equippedSkill.cooldown 控制，不在此重複設定
 
     /// <summary>
     /// 供技能系統動態改變攻擊形狀 (半徑與角度)，並通知 AttackRangeMesh 重新生成網格。
@@ -187,7 +189,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
             StateMachine.CurrentState is not EnemySkillState)
         {
             _skillCooldownTimer += Time.deltaTime;
-            if (_skillCooldownTimer >= skillCooldown)
+            if (_skillCooldownTimer >= equippedSkill.cooldown)
             {
                 _skillCooldownTimer = 0f;
                 StateMachine.ChangeState(_skillState);

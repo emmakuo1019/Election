@@ -11,6 +11,7 @@ public class EnemyStunState : IState
     
     private float stunDuration;
     private float stunTimer;
+    private GameObject _stunVfxInstance; // 暈眩 VFX 實例，Exit 時銷毀
 
     public EnemyStunState(EnemyController controller, StateMachine stateMachine)
     {
@@ -41,10 +42,17 @@ public class EnemyStunState : IState
             ctx.attackRangeMesh.Hide();
         }
 
-        // 3. 播放受擊動畫 (與玩家共用 Animator Controller，所以假設有 Hit 狀態，或者直接回到 Idle)
-        // 若敵人沒有專屬的 Hit 動畫，可以暫時 CrossFade 到 Idle 或專屬受擊狀態
-        ctx.Animator?.CrossFade("Idle", 0.1f); // 根據你的動畫機調整為 "Hit"
-        
+        // 3. 播放受擊動畫
+        ctx.Animator?.CrossFade("Idle", 0.1f);
+
+        // 4. 生成暈眩 VFX，設為子物件使其跟隨角色
+        if (ctx.stunVfxPrefab != null)
+        {
+            Vector3 spawnPos = ctx.transform.position + ctx.stunVfxOffset;
+            _stunVfxInstance = Object.Instantiate(ctx.stunVfxPrefab, spawnPos, Quaternion.identity);
+            _stunVfxInstance.transform.SetParent(ctx.transform, worldPositionStays: true);
+        }
+
         stunTimer = 0f;
         Debug.Log($"Enemy: 進入 Stun 狀態，硬直時間 {stunDuration} 秒，已中斷原先行動！");
     }
@@ -66,5 +74,11 @@ public class EnemyStunState : IState
 
     public void Exit()
     {
+        // 離開暈眩狀態時銷毀 VFX
+        if (_stunVfxInstance != null)
+        {
+            Object.Destroy(_stunVfxInstance);
+            _stunVfxInstance = null;
+        }
     }
 }
