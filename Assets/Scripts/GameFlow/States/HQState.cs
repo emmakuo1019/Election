@@ -5,15 +5,12 @@ using System.Collections;
 public class HQState : IState
 {
     private string hqSceneName = "headquarters";
-    private bool isTransitioning = false;
 
     public void Enter()
     {
-        Debug.Log("[HQState] Enter - 進入總部 (實體觸發流程)");
-        isTransitioning = true; // 鎖定狀態，直到場景載入完成
-        Time.timeScale = 1f; // 確保時間流動正常，否則玩家無法移動！
+        Debug.Log("[HQState] Enter - 進入總部 (純介面流程)");
+        Time.timeScale = 1f;
 
-        // 啟動非同步場景載入
         if (GameFlowManager.Instance != null)
         {
             GameFlowManager.Instance.StartCoroutine(LoadHQSceneRoutine());
@@ -30,17 +27,25 @@ public class HQState : IState
                 yield return null;
             }
             
-            if (UIManager.Instance != null) 
+            Debug.Log($"[HQState] 場景 {hqSceneName} 載入完成，啟動 UI 選角流程。");
+
+            // 禁用玩家移動（純介面操作，不需要玩家跑動）
+            DisablePlayerMovement();
+
+            // 等一幀讓 HQSceneController 完成 Start()，再啟動流程
+            yield return null;
+
+            // 啟動總部 UI 流程：切到男角鏡頭 → 顯示選角介面
+            if (HQSceneController.Instance != null)
             {
-                // 只開啟基礎的 HQ HUD，不跳出按鍵提示
-                UIManager.Instance.ShowHQPanel();
+                HQSceneController.Instance.BeginHQFlow();
             }
-            Debug.Log($"[HQState] 場景 {hqSceneName} 載入完成！玩家可自由行動。");
-            
-            // 注意：我們不再停用 PlayerController。
-            // 讓玩家在總部內可以自由跑動去撞擊實體方塊。
-            
-            isTransitioning = false;
+            else
+            {
+                Debug.LogWarning("[HQState] 找不到 HQSceneController，請確認場景內有掛載此腳本。");
+                // Fallback：至少打開 UI
+                if (UIManager.Instance != null) UIManager.Instance.ShowHQCandidateStep(true);
+            }
         }
         else
         {
@@ -48,17 +53,33 @@ public class HQState : IState
         }
     }
 
+    /// <summary>
+    /// 停用場景內的玩家移動輸入，讓玩家角色原地站立當展示用
+    /// </summary>
+    private void DisablePlayerMovement()
+    {
+        // 找場景內所有 PlayerController，停用其 Update 的輸入讀取
+        var players = GameObject.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        foreach (var p in players)
+        {
+            p.enabled = false;
+            Debug.Log($"[HQState] 已停用 PlayerController: {p.gameObject.name}");
+        }
+    }
+
     public void Exit()
     {
         Debug.Log("[HQState] Exit");
         if (UIManager.Instance != null) UIManager.Instance.HideHQPanel();
+
+        // 出發前恢復玩家輸入（進入戰鬥場景後 PlayerController 會重新初始化，這裡保險用）
+        var players = GameObject.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        foreach (var p in players)
+        {
+            p.enabled = true;
+        }
     }
     
-    public void Update() 
-    { 
-        // 由於已經改為實體觸發流程，這裡完全不需要監聽任何按鍵。
-        // 所有選擇行為都交給 HQSkillTrigger 和 HQExitTrigger 處理。
-    }
-
+    public void Update() { }
     public void PhysicsUpdate() { }
 }

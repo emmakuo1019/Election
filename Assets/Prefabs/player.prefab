@@ -492,10 +492,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackRange: 2
   attackAngle: 60
-  attackInfluence: 1
-  attackCooldown: 0.3
+  attackInfluence: 5
+  attackCooldown: 0.4
   convertChance: 1
-  darkVoterConvertChance: 0.8
+  darkVoterConvertChance: 0.5
   attackRangeMesh: {fileID: 4360986305226485520}
   voterLayer:
     serializedVersion: 2

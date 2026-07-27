@@ -73,20 +73,87 @@ public class UIManager : MonoBehaviour
     public void HideMainMenu() { if (mainMenuPanel != null) mainMenuPanel.SetActive(false); }
 
     // HQ
-    public void ShowHQPanel() 
-    { 
-        if (hqPanel != null) hqPanel.SetActive(true); 
-        
-        // 進入總部時，初始化子面板狀態：開啟選角介面、關閉技能介面
-        if (candidatePanel != null) candidatePanel.SetActive(true);
-        if (skillPanel != null) skillPanel.SetActive(false);
-    }
-
     public void HideHQPanel() 
     { 
         if (hqPanel != null) hqPanel.SetActive(false); 
         if (candidatePanel != null) candidatePanel.SetActive(false);
         if (skillPanel != null) skillPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// Step 1：顯示選角資訊面板。
+    /// 你需要在 candidatePanel 內放兩個子物件：maleIndicator（男選中）、femaleIndicator（女選中）。
+    /// 根據 isMaleSelected 顯示對應的指示器。
+    /// </summary>
+    public void ShowHQCandidateStep(bool isMaleSelected)
+    {
+        if (hqPanel != null) hqPanel.SetActive(true);
+        if (candidatePanel != null)
+        {
+            candidatePanel.SetActive(true);
+
+            // 找子物件 maleIndicator 和 femaleIndicator，控制顯示
+            Transform maleIndicator = candidatePanel.transform.Find("MaleIndicator");
+            Transform femaleIndicator = candidatePanel.transform.Find("FemaleIndicator");
+
+            if (maleIndicator != null) maleIndicator.gameObject.SetActive(isMaleSelected);
+            if (femaleIndicator != null) femaleIndicator.gameObject.SetActive(!isMaleSelected);
+
+            Debug.Log($"[UIManager] 選角面板：{(isMaleSelected ? "男" : "女")} 被選中");
+        }
+
+        if (skillPanel != null) skillPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// Step 2：顯示技能選擇面板。
+    /// skillPanel 內需要有 N 個子物件對應 availableSkills（名稱建議 SkillOption0, SkillOption1...）。
+    /// 每個 SkillOption 有兩個子物件：Unselected（未選中）和 Selected（已確認選中）。
+    /// </summary>
+    public void ShowHQSkillStep(int cursorIndex, bool skillConfirmed, SkillData[] availableSkills)
+    {
+        if (candidatePanel != null) candidatePanel.SetActive(false);
+        if (skillPanel != null)
+        {
+            skillPanel.SetActive(true);
+
+            // 遍歷所有技能選項 UI
+            for (int i = 0; i < availableSkills.Length; i++)
+            {
+                Transform optionTransform = skillPanel.transform.Find($"SkillOption{i}");
+                if (optionTransform == null) continue;
+
+                bool isCursor = (i == cursorIndex);
+
+                Transform unselected = optionTransform.Find("Unselected");
+                Transform selected = optionTransform.Find("Selected");
+
+                // 當前游標指向這個選項
+                if (isCursor)
+                {
+                    if (!skillConfirmed)
+                    {
+                        // 游標高亮但未確認
+                        if (unselected != null) unselected.gameObject.SetActive(true);
+                        if (selected != null) selected.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        // 確認選中
+                        if (unselected != null) unselected.gameObject.SetActive(false);
+                        if (selected != null) selected.gameObject.SetActive(true);
+                    }
+                }
+                else
+                {
+                    // 非游標選項全部變暗或隱藏
+                    if (unselected != null) unselected.gameObject.SetActive(false);
+                    if (selected != null) selected.gameObject.SetActive(false);
+                }
+            }
+
+            Debug.Log($"[UIManager] 技能面板：cursor={cursorIndex}, confirmed={skillConfirmed}");
+        }
     }
 
     // Gameplay HUD
@@ -327,20 +394,12 @@ public class UIManager : MonoBehaviour
     // ==========================================
 
     /// <summary>
-    /// 顯示選角操作提示 (純 UI 顯示，邏輯交由 HQState 處理)
+    /// 保留舊有呼叫介面（轉發）
     /// </summary>
-    public void ShowCandidateHint()
-    {
-        if (candidatePanel != null) candidatePanel.SetActive(true);
-        if (skillPanel != null) skillPanel.SetActive(false);
-    }
+    public void ShowCandidateHint() => ShowHQCandidateStep(true);
 
     /// <summary>
-    /// 顯示選技能操作提示 (純 UI 顯示，邏輯交由 HQState 處理)
+    /// 保留舊有呼叫介面（轉發，無技能資料時的 fallback）
     /// </summary>
-    public void ShowSkillHint()
-    {
-        if (candidatePanel != null) candidatePanel.SetActive(false);
-        if (skillPanel != null) skillPanel.SetActive(true);
-    }
+    public void ShowSkillHint() => ShowHQSkillStep(0, false, new SkillData[0]);
 }
