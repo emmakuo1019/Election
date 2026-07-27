@@ -30,39 +30,34 @@ public class StageClearState : IState
     private void HandlePolicyCardSelected(PolicyCardData card)
     {
         Debug.Log($"[StageClearState] 選擇了政策卡: {card.cardName}");
-        
-        // 將獲得的卡牌記錄到 GameDB 並套用效果
-        if (GameDB.Instance != null && GameDB.Instance.Run != null)
-        {
-            GameDB.Instance.Run.AddPolicyCard(card);
-        }
-
-        // ⚠️ 修正：移除這裡的 OnSequenceFinished()。
-        // 將流程控制權交還給 UIManager，讓它繼續處理技能面板等後續流程，
-        // 等所有面板都關閉後，UIManager 才會安全地觸發 OnSequenceFinished()。
+        GameDB.Instance?.Run.AddPolicyCard(card);
     }
 
     private void OnSequenceFinished()
     {
-        // 當完成第 14 關時，下一關即為第 15 關 (Boss 戰)
-        if (roomNumber == 14)
+        var campaign = GameDB.Instance?.Campaign;
+
+        // 推進房間進度
+        campaign?.EnterNextRoom();
+
+        // 最後一關 → Boss 戰
+        if (campaign != null && campaign.IsLastRoomInBlock())
         {
             Debug.Log("[StageClearState] 序列結束，準備進入 Boss 戰！");
             GameFlowManager.Instance.ChangeState(new BossBattleState());
+            return;
+        }
+
+        // 非最後一關 → 隨機決定安全房或下一戰鬥房
+        if (UnityEngine.Random.value <= GameFlowManager.Instance.SafeRoomSpawnChance)
+        {
+            Debug.Log($"[StageClearState] 序列結束，隨機命中！前往安全房: {roomNumber + 1}");
+            GameFlowManager.Instance.ChangeState(new SafeRoomState(roomNumber + 1));
         }
         else
         {
-            // 利用 Random.value 取得 0.0 ~ 1.0 的隨機值，若小於等於設定機率則進入安全房
-            if (UnityEngine.Random.value <= GameFlowManager.Instance.SafeRoomSpawnChance)
-            {
-                Debug.Log($"[StageClearState] 序列結束，隨機命中！前往安全房: {roomNumber + 1}");
-                GameFlowManager.Instance.ChangeState(new SafeRoomState(roomNumber + 1));
-            }
-            else
-            {
-                Debug.Log($"[StageClearState] 序列結束，前往下一關戰鬥: {roomNumber + 1}");
-                GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
-            }
+            Debug.Log($"[StageClearState] 序列結束，前往下一關戰鬥: {roomNumber + 1}");
+            GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
         }
     }
 

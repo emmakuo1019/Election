@@ -27,4 +27,4 @@ MonoBehaviour:
       data:
         TargetStat: 1
         ModType: 0
-        Value: 5
+        Value: 1

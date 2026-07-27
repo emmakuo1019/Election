@@ -4,16 +4,9 @@ public class BattleSceneController : MonoBehaviour
 {
     [Header("場景初始化")]
     [SerializeField] private bool initializeVoterIdentityOnStart = true;
-    [SerializeField] private BattleFlowController battleFlowController;
     [SerializeField, Range(0f, 1f)] private float coldAttributeChance = 0.25f;
 
-    private void Awake()
-    {
-        if (battleFlowController == null)
-        {
-            battleFlowController = FindFirstObjectByType<BattleFlowController>();
-        }
-    }
+    private void Awake() { }
 
     private void OnEnable()
     {
@@ -30,11 +23,6 @@ public class BattleSceneController : MonoBehaviour
         if (initializeVoterIdentityOnStart)
         {
             InitializeSceneVoters();
-        }
-
-        if (battleFlowController != null)
-        {
-            battleFlowController.StartBattle();
         }
     }
 

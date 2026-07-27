@@ -27,6 +27,9 @@ public class UIManager : MonoBehaviour
     public GameObject stageClearPanel;
     public GameObject gameEndPanel;
 
+    [Header("HUD Sub-Objects")]
+    [SerializeField] private GameObject exitPromptPanel;
+
     [Header("Stage Clear Sub-Panels")]
     public GameObject stageClearDataPanel;
     public GameObject stageClearRewardPanel;
@@ -182,16 +185,12 @@ public class UIManager : MonoBehaviour
     // Exit Prompt (子物件放在 gameplayHUDPanel 底下，Hide HUD 時自動帶走)
     public void ShowExitPrompt()
     {
-        if (gameplayHUDPanel == null) return;
-        var prompt = gameplayHUDPanel.transform.Find("ExitPrompt");
-        if (prompt != null) prompt.gameObject.SetActive(true);
+        if (exitPromptPanel != null) exitPromptPanel.SetActive(true);
     }
 
     public void HideExitPrompt()
     {
-        if (gameplayHUDPanel == null) return;
-        var prompt = gameplayHUDPanel.transform.Find("ExitPrompt");
-        if (prompt != null) prompt.gameObject.SetActive(false);
+        if (exitPromptPanel != null) exitPromptPanel.SetActive(false);
     }
 
     // Stage Clear
@@ -282,10 +281,7 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        // 記錄選擇的卡片到 GameDB 中
-        GameDB.Instance?.Run.AddPolicyCard(selectedRewardCard);
-
-        // 確認選擇，發送事件給 StageClearState 套用卡片效果
+        // 確認選擇，發送事件給 StageClearState 套用卡片效果（AddPolicyCard 由 StageClearState 負責）
         OnPolicyCardSelected?.Invoke(selectedRewardCard);
 
         // 3. 玩家點擊繼續後，關閉 Reward

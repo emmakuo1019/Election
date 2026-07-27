@@ -9,7 +9,7 @@ public class Spawner : MonoBehaviour
     public float rationalLabelChance = 0.5f;
 
     [Header("屬性機率")]
-    [SerializeField, Range(0f, 1f)] private float baseColdChance = 0.0f; // 若有需要可保留基礎機率
+    [SerializeField, Range(0f, 1f)] private float baseColdChance = 0.0f;
     [SerializeField, Range(0f, 1f)] private float baseDarkChance = 0.0f;
 
     [Header("波次生成設定")]
@@ -122,46 +122,20 @@ public class Spawner : MonoBehaviour
         return Random.value < rationalLabelChance ? VoterLabel.Rational : VoterLabel.Emotion;
     }
 
-    private void CalculateDynamicProbabilities(out float darkChance, out float coldChance)
-    {
-        darkChance = baseDarkChance;
-        coldChance = baseColdChance;
-
-        if (GameDB.Instance == null) return;
-
-        // 根據現有 GameDB 架構：SocialAtmosphere 介於 -100 (極端情緒) 到 +100 (極端理性)，0 為中立
-        // 這裡將企劃描述的 0~100 (50為界) 完美映射至實際的 -100 ~ 100 系統中。
-        int atmosphere = GameDB.Instance.Run.SocialAtmosphere;
-
-        if (atmosphere > 0)
-        {
-            // 偏向情緒 (對應企劃的 50~100 區間)
-            float emotionBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MaxAtmosphere, atmosphere);
-            darkChance = Mathf.Lerp(0.1f, 0.7f, emotionBias);
-        }
-        else if (atmosphere < 0)
-        {
-            // 偏向理性 (對應企劃的 50~0 區間)
-            float rationalBias = Mathf.InverseLerp(0, GameDB.Instance.Run.MinAtmosphere, atmosphere);
-            coldChance = Mathf.Lerp(0.1f, 0.5f, rationalBias);
-        }
-    }
-
     private VoterAttribute GetRandomAttribute()
     {
-        CalculateDynamicProbabilities(out float darkChance, out float coldChance);
+        // 機率來源統一由 GameDB (SSOT) 提供，不在 Spawner 重複計算
+        float darkChance = GameDB.Instance != null
+            ? GameDB.Instance.Run.GetDarkVoterRate()
+            : baseDarkChance;
+
+        float coldChance = GameDB.Instance != null
+            ? GameDB.Instance.Run.GetColdVoterRate()
+            : baseColdChance;
 
         // 依照企劃要求：優先判定深色，再判定冷感，最後是普通
-        if (Random.value < darkChance)
-        {
-            return VoterAttribute.Dark;
-        }
-
-        if (Random.value < coldChance)
-        {
-            return VoterAttribute.Cold;
-        }
-
+        if (Random.value < darkChance) return VoterAttribute.Dark;
+        if (Random.value < coldChance) return VoterAttribute.Cold;
         return VoterAttribute.None;
     }
 }

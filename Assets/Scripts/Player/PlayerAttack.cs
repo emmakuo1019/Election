@@ -12,7 +12,6 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     public int attackInfluence = 1;
     [SerializeField] private float attackCooldown = 0f;
     [SerializeField] private float convertChance = 0.3f;
-    [SerializeField] private float darkVoterConvertChance = 0.8f;
 
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
@@ -260,20 +259,10 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         if (voter == null)
             return;
 
+        // 深色選民在 PerformAttack 已被 continue 跳過，此處不會收到深色選民
+        // ponytail: 若未來深色選民需要特殊轉化率，在此補充 HasDarkAttribute 分支
         var stats = GameDB.Instance?.Run?.Stats;
-        
-        float chance = stats != null
-            ? stats.ModifiedConvertChance
-            : convertChance;
-
-        if (voter.HasDarkAttribute)
-        {
-            // 如果我們有針對深色選民的特殊轉化率屬性，也可放在 Stats。
-            // 這裡暫時維持加上原本設定的差值或覆蓋。
-            chance = stats != null
-                ? stats.ModifiedConvertChance + (darkVoterConvertChance - convertChance) // 簡單處理
-                : darkVoterConvertChance;
-        }
+        float chance = stats != null ? stats.ModifiedConvertChance : convertChance;
 
         if (UnityEngine.Random.value < chance)
         {

@@ -288,10 +288,7 @@ public class VoterLogic : MonoBehaviour, IPoolable
         if (oldSide != newSide)
         {
             Data.loyalty = 1f;
-        }
 
-        if (oldSide != newSide)
-        {
             if (GameDB.Instance != null)
             {
                 if (oldSide == VoterData.PlayerSideSign) GameDB.Instance.Run.AddVote(-1, 0);
@@ -301,7 +298,7 @@ public class VoterLogic : MonoBehaviour, IPoolable
                 else if (newSide == VoterData.EnemySideSign) GameDB.Instance.Run.AddVote(0, 1);
             }
 
-            if (newSide == VoterData.PlayerSideSign && oldSide != VoterData.PlayerSideSign)
+            if (newSide == VoterData.PlayerSideSign)
             {
                 GameDB.Instance?.Run.ModifyMP(1);
 

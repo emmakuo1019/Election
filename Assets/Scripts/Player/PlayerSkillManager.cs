@@ -63,8 +63,8 @@ public class PlayerSkillManager : MonoBehaviour
             {
                 if (skill != null)
                 {
-                    // 若已解鎖了悲情土下座 (DogezaSkill/DogezaSkillData)，且目前未裝備任何戰鬥技能，則自動掛載
-                    if (skill is DogezaSkill || skill is DogezaSkillData || skill.skillName == "悲情土下座")
+                    // 若已解鎖了悲情土下座，且目前未裝備任何戰鬥技能，則自動掛載
+                    if (skill is DogezaSkill || skill.skillName == "悲情土下座")
                     {
                         if (baseSkillJ == null)
                         {
@@ -140,26 +140,5 @@ public class PlayerSkillManager : MonoBehaviour
         }
     }
 
-    // 改用 GameDB.Instance.Run.HasPendingSkillSelection 進行跨場景存取，消滅 PlayerPrefs
-    public static void MarkPendingMapSkillSelection()
-    {
-        if (GameDB.Instance != null && GameDB.Instance.Run != null)
-        {
-            GameDB.Instance.Run.HasPendingSkillSelection = true;
-        }
-    }
-
-    public static bool HasPendingMapSkillSelection()
-    {
-        return GameDB.Instance != null && GameDB.Instance.Run != null && GameDB.Instance.Run.HasPendingSkillSelection;
-    }
-
-    public static void ClearPendingMapSkillSelection()
-    {
-        if (GameDB.Instance != null && GameDB.Instance.Run != null)
-        {
-            GameDB.Instance.Run.HasPendingSkillSelection = false;
-        }
-    }
     #endregion
 }

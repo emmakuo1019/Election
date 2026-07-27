@@ -274,7 +274,18 @@ public class RunData
     {
         // 情緒動員越強 (正值)，深色選民越常出現。
         float emotionalBias = Mathf.InverseLerp(MinAtmosphere, MaxAtmosphere, SocialAtmosphere);
-        return Mathf.Lerp(0.1f, 0.6f, emotionalBias);
+        return Mathf.Lerp(0.1f, 0.7f, emotionalBias);
+    }
+
+    /// <summary>
+    /// 根據社會風氣計算冷感選民生成機率。
+    /// 理性風氣越強 (負值)，冷感選民越常出現。
+    /// </summary>
+    public float GetColdVoterRate()
+    {
+        if (SocialAtmosphere >= 0) return 0f;
+        float rationalBias = Mathf.InverseLerp(0, MinAtmosphere, SocialAtmosphere);
+        return Mathf.Lerp(0.1f, 0.5f, rationalBias);
     }
 
     public string GetAtmosphereDescription()

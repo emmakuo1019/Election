@@ -81,7 +81,8 @@ public static class BlockProgressManager
             return false;
 
         CampaignProgressManager.AddCompletedBlock();
-        PlayerSkillManager.MarkPendingMapSkillSelection();
+        if (GameDB.Instance?.Run != null)
+            GameDB.Instance.Run.HasPendingSkillSelection = true;
         ClearBlockProgress();
         return true;
     }

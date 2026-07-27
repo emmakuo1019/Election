@@ -11,7 +11,8 @@ void Start()
     Time.timeScale = 1f;
     CampaignProgressManager.ResetCampaign();
     BlockProgressManager.ClearBlockProgress();
-    PlayerSkillManager.ClearPendingMapSkillSelection();
+    if (GameDB.Instance?.Run != null)
+        GameDB.Instance.Run.HasPendingSkillSelection = false;
     if (GameDB.Instance != null && GameDB.Instance.Player != null)
     {
         GameDB.Instance.Player.EquipPartySkill(null);

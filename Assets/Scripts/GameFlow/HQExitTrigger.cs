@@ -20,7 +20,10 @@ public class HQExitTrigger : MonoBehaviour
 
             if (UIManager.Instance != null && GameFlowManager.Instance != null)
             {
-                // 呼叫 UIManager 的黑畫面淡出功能，淡出完成後切換狀態到 GameplayState(第一關)
+                // 初始化本次戰役的房間序列，再進入第一關
+                if (GameDB.Instance?.Campaign != null)
+                    GameDB.Instance.Campaign.StartNextCampaignBlock();
+
                 UIManager.Instance.FadeOut(1.0f, () => 
                 {
                     GameFlowManager.Instance.ChangeState(new GameplayState(1));

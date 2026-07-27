@@ -1899,7 +1899,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1976119068}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1067532211
 MonoBehaviour:
@@ -1913,8 +1913,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fbc51c7e89f74306b9d29074fffdba6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelDuration: 10
-  remainingTime: 10
+  levelDuration: 20
+  remainingTime: 0
   isActive: 1
   isTimeUp: 0
 --- !u!114 &1067532212
@@ -3320,6 +3320,7 @@ Transform:
   - {fileID: 1638184980}
   - {fileID: 1199617885}
   - {fileID: 1540834728}
+  - {fileID: 1067532210}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2037251923
@@ -3560,7 +3561,6 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1067532210}
   - {fileID: 955142231}
   - {fileID: 1163203712}
   - {fileID: 1976119068}

@@ -67,7 +67,8 @@ public class UpgradePanelUI : MonoBehaviour
     {
         if (dogezaSkill == null)
         {
-            DogezaSkillData runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkillData>();
+            // ponytail: runtime 建立僅作為 Inspector 未綁定時的 fallback，正式流程應在 Inspector 指定 DogezaSkill asset
+            DogezaSkill runtimeDogezaSkill = ScriptableObject.CreateInstance<DogezaSkill>();
             runtimeDogezaSkill.skillName = "悲情土下座";
             runtimeDogezaSkill.cooldown = 5f;
             runtimeDogezaSkill.animationTriggerName = "Begging";
@@ -104,7 +105,7 @@ public class UpgradePanelUI : MonoBehaviour
     {
         bool hasSkillJ = GameDB.Instance != null && GameDB.Instance.Player != null && GameDB.Instance.Player.BaseSkillJ != null;
 
-        if (PlayerSkillManager.HasPendingMapSkillSelection() && !hasSkillJ)
+        if (GameDB.Instance?.Run?.HasPendingSkillSelection == true && !hasSkillJ)
         {
             return;
         }
@@ -141,7 +142,8 @@ public class UpgradePanelUI : MonoBehaviour
             playerSkillManager.EquipSkillJ(skillData);
         }
 
-        PlayerSkillManager.ClearPendingMapSkillSelection();
+        if (GameDB.Instance?.Run != null)
+            GameDB.Instance.Run.HasPendingSkillSelection = false;
 
         ClosePanel();
         RefreshUI();

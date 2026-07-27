@@ -36,6 +36,9 @@ public class BossBattleState : IState
             
             // ⭐️ 場景載入且物件初始化完成後打開 HUD，讓 UI 能順利抓到 LevelTimer
             if (UIManager.Instance != null) UIManager.Instance.ShowGameplayHUD();
+
+            // 用 LevelTimer Inspector 上設定的 levelDuration 啟動（與 GameplayState 做法一致）
+            if (LevelTimer.Instance != null) LevelTimer.Instance.StartTimer(LevelTimer.Instance.TotalDuration);
         }
         else
         {
@@ -67,12 +70,14 @@ public class BossBattleState : IState
 
     public void Update() 
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         // 按下 Y 鍵：模擬時間到/過關
         if (Input.GetKeyDown(KeyCode.Y))
         {
             Debug.Log("[BossBattleState] 偵測到按下 Y 鍵，模擬倒數結束過關！");
             BattleEventManager.TriggerRoomCleared();
         }
+#endif
     }
     public void PhysicsUpdate() { }
 }
