@@ -2444,8 +2444,8 @@ MonoBehaviour:
   - {fileID: 526729843}
   - {fileID: 348117423}
   initialSpawnCount: 30
-  spawnInterval: 5
-  spawnPerTick: 3
+  spawnInterval: 0
+  spawnPerTick: 0
 --- !u!114 &1540834730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2863,7 +2863,7 @@ Transform:
   m_GameObject: {fileID: 1649870942}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -5.32, y: 0.26, z: -1.32}
+  m_LocalPosition: {x: -3.58, y: 0.26, z: -2.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3379,7 +3379,7 @@ Transform:
   m_GameObject: {fileID: 2085676569}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -13.72, y: 0.28, z: 0}
+  m_LocalPosition: {x: -8.34, y: 0.28, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3497,7 +3497,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6228465154643208686, guid: 674e01088c8b74177a963af098f37808, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 13.26
+      value: 6.46
       objectReference: {fileID: 0}
     - target: {fileID: 6228465154643208686, guid: 674e01088c8b74177a963af098f37808, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3505,7 +3505,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6228465154643208686, guid: 674e01088c8b74177a963af098f37808, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.54
+      value: 4.97
       objectReference: {fileID: 0}
     - target: {fileID: 6228465154643208686, guid: 674e01088c8b74177a963af098f37808, type: 3}
       propertyPath: m_LocalRotation.w
