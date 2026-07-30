@@ -88,26 +88,11 @@ public class GameplayState : IState
     public void Update() 
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // 按下 Y 鍵：模擬正常過關事件（會走結算 UI 流程，結束後 roomNumber + 1）
-        if (Input.GetKeyDown(KeyCode.Y))
+        // 按下 T 鍵：模擬正常過關事件（會走結算 UI 流程，結束後 roomNumber + 1）
+        if (Input.GetKeyDown(KeyCode.T))
         {
-            Debug.Log($"[GameplayState] 偵測到按下 Y 鍵，模擬過關！當前關卡: {roomNumber}");
+            Debug.Log($"[GameplayState] 偵測到按下 T 鍵，模擬過關！當前關卡: {roomNumber}");
             BattleEventManager.TriggerRoomCleared();
-        }
-
-        // 按下 N 鍵：直接跳過結算 UI，進入下一關 roomNumber + 1 (如果是 14 則進入 Boss 戰)
-        if (Input.GetKeyDown(KeyCode.N))
-        {
-            int nextRoom = roomNumber + 1;
-            Debug.Log($"[GameplayState] 偵測到按下 N 鍵，直接跳過結算 UI！關卡切換: {roomNumber} -> {nextRoom}");
-            if (roomNumber == 14)
-            {
-                GameFlowManager.Instance.ChangeState(new BossBattleState());
-            }
-            else
-            {
-                GameFlowManager.Instance.ChangeState(new GameplayState(nextRoom));
-            }
         }
 #endif
     }

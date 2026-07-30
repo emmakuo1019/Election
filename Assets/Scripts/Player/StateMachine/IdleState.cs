@@ -60,6 +60,10 @@ public class IdleState : IState
     {
         if (_ctx.MoveInput.sqrMagnitude > 0.01f)
             _ctx.StateMachine.ChangeState(new MoveState(_ctx));
+
+        // 套用重力
+        if (!_ctx.CharCon.isGrounded)
+            _ctx.CharCon.Move(new Vector3(0f, Physics.gravity.y * Time.deltaTime, 0f));
     }
 
     public void PhysicsUpdate()

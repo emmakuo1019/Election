@@ -61,10 +61,6 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void OnEnable()
     {
-        if (LevelTimer.Instance != null)
-        {
-            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
-        }
         if (Data != null)
         {
             Data.OnConversionSuccess += HandleConversionSuccess;
@@ -74,10 +70,6 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void OnDisable()
     {
-        if (LevelTimer.Instance != null)
-        {
-            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
-        }
         if (Data != null)
         {
             Data.OnConversionSuccess -= HandleConversionSuccess;
@@ -141,6 +133,13 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void Update()
     {
+        // 退場狀態優先執行，不受 IsGameActive 限制
+        if (StateMachine.CurrentState is VoterExitState)
+        {
+            StateMachine.CurrentState.Update();
+            return;
+        }
+
         if (!IsGameActive || Data == null || Agent == null || !HasUsableNavMeshAgent || !Agent.isOnNavMesh)
         {
             return;
@@ -418,14 +417,7 @@ public class VoterLogic : MonoBehaviour, IPoolable
     // ==========================================
     public void BeginExitMovement(Vector3 destination)
     {
-        IsGameActive = false;
-        
-        // 簡單做法：直接叫 Agent 走過去。未來會由獨立的 VoterExitState 來負責
-        if (Agent != null && Agent.isOnNavMesh)
-        {
-            Agent.isStopped = false;
-            Agent.SetDestination(destination);
-        }
+        StateMachine.ChangeState(new VoterExitState(this, destination));
     }
 
     private void OnGameEnd()

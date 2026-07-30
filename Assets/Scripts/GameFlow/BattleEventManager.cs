@@ -10,6 +10,9 @@ public static class BattleEventManager
     // 怪物清空、過關事件
     public static event Action OnRoomCleared;
     
+    // 敵人全滅事件（解鎖出口用，尚未結算）
+    public static event Action OnAllEnemiesDefeated;
+    
     // 生存時間結束事件
     public static event Action OnSurvivalTimeUp;
     
@@ -29,6 +32,15 @@ public static class BattleEventManager
     {
         Debug.Log("[BattleEventManager] 觸發房間過關事件 (OnRoomCleared)");
         OnRoomCleared?.Invoke();
+    }
+
+    /// <summary>
+    /// 敵人全滅，出口解鎖（玩家尚未走到出口）
+    /// </summary>
+    public static void TriggerAllEnemiesDefeated()
+    {
+        Debug.Log("[BattleEventManager] 觸發敵人全滅事件 (OnAllEnemiesDefeated)");
+        OnAllEnemiesDefeated?.Invoke();
     }
 
     /// <summary>

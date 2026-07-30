@@ -347,6 +347,7 @@ GameObject:
   - component: {fileID: 7095031572979110621}
   - component: {fileID: 5242680767156421125}
   - component: {fileID: 3016036086028709808}
+  - component: {fileID: 8901855827217775638}
   m_Layer: 3
   m_Name: player
   m_TagString: Player
@@ -490,12 +491,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afd866a78abbf44c08a62f3776a06563, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 2
+  attackRange: 6
   attackAngle: 60
-  attackInfluence: 5
+  attackInfluence: 1
   attackCooldown: 0.4
   convertChance: 1
-  darkVoterConvertChance: 0.5
   attackRangeMesh: {fileID: 4360986305226485520}
   voterLayer:
     serializedVersion: 2
@@ -519,6 +519,29 @@ MonoBehaviour:
   skillK: {fileID: 0}
   currentPartySkill: {fileID: 0}
   speechAttack: {fileID: 5242680767156421125}
+--- !u!136 &8901855827217775638
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5403555500550337343}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &9152536651902869562
 GameObject:
   m_ObjectHideFlags: 0

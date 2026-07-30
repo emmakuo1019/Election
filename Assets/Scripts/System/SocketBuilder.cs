@@ -8,10 +8,12 @@ using UnityEditor;
 [System.Serializable]
 public class SocketCategory
 {
-    [Tooltip("用來比對的後綴，例如 '_AC' 或 '_Sign'")]
+    [Tooltip("用來比對的後綴，例如 '_AC' 或 '_Sign'。\n" +
+             "【招牌規範】直式與橫式招牌已統一使用 '_Sign' 後綴，\n" +
+             "請勿再新增 '_SignH' 或 '_SignV' 等細分後綴，以避免混搭問題。")]
     public string suffix;
 
-    [Tooltip("專屬此類別的裝飾物 Prefab 清單")]
+    [Tooltip("專屬此類別的裝飾物 Prefab 清單（橫式與直式招牌 Prefab 請放在同一個 _Sign 分類中）")]
     public List<GameObject> prefabs;
 
     [Tooltip("專屬此類別的生成機率 (0 = 不生成, 1 = 必定生成)")]
@@ -33,6 +35,29 @@ public class SocketBuilder : MonoBehaviour
 
     // 用於追蹤當前已生成的配件實體，以便後續精確回收
     private List<GameObject> spawnedProps = new List<GameObject>();
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (categories == null) return;
+
+        foreach (var category in categories)
+        {
+            if (string.IsNullOrEmpty(category.suffix)) continue;
+
+            string lower = category.suffix.ToLower();
+            if (lower == "_signh" || lower == "_signv")
+            {
+                Debug.LogWarning(
+                    $"[SocketBuilder] 偵測到已廢棄的招牌後綴 '{category.suffix}'。\n" +
+                    "直式與橫式招牌已統一合併為 '_Sign'，請將此 category 的後綴改為 '_Sign'，" +
+                    "並將所有招牌 Prefab 集中放入該分類。",
+                    this
+                );
+            }
+        }
+    }
+#endif
 
     /// <summary>
     /// 自動搜尋建築主體底下所有名稱包含 "Socket" 的掛點

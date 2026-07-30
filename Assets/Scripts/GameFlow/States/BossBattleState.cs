@@ -71,10 +71,10 @@ public class BossBattleState : IState
     public void Update() 
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // 按下 Y 鍵：模擬時間到/過關
-        if (Input.GetKeyDown(KeyCode.Y))
+        // 按下 T 鍵：模擬時間到/過關
+        if (Input.GetKeyDown(KeyCode.T))
         {
-            Debug.Log("[BossBattleState] 偵測到按下 Y 鍵，模擬倒數結束過關！");
+            Debug.Log("[BossBattleState] 偵測到按下 T 鍵，模擬倒數結束過關！");
             BattleEventManager.TriggerRoomCleared();
         }
 #endif

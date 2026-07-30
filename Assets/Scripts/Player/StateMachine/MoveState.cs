@@ -67,6 +67,11 @@ public class MoveState : IState
 
         Vector3 move = new Vector3(input.x, 0f, input.y);
         _ctx.LastMoveDirection = move.normalized;
+
+        // 套用重力，讓玩家能正確從高低差走下來
+        if (!_ctx.CharCon.isGrounded)
+            move.y = Physics.gravity.y * Time.deltaTime;
+
         _ctx.CharCon.Move(move * _ctx.CurrentMoveSpeed * Time.deltaTime);
 
         if (_ctx.AnimController != null)

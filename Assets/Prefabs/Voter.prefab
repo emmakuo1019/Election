@@ -5220,9 +5220,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wanderRadius: 7
-  wanderIntervalMin: 2
-  wanderIntervalMax: 5
-  moveSpeed: 20
+  wanderIntervalMin: 0.5
+  wanderIntervalMax: 2
+  moveSpeed: 22
   darkApproachStoppingDistance: 1
   darkDestinationRefreshInterval: 0.5
   knockbackDistance: 0.3
@@ -5245,7 +5245,7 @@ MonoBehaviour:
   emotionHeadSprite: {fileID: 21300000, guid: a68de2eb09a7843a49792d60d444845e, type: 3}
   neutralColor: {r: 1, g: 1, b: 1, a: 1}
   playerColor: {r: 1, g: 0.8353392, b: 0, a: 1}
-  opponentColor: {r: 0.42518154, g: 0.08018869, b: 1, a: 1}
+  opponentColor: {r: 0.6411914, g: 0.13679248, b: 1, a: 1}
   darkMultiplier: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   apatheticHeadColor: {r: 0, g: 1, b: 1, a: 1}
   colorTransitionDuration: 0.8

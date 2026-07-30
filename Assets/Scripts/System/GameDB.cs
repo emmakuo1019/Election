@@ -13,6 +13,16 @@ public class GameDB : MonoBehaviour
 
     [Header("Data Modules")]
     public List<PolicyCardData> allPolicyCards = new List<PolicyCardData>();
+
+    [Header("社會風氣初始設定")]
+    [Tooltip("初始社會風氣，負數=偏理性，正數=偏情緒")]
+    [SerializeField, Range(-100, 100)] private int initialSocialAtmosphere = -30;
+    [Tooltip("深色選民生成率最小值（社會風氣最負時）")]
+    [SerializeField, Range(0f, 1f)] private float darkVoterRateMin = 0.05f;
+    [Tooltip("深色選民生成率最大值（社會風氣最正時）")]
+    [SerializeField, Range(0f, 1f)] private float darkVoterRateMax = 0.3f;
+    [Tooltip("冷感選民生成率最大值")]
+    [SerializeField, Range(0f, 1f)] private float coldVoterRateMax = 0.4f;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
@@ -33,6 +43,7 @@ public class GameDB : MonoBehaviour
         Player = new PlayerData();
         Run = new RunData();
         Campaign = new CampaignData();
+        Run.InitializeAtmosphere(initialSocialAtmosphere, darkVoterRateMin, darkVoterRateMax, coldVoterRateMax);
     }
 
     /// <summary>
@@ -245,6 +256,18 @@ public class RunData
     public int MinAtmosphere { get; private set; } = -100;
     public int MaxAtmosphere { get; private set; } = 100;
     
+    private float _darkVoterRateMin = 0.05f;
+    private float _darkVoterRateMax = 0.3f;
+    private float _coldVoterRateMax = 0.4f;
+
+    public void InitializeAtmosphere(int initial, float darkMin, float darkMax, float coldMax)
+    {
+        SocialAtmosphere = initial;
+        _darkVoterRateMin = darkMin;
+        _darkVoterRateMax = darkMax;
+        _coldVoterRateMax = coldMax;
+    }
+    
     public float AtmosphereNormalized => (float)(SocialAtmosphere - MinAtmosphere) / (MaxAtmosphere - MinAtmosphere);
     
     // 參數：舊值, 新值
@@ -272,20 +295,15 @@ public class RunData
 
     public float GetDarkVoterRate()
     {
-        // 情緒動員越強 (正值)，深色選民越常出現。
         float emotionalBias = Mathf.InverseLerp(MinAtmosphere, MaxAtmosphere, SocialAtmosphere);
-        return Mathf.Lerp(0.1f, 0.7f, emotionalBias);
+        return Mathf.Lerp(_darkVoterRateMin, _darkVoterRateMax, emotionalBias);
     }
 
-    /// <summary>
-    /// 根據社會風氣計算冷感選民生成機率。
-    /// 理性風氣越強 (負值)，冷感選民越常出現。
-    /// </summary>
     public float GetColdVoterRate()
     {
         if (SocialAtmosphere >= 0) return 0f;
         float rationalBias = Mathf.InverseLerp(0, MinAtmosphere, SocialAtmosphere);
-        return Mathf.Lerp(0.1f, 0.5f, rationalBias);
+        return Mathf.Lerp(0.1f, _coldVoterRateMax, rationalBias);
     }
 
     public string GetAtmosphereDescription()

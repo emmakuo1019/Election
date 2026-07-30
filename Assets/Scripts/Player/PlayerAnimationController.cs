@@ -74,6 +74,17 @@ public class PlayerAnimationController : MonoBehaviour
             scale.x = _lastFlipX < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
             _animator.transform.localScale = scale;
         }
+
+        // 鎖定 Sprite 子物件的本地 Y，防止高低差或 Root Motion 造成漂移
+        if (_animator != null)
+        {
+            Vector3 localPos = _animator.transform.localPosition;
+            if (localPos.y != 0f)
+            {
+                localPos.y = 0.893f;
+                _animator.transform.localPosition = localPos;
+            }
+        }
     }
 
     private void UpdateFlip(Vector2 facingDirection)

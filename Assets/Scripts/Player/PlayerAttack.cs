@@ -193,7 +193,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                 // 如果是敵人，直接打斷並造成硬直
                 if (enemy != null)
                 {
-                    enemy.TakeDamage(10, 1.0f);
+                    var stats = GameDB.Instance?.Run?.Stats;
+                    int dmg = stats != null
+                        ? Mathf.RoundToInt(attackInfluence * stats.ModifiedAttackInfluence)
+                        : attackInfluence;
+                    // 普攻只扣血，不造成暈眩（stunTime = 0）
+                    enemy.TakeDamage(dmg, 0f);
                     hitAny = true;
                 }
                 // 如果是選民，則進行原本的拉票邏輯
