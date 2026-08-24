@@ -3,35 +3,39 @@ using Unity.Cinemachine;
 
 /// <summary>
 /// 總部場景控制器。
-/// 管理鏡頭切換 + 內部流程步驟，並通知 UIManager 顯示對應面板。
 ///
 /// 流程：
-///   Step.Candidate  ── A/D 切換男女鏡頭，S 確認進入 Step.Skill
-///   Step.Skill      ── A/D 切換技能選項，S 確認技能選擇（若已選則出發）
+///   Step.Candidate  ─ 進場預設鏡頭對準候選人，Space/Enter/J 確認後進入 Step.Faction
+///   Step.Faction    ─ A/D 切換各派系大佬鏡頭，Space/Enter/J 確認派系並出發
+///
+/// 場景設定：
+///   vcamCandidate   ─ 對準男候選人的鏡頭（進場預設）
+///   vcamFactions[]  ─ 每個派系一顆鏡頭，依序對應 factions[]
 /// </summary>
 public class HQSceneController : MonoBehaviour
 {
     public static HQSceneController Instance { get; private set; }
 
+    // ── 候選人鏡頭 ────────────────────────────────────────────────────
+    [Header("候選人鏡頭（進場預設）")]
+    [Tooltip("對準男候選人的 CinemachineCamera，場景一載入就啟用")]
+    [SerializeField] private CinemachineCamera vcamCandidate;
+
+    // ── 派系鏡頭 ──────────────────────────────────────────────────────
+    [Header("派系鏡頭（與 factions 陣列一一對應）")]
+    [Tooltip("每個派系一顆 CinemachineCamera，對準沙發上各自的大佬 NPC")]
+    [SerializeField] private CinemachineCamera[] vcamFactions;
+
+    // ── 派系資料 ──────────────────────────────────────────────────────
+    [Header("可選派系（依序對應 vcamFactions）")]
+    public FactionData[] factions;
+
     // ── 流程步驟 ──────────────────────────────────────────────────────
-    public enum HQStep { Candidate, Skill }
+    public enum HQStep { Candidate, Faction }
     public HQStep CurrentStep { get; private set; } = HQStep.Candidate;
 
-    // ── Cinemachine 鏡頭 ──────────────────────────────────────────────
-    [Header("Cinemachine 鏡頭")]
-    [SerializeField] private CinemachineCamera vcamMale;
-    [SerializeField] private CinemachineCamera vcamFemale;
-    [SerializeField] private CinemachineCamera vcamDesk;
-    [SerializeField] private CinemachineCamera[] allCameras;
-
-    // ── 技能資料 ──────────────────────────────────────────────────────
-    [Header("可選技能（依序對應選項 0, 1, 2...）")]
-    public SkillData[] availableSkills;
-
     // ── 內部狀態 ──────────────────────────────────────────────────────
-    private bool isMaleSelected = true;         // 目前游標指向男(true)或女(false)
-    private int  skillCursorIndex = 0;          // 技能游標
-    private bool skillConfirmed   = false;      // 是否已按 S 確認技能
+    private int factionCursor = 0;
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -39,13 +43,11 @@ public class HQSceneController : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else { Destroy(gameObject); return; }
-
-        if (allCameras == null || allCameras.Length == 0)
-            allCameras = new CinemachineCamera[] { vcamMale, vcamFemale, vcamDesk };
     }
 
     private void Start()
     {
+        // 將所有鏡頭壓低，等 BeginHQFlow 再啟動
         SetAllPriority(10);
     }
 
@@ -58,137 +60,96 @@ public class HQSceneController : MonoBehaviour
 
     /// <summary>
     /// 場景載入完成後，由 HQState 呼叫，正式啟動流程。
+    /// 預設：鏡頭對準候選人，顯示候選人介紹面板。
     /// </summary>
     public void BeginHQFlow()
     {
-        isMaleSelected  = true;
-        skillCursorIndex = 0;
-        skillConfirmed   = false;
-        CurrentStep      = HQStep.Candidate;
+        CurrentStep   = HQStep.Candidate;
+        factionCursor = 0;
 
-        FocusCandidate(true);
-        UIManager.Instance?.ShowHQCandidateStep(isMaleSelected);
+        // 進場直接對準候選人
+        SwitchCamera(vcamCandidate);
+        UIManager.Instance?.ShowHQCandidateStep();
 
-        Debug.Log("[HQSceneController] 流程開始：Step.Candidate");
+        Debug.Log("[HQSceneController] 流程開始：Step.Candidate（候選人介紹）");
     }
 
     // ── 輸入回調（由 HQInputHandler 呼叫）────────────────────────────
 
     public void OnNavigateLeft()
     {
-        if (CurrentStep == HQStep.Candidate)
-        {
-            // 切換到男候選人
-            isMaleSelected = true;
-            FocusCandidate(true);
-            UIManager.Instance?.ShowHQCandidateStep(isMaleSelected);
-            Debug.Log("[HQSceneController] 選角游標 ← 男");
-        }
-        else if (CurrentStep == HQStep.Skill)
-        {
-            // 技能游標往左
-            if (availableSkills == null || availableSkills.Length == 0) return;
-            skillCursorIndex = (skillCursorIndex - 1 + availableSkills.Length) % availableSkills.Length;
-            skillConfirmed   = false; // 移動游標後重置確認狀態
-            UIManager.Instance?.ShowHQSkillStep(skillCursorIndex, skillConfirmed, availableSkills);
-            Debug.Log($"[HQSceneController] 技能游標 ← index {skillCursorIndex}");
-        }
+        // Candidate 步驟只有一位候選人，左右無效
+        if (CurrentStep != HQStep.Faction) return;
+        if (factions == null || factions.Length == 0) return;
+
+        factionCursor = (factionCursor - 1 + factions.Length) % factions.Length;
+        SwitchToFactionCamera(factionCursor);
+        UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
+
+        Debug.Log($"[HQSceneController] 派系游標 ← {factionCursor}: {factions[factionCursor]?.factionName}");
     }
 
     public void OnNavigateRight()
     {
-        if (CurrentStep == HQStep.Candidate)
-        {
-            // 切換到女候選人
-            isMaleSelected = false;
-            FocusCandidate(false);
-            UIManager.Instance?.ShowHQCandidateStep(isMaleSelected);
-            Debug.Log("[HQSceneController] 選角游標 → 女");
-        }
-        else if (CurrentStep == HQStep.Skill)
-        {
-            if (availableSkills == null || availableSkills.Length == 0) return;
-            skillCursorIndex = (skillCursorIndex + 1) % availableSkills.Length;
-            skillConfirmed   = false;
-            UIManager.Instance?.ShowHQSkillStep(skillCursorIndex, skillConfirmed, availableSkills);
-            Debug.Log($"[HQSceneController] 技能游標 → index {skillCursorIndex}");
-        }
+        if (CurrentStep != HQStep.Faction) return;
+        if (factions == null || factions.Length == 0) return;
+
+        factionCursor = (factionCursor + 1) % factions.Length;
+        SwitchToFactionCamera(factionCursor);
+        UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
+
+        Debug.Log($"[HQSceneController] 派系游標 → {factionCursor}: {factions[factionCursor]?.factionName}");
     }
 
     public void OnConfirm()
     {
         if (CurrentStep == HQStep.Candidate)
         {
-            ConfirmCandidateAndGoSkill();
+            ConfirmCandidateAndGoFaction();
         }
-        else if (CurrentStep == HQStep.Skill)
+        else if (CurrentStep == HQStep.Faction)
         {
-            if (!skillConfirmed)
-            {
-                // 第一次按 S：確認選擇這個技能
-                ConfirmSkill();
-            }
-            else
-            {
-                // 已確認技能，再按 S：出發！
-                TryStartGame();
-            }
+            ConfirmFactionAndStart();
         }
     }
 
     // ── 內部步驟邏輯 ─────────────────────────────────────────────────
 
-    private void ConfirmCandidateAndGoSkill()
+    private void ConfirmCandidateAndGoFaction()
     {
-        // 寫入候選人選擇（目前 GameDB 沒有候選人欄位，預留擴充點）
-        // GameDB.Instance?.Player.SelectGender(isMaleSelected);
+        CurrentStep   = HQStep.Faction;
+        factionCursor = 0;
 
-        CurrentStep      = HQStep.Skill;
-        skillCursorIndex = 0;
-        skillConfirmed   = false;
+        // 切到第一個派系大佬的鏡頭
+        SwitchToFactionCamera(factionCursor);
+        UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
 
-        FocusDesk();
-        UIManager.Instance?.ShowHQSkillStep(skillCursorIndex, skillConfirmed, availableSkills);
-
-        Debug.Log($"[HQSceneController] 確認選角（{(isMaleSelected ? "男" : "女")}），進入 Step.Skill");
+        Debug.Log("[HQSceneController] 確認候選人，進入 Step.Faction（選派系）");
     }
 
-    private void ConfirmSkill()
+    private void ConfirmFactionAndStart()
     {
-        if (availableSkills == null || availableSkills.Length == 0)
+        if (factions == null || factions.Length == 0)
         {
-            Debug.LogWarning("[HQSceneController] 沒有可選技能！請在 Inspector 填入 availableSkills。");
+            Debug.LogWarning("[HQSceneController] 沒有可選派系！請在 Inspector 填入 factions。");
             return;
         }
 
-        SkillData chosen = availableSkills[skillCursorIndex];
+        FactionData chosen = factions[factionCursor];
         if (chosen == null)
         {
-            Debug.LogWarning($"[HQSceneController] availableSkills[{skillCursorIndex}] 為 null！");
+            Debug.LogWarning($"[HQSceneController] factions[{factionCursor}] 為 null！");
             return;
         }
 
-        // 寫入 GameDB
-        GameDB.Instance?.Player.EquipBaseSkillJ(chosen);
-        skillConfirmed = true;
+        // 寫入 GameDB（同時自動裝備起始技能）
+        GameDB.Instance?.Player.SelectFaction(chosen);
 
-        UIManager.Instance?.ShowHQSkillStep(skillCursorIndex, skillConfirmed, availableSkills);
+        Debug.Log($"[HQSceneController] 確認派系：{chosen.factionName}，出發！");
 
-        Debug.Log($"[HQSceneController] 技能確認：{chosen.skillName}（再按 S 出發）");
-    }
-
-    private void TryStartGame()
-    {
-        if (GameDB.Instance?.Player?.BaseSkillJ == null)
-        {
-            Debug.LogWarning("[HQSceneController] 尚未選擇技能！");
-            return;
-        }
-
-        Debug.Log("[HQSceneController] 出發！");
         UIManager.Instance?.FadeOut(1.0f, () =>
         {
-            GameFlowManager.Instance?.ChangeState(new GameplayState(1));
+            GameFlowManager.Instance?.ChangeState(new TutorialState());
         });
     }
 
@@ -196,18 +157,24 @@ public class HQSceneController : MonoBehaviour
 
     private void SetAllPriority(int p)
     {
-        if (allCameras == null) return;
-        foreach (var cam in allCameras)
+        if (vcamCandidate != null) vcamCandidate.Priority.Value = p;
+        if (vcamFactions == null) return;
+        foreach (var cam in vcamFactions)
             if (cam != null) cam.Priority.Value = p;
     }
 
-    public void SwitchCamera(CinemachineCamera target)
+    private void SwitchCamera(CinemachineCamera target)
     {
-        if (target == null || allCameras == null) return;
+        if (target == null) return;
         SetAllPriority(10);
         target.Priority.Value = 20;
     }
 
-    public void FocusCandidate(bool isMale) => SwitchCamera(isMale ? vcamMale : vcamFemale);
-    public void FocusDesk() => SwitchCamera(vcamDesk);
+    private void SwitchToFactionCamera(int index)
+    {
+        if (vcamFactions == null || index < 0 || index >= vcamFactions.Length) return;
+        SetAllPriority(10);
+        if (vcamFactions[index] != null)
+            vcamFactions[index].Priority.Value = 20;
+    }
 }

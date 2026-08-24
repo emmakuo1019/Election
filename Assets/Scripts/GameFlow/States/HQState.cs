@@ -43,8 +43,8 @@ public class HQState : IState
             else
             {
                 Debug.LogWarning("[HQState] 找不到 HQSceneController，請確認場景內有掛載此腳本。");
-                // Fallback：至少打開 UI
-                if (UIManager.Instance != null) UIManager.Instance.ShowHQCandidateStep(true);
+                // Fallback：至少打開候選人面板
+                if (UIManager.Instance != null) UIManager.Instance.ShowHQCandidateStep();
             }
         }
         else

@@ -84,79 +84,86 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Step 1：顯示選角資訊面板。
-    /// 你需要在 candidatePanel 內放兩個子物件：maleIndicator（男選中）、femaleIndicator（女選中）。
-    /// 根據 isMaleSelected 顯示對應的指示器。
+    /// Step 1：顯示候選人介紹面板（只有男候選人，直接展示，等玩家按確認）。
+    /// candidatePanel 內放候選人名稱、背景介紹、操作提示（[Space] 確認）等文字即可。
     /// </summary>
-    public void ShowHQCandidateStep(bool isMaleSelected)
+    public void ShowHQCandidateStep()
     {
         if (hqPanel != null) hqPanel.SetActive(true);
-        if (candidatePanel != null)
-        {
-            candidatePanel.SetActive(true);
-
-            // 找子物件 maleIndicator 和 femaleIndicator，控制顯示
-            Transform maleIndicator = candidatePanel.transform.Find("MaleIndicator");
-            Transform femaleIndicator = candidatePanel.transform.Find("FemaleIndicator");
-
-            if (maleIndicator != null) maleIndicator.gameObject.SetActive(isMaleSelected);
-            if (femaleIndicator != null) femaleIndicator.gameObject.SetActive(!isMaleSelected);
-
-            Debug.Log($"[UIManager] 選角面板：{(isMaleSelected ? "男" : "女")} 被選中");
-        }
-
+        if (candidatePanel != null) candidatePanel.SetActive(true);
         if (skillPanel != null) skillPanel.SetActive(false);
+
+        Debug.Log("[UIManager] 候選人介紹面板");
     }
 
     /// <summary>
-    /// Step 2：顯示技能選擇面板。
-    /// skillPanel 內需要有 N 個子物件對應 availableSkills（名稱建議 SkillOption0, SkillOption1...）。
-    /// 每個 SkillOption 有兩個子物件：Unselected（未選中）和 Selected（已確認選中）。
+    /// Step 2：顯示派系選擇面板。
+    ///
+    /// skillPanel 內需要有 N 個子物件，命名為 FactionOption0, FactionOption1...
+    /// 每個 FactionOption 結構：
+    ///   ├── Unselected   ← 游標停在此時顯示
+    ///   ├── Selected     ← 確認後顯示（目前流程單次確認不使用，保留備用）
+    ///   ├── factionName  ← 文字物件
+    ///   └── description  ← 文字物件
+    /// 游標指向的 option 顯示 Unselected，其他 option 整個隱藏。
     /// </summary>
-    public void ShowHQSkillStep(int cursorIndex, bool skillConfirmed, SkillData[] availableSkills)
+    public void ShowHQFactionStep(int cursorIndex, FactionData[] factions)
     {
+        if (hqPanel != null) hqPanel.SetActive(true);
         if (candidatePanel != null) candidatePanel.SetActive(false);
-        if (skillPanel != null)
+        if (skillPanel == null) return;
+
+        skillPanel.SetActive(true);
+
+        if (factions == null) return;
+
+        for (int i = 0; i < factions.Length; i++)
         {
-            skillPanel.SetActive(true);
+            Transform option = skillPanel.transform.Find($"FactionOption{i}");
+            if (option == null) continue;
 
-            // 遍歷所有技能選項 UI
-            for (int i = 0; i < availableSkills.Length; i++)
+            bool isCursor = (i == cursorIndex);
+
+            // FactionOption 本體開關
+            option.gameObject.SetActive(isCursor);
+
+            if (!isCursor) continue;
+
+            // 游標所在的 option：確保 Unselected 開、Selected 關
+            Transform unselected = option.Find("Unselected");
+            Transform selected   = option.Find("Selected");
+            if (unselected != null) unselected.gameObject.SetActive(true);
+            if (selected   != null) selected.gameObject.SetActive(false);
+
+            // 同步文字內容（如果有 TMP 或 Text 元件）
+            FactionData data = factions[i];
+            if (data != null)
             {
-                Transform optionTransform = skillPanel.transform.Find($"SkillOption{i}");
-                if (optionTransform == null) continue;
-
-                bool isCursor = (i == cursorIndex);
-
-                Transform unselected = optionTransform.Find("Unselected");
-                Transform selected = optionTransform.Find("Selected");
-
-                // 當前游標指向這個選項
-                if (isCursor)
-                {
-                    if (!skillConfirmed)
-                    {
-                        // 游標高亮但未確認
-                        if (unselected != null) unselected.gameObject.SetActive(true);
-                        if (selected != null) selected.gameObject.SetActive(false);
-                    }
-                    else
-                    {
-                        // 確認選中
-                        if (unselected != null) unselected.gameObject.SetActive(false);
-                        if (selected != null) selected.gameObject.SetActive(true);
-                    }
-                }
-                else
-                {
-                    // 非游標選項全部變暗或隱藏
-                    if (unselected != null) unselected.gameObject.SetActive(false);
-                    if (selected != null) selected.gameObject.SetActive(false);
-                }
+                SetChildText(option, "factionName",  data.factionName);
+                SetChildText(option, "description",  data.description);
             }
-
-            Debug.Log($"[UIManager] 技能面板：cursor={cursorIndex}, confirmed={skillConfirmed}");
         }
+
+        string logName = (factions.Length > cursorIndex && factions[cursorIndex] != null)
+            ? factions[cursorIndex].factionName : "?";
+        Debug.Log($"[UIManager] 派系面板：cursor={cursorIndex} ({logName})");
+    }
+
+    /// <summary>
+    /// 嘗試對子物件上的 TMP_Text 或 UnityEngine.UI.Text 設定文字
+    /// </summary>
+    private void SetChildText(Transform parent, string childName, string text)
+    {
+        Transform child = parent.Find(childName);
+        if (child == null) return;
+
+        // 優先 TMP
+        var tmp = child.GetComponent<TMPro.TMP_Text>();
+        if (tmp != null) { tmp.text = text; return; }
+
+        // 退回 Legacy Text
+        var legacyText = child.GetComponent<UnityEngine.UI.Text>();
+        if (legacyText != null) legacyText.text = text;
     }
 
     // Gameplay HUD
@@ -392,10 +399,86 @@ public class UIManager : MonoBehaviour
     /// <summary>
     /// 保留舊有呼叫介面（轉發）
     /// </summary>
-    public void ShowCandidateHint() => ShowHQCandidateStep(true);
+    public void ShowCandidateHint() => ShowHQCandidateStep();
 
     /// <summary>
-    /// 保留舊有呼叫介面（轉發，無技能資料時的 fallback）
+    /// 保留舊有呼叫介面（轉發）
     /// </summary>
-    public void ShowSkillHint() => ShowHQSkillStep(0, false, new SkillData[0]);
+    public void ShowSkillHint() => ShowHQFactionStep(0, null);
+
+    // ==========================================
+    // 教學 UI (Tutorial UI)
+    // ==========================================
+
+    [Header("Tutorial UI")]
+    [Tooltip("教學大對話框 UI 腳本（掛在教學場景的 Canvas 下）")]
+    [SerializeField] private TutorialDialogueUI tutorialDialogueUI;
+
+    [Tooltip("教學常駐小提示框 UI 腳本（掛在教學場景的 Canvas 下）")]
+    [SerializeField] private TutorialTipsUI tutorialTipsUI;
+
+    /// <summary>
+    /// 顯示教學大對話框。
+    /// 通常由 TutorialManager 呼叫，也可從外部直接驅動。
+    /// </summary>
+    public void ShowTutorialDialogue(TutorialStepData step)
+    {
+        if (tutorialDialogueUI == null)
+        {
+            Debug.LogWarning("[UIManager] tutorialDialogueUI 未設定，請在 Inspector 綁定。");
+            return;
+        }
+        tutorialDialogueUI.Show(step);
+    }
+
+    /// <summary>
+    /// 隱藏教學大對話框。
+    /// </summary>
+    public void HideTutorialDialogue()
+    {
+        tutorialDialogueUI?.Hide();
+    }
+
+    /// <summary>
+    /// 顯示（或更新）常駐教學提示框。
+    /// </summary>
+    public void ShowTutorialTips(TutorialStepData step)
+    {
+        if (tutorialTipsUI == null)
+        {
+            Debug.LogWarning("[UIManager] tutorialTipsUI 未設定，請在 Inspector 綁定。");
+            return;
+        }
+        tutorialTipsUI.Show(step);
+    }
+
+    /// <summary>
+    /// 用純文字顯示常駐教學提示框（不需要 ScriptableObject）。
+    /// </summary>
+    public void ShowTutorialTipsText(string text, Sprite icon = null)
+    {
+        if (tutorialTipsUI == null)
+        {
+            Debug.LogWarning("[UIManager] tutorialTipsUI 未設定，請在 Inspector 綁定。");
+            return;
+        }
+        tutorialTipsUI.ShowText(text, icon);
+    }
+
+    /// <summary>
+    /// 隱藏常駐教學提示框。
+    /// </summary>
+    public void HideTutorialTips()
+    {
+        tutorialTipsUI?.Hide();
+    }
+
+    /// <summary>
+    /// 強制關閉所有教學 UI（場景切換或跳過教學時使用）。
+    /// </summary>
+    public void HideAllTutorialUI()
+    {
+        tutorialDialogueUI?.Hide();
+        tutorialTipsUI?.Hide();
+    }
 }
