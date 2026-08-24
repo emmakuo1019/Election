@@ -11,7 +11,8 @@ public class SceneContext : MonoBehaviour
         Menu,           // S0 - 主菜單
         Intro,          // S1 - 劇情介紹
         Level,          // 真正的關卡
-        Headquarters    // 總部
+        Headquarters,   // 總部
+        Tutorial        // 教學關卡
     }
 
     public static SceneType CurrentScene { get; private set; } = SceneType.Menu;
@@ -28,10 +29,11 @@ public class SceneContext : MonoBehaviour
             "TestSpecial" => SceneType.Level,
             "TestSmallBoss" => SceneType.Level,
             "headquarters" => SceneType.Headquarters,
+            "TeachScenes" => SceneType.Tutorial,
             _ => SceneType.Menu
         };
 
     }
 
-    public static bool IsLevelScene() => CurrentScene == SceneType.Level;
+    public static bool IsLevelScene() => CurrentScene == SceneType.Level || CurrentScene == SceneType.Tutorial;
 }

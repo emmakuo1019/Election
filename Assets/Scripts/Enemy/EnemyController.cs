@@ -65,6 +65,14 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("脫戰距離(遲滯區間)，應大於 detectionRange")]
     public float escapeRange = 15f;
 
+    [Header("HP")]
+    [Tooltip("最大血量")]
+    public int maxHP = 3;
+    private int _currentHP;
+
+    [Header("UI")]
+    [SerializeField] private EnemyHPBarUI hpBarUI;
+
     [Header("Attack Hit Detection")]
     [Tooltip("攻擊判定的球體半徑 ")]
     public float attackHitRadius = 2f;
@@ -116,15 +124,27 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// </summary>
     public void TakeDamage(int damage, float stunTime = 0.5f)
     {
-        // 若未來有血量系統 (HP)，可以在此處實作扣血邏輯
-        // currentHP -= damage;
-        // if (currentHP <= 0) { Die(); return; }
+        _currentHP -= damage;
+        hpBarUI?.Refresh(_currentHP, maxHP);
+        Debug.Log($"Enemy: 受到 {damage} 點傷害，剩餘 HP {_currentHP}/{maxHP}");
 
-        Debug.Log($"Enemy: 受到 {damage} 點傷害，將硬直 {stunTime} 秒！");
-        
-        // 賦予硬直時間並強制切換狀態
-        StunState.SetStunDuration(stunTime);
-        StateMachine.ChangeState(StunState);
+        if (_currentHP <= 0)
+        {
+            Die();
+            return;
+        }
+
+        if (stunTime > 0f)
+        {
+            StunState.SetStunDuration(stunTime);
+            StateMachine.ChangeState(StunState);
+        }
+    }
+
+    private void Die()
+    {
+        EnemySpawnTracker.NotifyEnemyDied();
+        gameObject.SetActive(false);
     }
 
     // ==========================================
@@ -142,6 +162,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
         if (attackDuration <= 0.1f) attackDuration = 1.0f;
         if (attackHitTime <= 0f) attackHitTime = 0.3f;
         if (moveSpeed <= 0f) moveSpeed = 4.5f;
+        if (maxHP <= 0) maxHP = 3;
 
         // 關閉導航代理的自動旋轉，確保根節點不會因為尋路而轉向 (解決 Sprite 穿幫問題)
         if (Agent != null)
@@ -160,6 +181,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         _skillState = new EnemySkillState(this, StateMachine);
         _cachedPlayer = FindObjectOfType<PlayerController>();
+        
+        _currentHP = maxHP;
+        hpBarUI?.Refresh(_currentHP, maxHP);
     }
 
     private void Start()
@@ -180,7 +204,17 @@ public class EnemyController : MonoBehaviour, IAttackSource
         StateMachine.Initialize(IdleState);
     }
 
-    private void Update()
+    private void OnEnable()
+    {
+        // 復活或波次追加時通知追蹤器
+        if (_currentHP > 0)
+            EnemySpawnTracker.NotifyEnemySpawned();
+    }
+
+    private void OnDisable()
+    {
+        // SetActive(false) 時確保不重複扣計數（Die() 已呼叫過 NotifyEnemyDied）
+    }    private void Update()
     {
         StateMachine.CurrentState?.Update();
 

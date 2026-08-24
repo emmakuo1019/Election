@@ -1,3 +1,4 @@
+#if UNITY_EDITOR && UNITY_INCLUDE_TESTS
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -126,3 +127,4 @@ public class GameFlowManagerTests
         }
     }
 }
+#endif
