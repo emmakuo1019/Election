@@ -41,6 +41,10 @@ public class UIManager : MonoBehaviour
 
     public Action<PolicyCardData> OnPolicyCardSelected;
 
+    // 本次結算的獎勵卡牌類型過濾器（null = 不限制）
+    // 由 StageClearState 在啟動結算序列前設定，抽完卡後自動清除
+    private CardType[] _rewardCardTypeFilter = null;
+
     private PolicyCardData selectedRewardCard;
     private List<RewardCardUI> generatedRewardCards = new List<RewardCardUI>();
 
@@ -223,6 +227,15 @@ public class UIManager : MonoBehaviour
         if (stageClearSkillPanel != null) stageClearSkillPanel.SetActive(false);
     }
 
+    /// <summary>
+    /// 設定本次結算獎勵的 CardType 過濾器。
+    /// 需在 StartStageClearSequence 之前呼叫；傳 null 代表不限制（走原本隨機邏輯）。
+    /// </summary>
+    public void SetRewardFilter(CardType[] allowedTypes)
+    {
+        _rewardCardTypeFilter = allowedTypes;
+    }
+
     public void OnDataPanelContinueClicked()
     {
         // 2. 玩家點擊繼續後，關閉 Data，打開「獎勵面板 (Reward)」
@@ -251,7 +264,16 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        var cards = GameDB.Instance.Run.DrawRandomPolicyCards(3);
+        // 套用任務獎勵過濾器（null = 不限制）
+        List<PolicyCardData> cards;
+        if (_rewardCardTypeFilter != null && _rewardCardTypeFilter.Length > 0)
+            cards = DrawFilteredPolicyCards(3, _rewardCardTypeFilter);
+        else
+            cards = GameDB.Instance.Run.DrawRandomPolicyCards(3);
+
+        // 過濾器用完即清，避免影響下一次結算
+        _rewardCardTypeFilter = null;
+
         if (cards.Count > 0)
         {
             foreach (var card in cards)
@@ -265,6 +287,33 @@ public class UIManager : MonoBehaviour
         {
             Debug.LogWarning("[UIManager] 可選政策卡不足！");
         }
+    }
+
+    /// <summary>
+    /// 從牌池中篩出符合 allowedTypes 的卡，再隨機抽 count 張。
+    /// 若篩後數量不足，fallback 至不限制的隨機抽牌。
+    /// </summary>
+    private List<PolicyCardData> DrawFilteredPolicyCards(int count, CardType[] allowedTypes)
+    {
+        var allCards = GameDB.Instance.Run.DrawRandomPolicyCards(count * 3); // 多抽幾張再篩
+        var filtered = new List<PolicyCardData>();
+        foreach (var card in allCards)
+        {
+            foreach (var type in allowedTypes)
+            {
+                if (card.Type == type) { filtered.Add(card); break; }
+            }
+            if (filtered.Count >= count) break;
+        }
+
+        // 篩後不足 → fallback 至原本不限制的邏輯
+        if (filtered.Count < count)
+        {
+            Debug.Log("[UIManager] 篩選後牌量不足，fallback 至全牌池隨機抽牌");
+            return GameDB.Instance.Run.DrawRandomPolicyCards(count);
+        }
+
+        return filtered;
     }
 
     private void OnRewardCardClicked(PolicyCardData card)

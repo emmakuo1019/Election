@@ -56,6 +56,11 @@ public class GameplayState : IState
             
             // 步驟 B: 用 LevelTimer Inspector 上設定的 levelDuration 啟動
             if (LevelTimer.Instance != null) LevelTimer.Instance.StartTimer(LevelTimer.Instance.TotalDuration);
+
+            // 步驟 C: 顯示本關任務簡報（若 ActiveRoom 有指定 mission 且有 briefingStep）
+            TutorialStepData briefing = GameDB.Instance?.Campaign.ActiveRoom.mission?.briefingStep;
+            if (briefing != null)
+                UIManager.Instance?.ShowTutorialDialogue(briefing);
         }
         else
         {

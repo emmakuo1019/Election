@@ -47,6 +47,9 @@ public class SocketBuilder : MonoBehaviour
     // 用於追蹤當前已生成的配件實體，以便後續精確回收
     private List<GameObject> spawnedProps = new List<GameObject>();
 
+    // 記錄替換前的原始材質，供 Clear 時還原
+    private Material originalMaterial;
+
 #if UNITY_EDITOR
     private void OnValidate()
     {

@@ -13,6 +13,12 @@ public class GameDB : MonoBehaviour
 
     [Header("Data Modules")]
     public List<PolicyCardData> allPolicyCards = new List<PolicyCardData>();
+
+    [Header("任務系統")]
+    [Tooltip("戰役可用的任務池")]
+    public MissionPool missionPool;
+    [Tooltip("任務類型對應獎勵 CardType 查表")]
+    public MissionRewardConfig missionRewardConfig;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
@@ -69,6 +75,10 @@ public class PlayerData
     public event Action<SkillData> OnPartySkillEquipped;
     public event Action<SkillData> OnBaseSkillJEquipped;
 
+    // 選擇的黨內派系
+    public FactionData SelectedFaction { get; private set; }
+    public event Action<FactionData> OnFactionSelected;
+
     public void EquipPartySkill(SkillData skill)
     {
         EquippedPartySkill = skill;
@@ -79,6 +89,22 @@ public class PlayerData
     {
         BaseSkillJ = skill;
         OnBaseSkillJEquipped?.Invoke(skill);
+    }
+
+    /// <summary>
+    /// 選擇派系並自動裝備該派系的起始技能
+    /// </summary>
+    public void SelectFaction(FactionData faction)
+    {
+        SelectedFaction = faction;
+        OnFactionSelected?.Invoke(faction);
+
+        // 自動裝備派系起始技能到 J 鍵
+        if (faction != null && faction.starterSkill != null)
+        {
+            EquipBaseSkillJ(faction.starterSkill);
+            Debug.Log($"[PlayerData] 選擇派系：{faction.factionName}，裝備起始技能：{faction.starterSkill.skillName}");
+        }
     }
 }
 
@@ -306,6 +332,22 @@ public class RunData
 }
 
 /// <summary>
+/// 一個待選/已選的房間選項，包含場景名稱與任務定義。
+/// </summary>
+[System.Serializable]
+public struct RoomOption
+{
+    public string sceneName;
+    public RoomMissionData mission;  // null = 無任務（例如 Boss 房）
+
+    public RoomOption(string sceneName, RoomMissionData mission = null)
+    {
+        this.sceneName = sceneName;
+        this.mission   = mission;
+    }
+}
+
+/// <summary>
 /// 戰役/推進進度資料，取代原本分散在 BlockProgressManager 與
 /// CampaignProgressManager 裡的 PlayerPrefs 儲存。
 /// 所有欄位存活於 GameDB (DontDestroyOnLoad)，遊戲崩潰不會留下殘留狀態。
@@ -330,7 +372,15 @@ public class CampaignData
     public int MaxRoomsInBlock     { get; private set; } = 5;
 
     // 當前 Block 的房間場景序列，例如 ["TestMVP","TestSpecial","TestMVP",...]
+    // ponytail: 保留供舊呼叫端相容，新流程走 PendingOptions/ActiveRoom
     public string[] RoomSequence   { get; private set; } = System.Array.Empty<string>();
+
+    // ── 任務選項系統 ──────────────────────────────────────────────────
+    // 玩家到達岔路口時顯示的兩個選項（由上一關結算後生成）
+    public RoomOption[] PendingOptions { get; private set; } = System.Array.Empty<RoomOption>();
+
+    // 玩家選擇後的當前房間（進入關卡時讀取任務資料）
+    public RoomOption ActiveRoom { get; private set; }
 
     // 用於強制覆蓋下一間房間要載入的場景 (例如失敗跳結算畫面)
     public string NextSceneOverride { get; private set; } = string.Empty;
@@ -366,11 +416,13 @@ public class CampaignData
     // ── Block 初始化 ─────────────────────────────────────────────────
     public void InitBlock(int maxRooms, int blockIndex)
     {
-        CurrentRoomCount = 0;
-        MaxRoomsInBlock  = Mathf.Max(1, maxRooms);
+        CurrentRoomCount  = 0;
+        MaxRoomsInBlock   = Mathf.Max(1, maxRooms);
         CurrentBlockIndex = Mathf.Max(1, blockIndex);
-        RoomSequence     = System.Array.Empty<string>();
+        RoomSequence      = System.Array.Empty<string>();
         NextSceneOverride = string.Empty;
+        PendingOptions    = System.Array.Empty<RoomOption>();
+        ActiveRoom        = default;
         OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
     }
 
@@ -393,9 +445,49 @@ public class CampaignData
 
     public string GetCurrentRoomSceneName()
     {
+        // 優先從玩家已選的 ActiveRoom 取場景名
+        if (!string.IsNullOrEmpty(ActiveRoom.sceneName))
+            return ActiveRoom.sceneName;
+
+        // ponytail: fallback 至舊 RoomSequence，供尚未切換新流程的呼叫端相容
         if (RoomSequence.Length == 0) return string.Empty;
         int idx = Mathf.Clamp(CurrentRoomCount - 1, 0, RoomSequence.Length - 1);
         return RoomSequence[idx];
+    }
+
+    // ── 任務選項 ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 結算後呼叫，為岔路口生成兩個待選房間選項。
+    /// mission 參數由外部（StageClearState 或關卡設定）傳入；
+    /// 傳 null 代表該路線無指定任務（保持舊行為）。
+    /// </summary>
+    public void GenerateNextOptions(RoomMissionData missionA = null, RoomMissionData missionB = null)
+    {
+        string sceneA = UnityEngine.Random.value < SpecialRoomChance ? SpecialRoomSceneName : NormalRoomSceneName;
+        string sceneB = UnityEngine.Random.value < SpecialRoomChance ? SpecialRoomSceneName : NormalRoomSceneName;
+        PendingOptions = new RoomOption[]
+        {
+            new RoomOption(sceneA, missionA),
+            new RoomOption(sceneB, missionB),
+        };
+        Debug.Log($"[CampaignData] 生成岔路選項：A={sceneA} B={sceneB}");
+    }
+
+    /// <summary>
+    /// 玩家選擇岔路（0=左門, 1=右門），設定 ActiveRoom 並清空 PendingOptions。
+    /// </summary>
+    public void SelectOption(int index)
+    {
+        if (PendingOptions.Length == 0)
+        {
+            Debug.LogWarning("[CampaignData] SelectOption 呼叫時 PendingOptions 為空");
+            return;
+        }
+        int safeIndex = Mathf.Clamp(index, 0, PendingOptions.Length - 1);
+        ActiveRoom = PendingOptions[safeIndex];
+        PendingOptions = System.Array.Empty<RoomOption>();
+        Debug.Log($"[CampaignData] 玩家選擇選項 {safeIndex}，場景：{ActiveRoom.sceneName}");
     }
 
     // ── 場景覆蓋 ─────────────────────────────────────────────────────
@@ -420,6 +512,8 @@ public class CampaignData
         CurrentBlockIndex = 1;
         RoomSequence      = System.Array.Empty<string>();
         NextSceneOverride = string.Empty;
+        PendingOptions    = System.Array.Empty<RoomOption>();
+        ActiveRoom        = default;
     }
 
     // ── 戰役進度與 Block 推進移植 ──────────────────────────────────────
