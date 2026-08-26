@@ -17,8 +17,6 @@ public class GameDB : MonoBehaviour
     [Header("任務系統")]
     [Tooltip("戰役可用的任務池")]
     public MissionPool missionPool;
-    [Tooltip("任務類型對應獎勵 CardType 查表")]
-    public MissionRewardConfig missionRewardConfig;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }

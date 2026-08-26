@@ -1,7 +1,6 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 
 /// <summary>
 /// 全局 UI 管理器，負責管理各個遊戲流程狀態對應的 UI 面板開關。
@@ -24,32 +23,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject skillPanel;
 
     public GameObject gameplayHUDPanel;
-    public GameObject stageClearPanel;
     public GameObject gameEndPanel;
 
     [Header("HUD Sub-Objects")]
     [SerializeField] private GameObject exitPromptPanel;
-
-    [Header("Stage Clear Sub-Panels")]
-    public GameObject stageClearDataPanel;
-    public GameObject stageClearRewardPanel;
-    public GameObject stageClearSkillPanel;
-
-    [Header("Policy Card Reward")]
-    public RewardCardUI rewardCardPrefab;
-    public Transform rewardCardContainer;
-
-    public Action<PolicyCardData> OnPolicyCardSelected;
-
-    // 本次結算的獎勵卡牌類型過濾器（null = 不限制）
-    // 由 StageClearState 在啟動結算序列前設定，抽完卡後自動清除
-    private CardType[] _rewardCardTypeFilter = null;
-
-    private PolicyCardData selectedRewardCard;
-    private List<RewardCardUI> generatedRewardCards = new List<RewardCardUI>();
-
-    private int currentRoomNumber;
-    private Action onStageClearSequenceComplete;
 
     private void Awake()
     {
@@ -204,170 +181,9 @@ public class UIManager : MonoBehaviour
         if (exitPromptPanel != null) exitPromptPanel.SetActive(false);
     }
 
-    // Stage Clear
-    public void ShowStageClearPanel() { if (stageClearPanel != null) stageClearPanel.SetActive(true); }
-    public void HideStageClearPanel() { if (stageClearPanel != null) stageClearPanel.SetActive(false); }
-
     // Game End
     public void ShowGameEndPanel() { if (gameEndPanel != null) gameEndPanel.SetActive(true); }
     public void HideGameEndPanel() { if (gameEndPanel != null) gameEndPanel.SetActive(false); }
-
-    // --- Stage Clear Sequence Control ---
-
-    public void StartStageClearSequence(int roomNumber, Action onComplete)
-    {
-        currentRoomNumber = roomNumber;
-        onStageClearSequenceComplete = onComplete;
-        
-        ShowStageClearPanel();
-
-        // 1. 打開小結算面板(Data)，確保其他先關閉
-        if (stageClearDataPanel != null) stageClearDataPanel.SetActive(true);
-        if (stageClearRewardPanel != null) stageClearRewardPanel.SetActive(false);
-        if (stageClearSkillPanel != null) stageClearSkillPanel.SetActive(false);
-    }
-
-    /// <summary>
-    /// 設定本次結算獎勵的 CardType 過濾器。
-    /// 需在 StartStageClearSequence 之前呼叫；傳 null 代表不限制（走原本隨機邏輯）。
-    /// </summary>
-    public void SetRewardFilter(CardType[] allowedTypes)
-    {
-        _rewardCardTypeFilter = allowedTypes;
-    }
-
-    public void OnDataPanelContinueClicked()
-    {
-        // 2. 玩家點擊繼續後，關閉 Data，打開「獎勵面板 (Reward)」
-        if (stageClearDataPanel != null) stageClearDataPanel.SetActive(false);
-        if (stageClearRewardPanel != null) 
-        {
-            stageClearRewardPanel.SetActive(true);
-            GenerateRewardCards(); // Bug 1 Fix
-        }
-    }
-
-    private void GenerateRewardCards()
-    {
-        if (rewardCardContainer == null || rewardCardPrefab == null)
-        {
-            Debug.LogWarning("[UIManager] RewardCardPrefab 或 RewardCardContainer 未設定！請在 Inspector 綁定。");
-            return;
-        }
-
-        selectedRewardCard = null;
-        generatedRewardCards.Clear();
-
-        // 清除舊卡片
-        foreach (Transform child in rewardCardContainer)
-        {
-            Destroy(child.gameObject);
-        }
-
-        // 套用任務獎勵過濾器（null = 不限制）
-        List<PolicyCardData> cards;
-        if (_rewardCardTypeFilter != null && _rewardCardTypeFilter.Length > 0)
-            cards = DrawFilteredPolicyCards(3, _rewardCardTypeFilter);
-        else
-            cards = GameDB.Instance.Run.DrawRandomPolicyCards(3);
-
-        // 過濾器用完即清，避免影響下一次結算
-        _rewardCardTypeFilter = null;
-
-        if (cards.Count > 0)
-        {
-            foreach (var card in cards)
-            {
-                var ui = Instantiate(rewardCardPrefab, rewardCardContainer);
-                ui.Setup(card, OnRewardCardClicked);
-                generatedRewardCards.Add(ui);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[UIManager] 可選政策卡不足！");
-        }
-    }
-
-    /// <summary>
-    /// 從牌池中篩出符合 allowedTypes 的卡，再隨機抽 count 張。
-    /// 若篩後數量不足，fallback 至不限制的隨機抽牌。
-    /// </summary>
-    private List<PolicyCardData> DrawFilteredPolicyCards(int count, CardType[] allowedTypes)
-    {
-        var allCards = GameDB.Instance.Run.DrawRandomPolicyCards(count * 3); // 多抽幾張再篩
-        var filtered = new List<PolicyCardData>();
-        foreach (var card in allCards)
-        {
-            foreach (var type in allowedTypes)
-            {
-                if (card.Type == type) { filtered.Add(card); break; }
-            }
-            if (filtered.Count >= count) break;
-        }
-
-        // 篩後不足 → fallback 至原本不限制的邏輯
-        if (filtered.Count < count)
-        {
-            Debug.Log("[UIManager] 篩選後牌量不足，fallback 至全牌池隨機抽牌");
-            return GameDB.Instance.Run.DrawRandomPolicyCards(count);
-        }
-
-        return filtered;
-    }
-
-    private void OnRewardCardClicked(PolicyCardData card)
-    {
-        selectedRewardCard = card;
-
-        foreach (var ui in generatedRewardCards)
-        {
-            if (ui != null)
-            {
-                ui.SetSelected(ui.GetCard() == card);
-            }
-        }
-    }
-
-    public void OnRewardPanelContinueClicked()
-    {
-        if (selectedRewardCard == null)
-        {
-            Debug.LogWarning("[UIManager] 尚未選擇任何政策卡！");
-            return;
-        }
-
-        // 確認選擇，發送事件給 StageClearState 套用卡片效果（AddPolicyCard 由 StageClearState 負責）
-        OnPolicyCardSelected?.Invoke(selectedRewardCard);
-
-        // 3. 玩家點擊繼續後，關閉 Reward
-        if (stageClearRewardPanel != null) stageClearRewardPanel.SetActive(false);
-
-        // 4. 檢查 roomNumber，如果是 5 或 10 關，打開「技能選擇面板 (Skill)」
-        if (currentRoomNumber == 5 || currentRoomNumber == 10) // 也可以用 currentRoomNumber % 5 == 0 視你的需求而定
-        {
-            if (stageClearSkillPanel != null) stageClearSkillPanel.SetActive(true);
-        }
-        else
-        {
-            // 5. 如果不是，觸發 onComplete
-            FinishStageClearSequence();
-        }
-    }
-
-    public void OnSkillPanelContinueClicked()
-    {
-        // 玩家技能選擇完畢後
-        if (stageClearSkillPanel != null) stageClearSkillPanel.SetActive(false);
-        FinishStageClearSequence();
-    }
-
-    private void FinishStageClearSequence()
-    {
-        HideStageClearPanel();
-        onStageClearSequenceComplete?.Invoke();
-        onStageClearSequenceComplete = null;
-    }
 
     // ==========================================
     // 漸變轉場與流程控制 (Fade & Flow Control)
@@ -466,6 +282,10 @@ public class UIManager : MonoBehaviour
     [Tooltip("教學常駐小提示框 UI 腳本（掛在教學場景的 Canvas 下）")]
     [SerializeField] private TutorialTipsUI tutorialTipsUI;
 
+    [Header("Reward UI")]
+    [Tooltip("場景內獎勵物件的說明面板（置中排版）")]
+    [SerializeField] private RewardDescriptionUI rewardDescriptionUI;
+
     /// <summary>
     /// 顯示教學大對話框。
     /// 通常由 TutorialManager 呼叫，也可從外部直接驅動。
@@ -529,5 +349,17 @@ public class UIManager : MonoBehaviour
     {
         tutorialDialogueUI?.Hide();
         tutorialTipsUI?.Hide();
+    }
+
+    // ── Reward Description UI ─────────────────────────────────────────
+
+    public void ShowRewardDescription(PolicyCardData card)
+    {
+        rewardDescriptionUI?.Show(card);
+    }
+
+    public void HideRewardDescription()
+    {
+        rewardDescriptionUI?.Hide();
     }
 }
