@@ -131,8 +131,15 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 
 - **Demo 流程長度**：全程鎖定為 **8 關**。
   - **第 4 關與第 8 關**：固定為 Boss 戰。
-- **隨機房間、雙向選擇機制**：每次通關房間後，會出現兩扇門供玩家選擇。
-  - 門上需明確標示下一關的**獎勵預覽**（如：資金、政策卡、技能升級）。
+- **岔路選擇機制**：每個戰鬥場景從左進右出，右側固定兩扇門。
+  - 玩家靠近門時，畫面角落顯示下一關任務提示（`TutorialTipsUI`）。
+  - 敵人全滅後門才解鎖，走進門觸發選擇並載入下一關。
+  - 門的設定：左門 `optionIndex = 0`，右門 `optionIndex = 1`，對應 `CampaignData.PendingOptions`。
+- **任務系統（Mission System）**：每個房間有指定任務類型，過關後由 `MissionTracker` 評估達成與否。
+  - 任務類型：`EliminateAll`（消滅對手）、`ReachVotePercent`（達到 X% 票倉）、`Survive`（生存 N 秒）。
+  - 任務資料由 `RoomMissionData` ScriptableObject 定義（含類型、目標值、圖示、任務簡報）。
+  - 進場時由 `GameplayState` 自動顯示任務簡報對話框（復用 `TutorialDialogueUI`）。
+  - 任務池（`MissionPool`）由 `StageClearState` 結算後抽取，注入 `CampaignData.PendingOptions`。
 - **房間內部配置**：由系統依權重隨機生成。
 
 | 房間類型 | 生成物件 | 時限 |
@@ -202,26 +209,30 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 - 目前程式中現有實作範例：`DogezaSkill`（土下座）——轉換 Cold 屬性選民的特殊技能。
 
 ### 7. 政策卡系統（PolicyCard / 被動祝福機制）
-通關房間後（票數 > 對手）、過場或商人處可選擇配置政策卡。
+通關房間後，場景內出現三個獎勵物件，玩家靠近按 E 選擇。
 **重構聲明：政策卡不再是戰鬥中可主動施放的「技能」，而是作為「被動外掛/祝福」存在，用以建構深度的流派 (Build)。**
 
-#### 獎勵與抽卡機制 (Draft System)
-- **三選一介面 (Pick 1 of 3)**：獎勵結算時，系統會從卡池中隨機抽出三張政策卡供玩家選擇。
-- **重骰 (Reroll) 機制**：允許玩家消耗局內資源（如資金或誠信值）來刷新三選一的選項。
-- **道德代價**：政策卡的選擇必須綁定代價。高報酬的卡牌需附帶即時的屬性扣減（如扣除誠信值）或導致社會風氣惡化。
+#### 獎勵選卡機制（場景內互動，Cult of the Lamb 風格）
+- **敵人全滅後**，場景中段生成三個獎勵物件（3D 底座 + Billboard 卡面 Sprite）。
+- 玩家靠近物件顯示 `RewardDescriptionUI`（置中卡名 + 說明 + 互動提示）。
+- **按 E 選擇**：套用卡牌效果，其餘物件消失，觸發 `TriggerRoomCleared` 進入結算。
+- **不按類別篩選獎勵**：卡池完全隨機，保留殺戮尖塔的 Build 建立挑戰性。
 
-#### 程式實作邏輯與 Build 流派標籤 (Archetypes)
-未來所有的政策卡資料 (ScriptableObjects) 都需基於以下三大流派 (Archetypes) 作為設計基礎：
-- **A. 情緒爆發流**：主打高風險近戰、依賴狂熱的社會風氣。
-- **B. 理性穩健流**：主打防禦、控場，依賴冷感的社會風氣。
+#### 卡牌稀有度與視覺設計
+- 稀有度分為 `Common`（普通）、`Rare`（稀有）、`Legendary`（傳說），對應不同卡框視覺。
+- 每張卡有獨立 `cardArtwork` Sprite 作為卡面主圖。
+- **派系歸屬**改以 `FactionData faction`（可 null = 通用）取代舊有 `CardType` 分類，保留低調標記但不影響卡面主視覺，避免玩家一眼判斷跳過思考。
+
+#### 程式實作邏輯與 Build 流派
+未來所有政策卡以**派系（FactionData）**作為 Build 流派歸屬基礎：
+- 不同派系有獨立牌池，獎勵階段從所有派系牌池混合隨機出卡。
+- 派系目前為「陳派」與「柯派」，未來依企劃調整。
 
 **程式架構支援**：
-1. **條件觸發機制 (Proc)**：
-   政策卡的效果必須與「玩家操作」或「遊戲狀態」綁定（例如「完美閃避後觸發」或「誠信低於30%時發動」）。實作上需將觸發器 (`IProcTrigger`) 與效果器分離。
-2. **標籤與風氣連動 (Tag & Climate)**：
-   每張卡牌帶有特定的「情緒」或「理性」標籤。玩家裝備卡牌會動態改變全域「社會風氣 (Social Atmosphere)」，進而改變選民 AI 的行為模式。
+1. **條件觸發機制 (Proc)**：觸發器 (`IProcTrigger`) 與效果器分離，支援「完美閃避後觸發」等條件。
+2. **風氣連動**：卡牌的 `socialClimateDelta` 動態調整全域社會風氣，影響選民 AI 行為。
 
-*(開發提醒：請善用 `ICardEffect` 介面擴充觸發機制，所有設計必須遵循 GameDB (SSOT) 數值修改，發揮 ScriptableObject 自由組裝積木的優勢。)*
+*(開發提醒：請善用 `ICardEffect` 介面，所有設計遵循 GameDB SSOT 修改數值。)*
 
 ---
 
@@ -358,9 +369,12 @@ Assets/Scripts/
 │   └── StateMachine/  # Idle / Move / Dash / Attack / Skill / Stun 狀態
 ├── Voter/           # 選民邏輯、資料、外觀
 ├── System/          # 核心系統（GameDB、VoteManager、BattleFlowController 等）
+│   ├── Mission/     # 任務系統（RoomMissionData、MissionTracker、MissionPool、DoorController 等）
+│   └── Reward/      # 場景內獎勵系統（RewardItem、RewardItemSpawner、RewardDescriptionUI）
 ├── UIManager/       # UI 元件
 ├── Effects/         # 特效、物件池相關
 ├── Enemy/           # 敵方 AI
+├── Tutorial/        # 教學對話系統（TutorialManager、TutorialDialogueUI、TutorialTipsUI）
 ├── ScenesManager/   # 場景切換管理
 └── RandomEvents/    # 隨機事件（未開發）
 ```
@@ -389,6 +403,11 @@ Assets/Scripts/
 - 棄保效應機制：區塊完成時若票數未高於對手，對手深色選民出現率 +10%，待實作。
 - 結局 A/B/C/D 的結局畫面演出待製作。
 - 前導劇情（S1）待製作。
+- **場景內獎勵物件**：`RewardItem` Prefab（3D 底座 + Billboard SpriteRenderer）待美術製作與 Inspector 設定。
+- **任務資料填寫**：`RoomMissionData` SO assets 待在 `Assets/Data/Mission/` 建立，`MissionPool` 待組裝，各戰鬥 scene 需放置 `MissionTracker`、`RewardItemSpawner`、兩個門物件。
+- **對話系統多頁**：`TutorialStepData.dialogueLines` 每個元素為獨立一頁，按確認鍵翻頁，最後一頁才關閉對話框。
+- **技能選擇場景內化**：第 5/10 關的技能選擇預留於 `RewardItemSpawner`（TODO 標記），待技能選擇物件設計完成後實作。
+- **StageClearState 轉場動畫**：預留漫畫網點風格過場動畫接入點（`ponytail:` 注解標記）。
 - **敵人 AI 後續優化**：
   - **實作真實傷害判定**：目前 `EnemyAttackState` 僅觸發動畫，需加入實際對目標扣血的邏輯。
   - **實作 Billboard**：敵人 Sprite 需永遠面向攝影機，避免在 3D 空間中不自然旋轉。
@@ -493,7 +512,13 @@ Assets/Scripts/
 ## 🧹 開發日誌 (Development Log)
 > 紀錄格式已依日期排列，方便後續直接更新至工作室網頁
 
-### 📅 2026-07-17：系統大清洗與效能優化 (Legacy Cleanup & Optimization)
+### 📅 2026-08-24：關卡任務系統、場景內選卡、對話系統改版
+- **任務系統**：新增 `RoomMissionData`、`MissionObjectiveType`、`MissionPool`、`MissionTracker`，支援三種任務類型（消滅/搶票/生存）。任務資料存於 `CampaignData.ActiveRoom`，結算後由 `StageClearState` 從 `MissionPool` 抽取兩個選項注入岔路。
+- **岔路門系統**：新增 `DoorController`（進入觸發）與 `DoorPreviewZone`（靠近顯示任務 tip），分離感應範圍與選擇觸發，復用 `TutorialTipsUI` 顯示任務說明一行文字。
+- **場景內獎勵選卡**：拔除 `UIManager` 結算 UI 序列（Data/Reward/Skill Panel），改為場景內 `RewardItem`（3D 物件 + Billboard）+ `RewardItemSpawner`（敵人全滅後生成）+ `RewardDescriptionUI`（置中說明面板）；玩家靠近按 E 選擇，選完觸發 `TriggerRoomCleared`。
+- **政策卡架構調整**：移除 `CardType` enum，改以 `FactionData faction`（可 null = 通用）標記派系歸屬；新增 `cardArtwork` Sprite 欄位；稀有度（`CardRarity`）作為卡框視覺語言，不按類別篩選獎勵。
+- **對話系統多頁**：`TutorialDialogueUI` 改為逐頁顯示，每個 `dialogueLines` 元素為獨立一頁；`TutorialManager` 按確認鍵翻頁，最後一頁才關閉對話框。
+- **`StageClearState` 精簡**：移除所有 UI 流程，只保留推進房間、生成岔路選項、切換下一 State；預留漫畫網點轉場動畫接入點。
 - **錯誤修復**：修正計票系統重複計算、關卡房號 off-by-one 錯誤、玩家速度未即時同步等核心 Bug。
 - **舊代碼隔離**：將廢棄的 Manager (如 `PolicyCardManager`, `BlockProgressManager` 等) 徹底隔離並搬移至 `Obsolete` 資料夾，維持專案 100% 編譯成功與零缺失引用。
 - **生命週期管理**：實作 `AutoDestroy` 組件並與 `PolicyEffectRuntimeManager` 整合，確保動態生成物件能自動銷毀，解決轉場時潛在的記憶體洩漏 (Memory Leak)。

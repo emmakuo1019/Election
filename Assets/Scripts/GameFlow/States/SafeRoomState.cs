@@ -40,9 +40,10 @@ public class SafeRoomState : IState
     {
         Debug.Log("[SafeRoomState] 抵達出口，準備過渡...");
 
-        if (roomNumber == 15)
+        var campaign = GameDB.Instance?.Campaign;
+        if (campaign != null && campaign.IsNextRoomBoss())
         {
-            Debug.Log("[SafeRoomState] 第 15 關結束，進入 Boss 戰！");
+            Debug.Log($"[SafeRoomState] 第 {campaign.TotalRoomNumber + 1} 關為 Boss 戰，進入！");
             GameFlowManager.Instance.ChangeState(new BossBattleState());
         }
         else

@@ -6,21 +6,37 @@ public class SkillData : ScriptableObject, ISkillData
     [Header("基礎設定")]
     public string skillName;
     [UnityEngine.Serialization.FormerlySerializedAs("baseCooldown")]
-    public float cooldown; // 用於冷卻計算
-    public float duration = 0.5f; // 狀態鎖定時間
-    
+    public float cooldown;
+    public float duration = 0.5f;
+
+    [Header("資源消耗")]
+    [Tooltip("施放消耗資金（MP），0 = 免費")]
+    public int mpCost = 0;
+    [Tooltip("施放消耗誠信（HP），0 = 免費，通常用於高風險技能")]
+    public float hpCost = 0f;
+
+    [Header("社會風氣影響")]
+    [Tooltip("正值偏情緒動員，負值偏理性。0 = 無影響")]
+    public int socialClimateDelta = 0;
+
+    [Header("派系歸屬")]
+    [Tooltip("所屬派系（null = 通用）")]
+    public FactionData faction;
+
+    [Header("稀有度")]
+    public CardRarity Rarity = CardRarity.Common;
+
     [Header("動畫與表現")]
     public string animationTriggerName;
     [UnityEngine.Serialization.FormerlySerializedAs("skillEffectPrefab")]
     public GameObject vfxPrefab;
     public float vfxDuration = 0f;
-    
+
     // 實作 ISkillData 介面屬性
     public string AnimationTriggerName => animationTriggerName;
     public float Cooldown => cooldown;
     public float Duration => duration;
-    
-    // 實作執行邏輯（將原本在 Manager 的實體化邏輯移過來，封裝在自身）
+
     public virtual void ExecuteSkill(GameObject caster)
     {
         if (vfxPrefab != null && caster != null)
@@ -43,7 +59,6 @@ public class SkillData : ScriptableObject, ISkillData
         Debug.Log($"[SkillData] 執行技能邏輯：{skillName}");
     }
 
-    // 預設為空實作，讓有持續性邏輯（地位、追蹤）的技能覆寫
     public virtual void UpdateSkill(GameObject caster, float deltaTime)
     {
     }

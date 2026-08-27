@@ -44,6 +44,15 @@ public class PlayerHealthSystem : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (amount <= 0) return;
+
+        // 有護盾時吸收一次傷害
+        if (_shieldCount > 0)
+        {
+            _shieldCount--;
+            Debug.Log($"[PlayerHealthSystem] 誠信護盾吸收傷害！剩餘護盾: {_shieldCount}");
+            return;
+        }
+
         GameDB.Instance?.Run.ModifyIntegrityHp(-amount);
     }
 
@@ -52,4 +61,11 @@ public class PlayerHealthSystem : MonoBehaviour
         if (amount <= 0) return;
         GameDB.Instance?.Run.ModifyIntegrityHp(amount);
     }
+
+    /// <summary>增加護盾層數（每層吸收一次扣除）。</summary>
+    public void AddShield(int count = 1) => _shieldCount += count;
+
+    public int ShieldCount => _shieldCount;
+
+    private int _shieldCount = 0;
 }

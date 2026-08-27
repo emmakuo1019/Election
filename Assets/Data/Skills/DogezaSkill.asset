@@ -15,6 +15,11 @@ MonoBehaviour:
   skillName: "\u60B2\u60C5\u571F\u4E0B\u5EA7"
   cooldown: 5
   duration: 0.5
+  mpCost: 10
+  hpCost: 10
+  socialClimateDelta: 0
+  faction: {fileID: 11400000, guid: 2854ea893709e462fa5388c955e7c79c, type: 2}
+  Rarity: 0
   animationTriggerName: Begging
   vfxPrefab: {fileID: 7246763196193437300, guid: 268633b25e00646a7927c4266f63b6a6, type: 3}
   vfxDuration: 0

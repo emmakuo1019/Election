@@ -1,4 +1,5 @@
 using UnityEngine;
+
 public class BattleFlowController : MonoBehaviour
 {
     public static BattleFlowController Instance { get; private set; }
@@ -8,12 +9,7 @@ public class BattleFlowController : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
@@ -21,63 +17,82 @@ public class BattleFlowController : MonoBehaviour
     {
         if (levelTimer != null)
             levelTimer.OnTimerEnd += OnBattleTimeEnd;
+
+        // EliminateAll 任務：選完獎勵後顯示出口提示
+        BattleEventManager.OnRewardCollected += OnRewardCollected;
     }
 
     private void OnDisable()
     {
         if (levelTimer != null)
             levelTimer.OnTimerEnd -= OnBattleTimeEnd;
+
+        BattleEventManager.OnRewardCollected -= OnRewardCollected;
     }
 
     private void Start()
     {
         if (levelTimer == null)
-        {
             levelTimer = FindFirstObjectByType<LevelTimer>();
-        }
     }
 
+    // ── 事件處理 ─────────────────────────────────────────────────────
+
+    /// <summary>Survive 任務：計時結束 → 生成獎勵卡（與 EliminateAll 共用相同流程）</summary>
     private void OnBattleTimeEnd()
     {
-        bool isLastRoomInBlock = GameDB.Instance != null && GameDB.Instance.Campaign != null &&
-                                 GameDB.Instance.Campaign.HasBlockProgress() && 
+        bool isLastRoomInBlock = GameDB.Instance?.Campaign != null &&
+                                 GameDB.Instance.Campaign.HasBlockProgress() &&
                                  GameDB.Instance.Campaign.IsLastRoomInBlock();
-        int playerVotes = GameDB.Instance != null ? GameDB.Instance.Run.PlayerVotes : 0;
-        int opponentVotes = GameDB.Instance != null ? GameDB.Instance.Run.OpponentVotes : 0;
-        bool canClaimReward = playerVotes > opponentVotes;
+        int playerVotes   = GameDB.Instance?.Run.PlayerVotes   ?? 0;
+        int opponentVotes = GameDB.Instance?.Run.OpponentVotes ?? 0;
 
-        if (isLastRoomInBlock && !canClaimReward)
+        if (isLastRoomInBlock && playerVotes <= opponentVotes)
         {
-            if (GameDB.Instance != null && GameDB.Instance.Campaign != null)
-            {
-                GameDB.Instance.Campaign.SetNextSceneOverride("endGamePanel");
-                GameDB.Instance.Campaign.FailCurrentBlock();
-            }
+            GameDB.Instance?.Campaign.SetNextSceneOverride("endGamePanel");
+            GameDB.Instance?.Campaign.FailCurrentBlock();
         }
 
-        UnlockExitAndForceVotersLeave();
+        // Survive 任務計時結束後，強制讓選民離場，再觸發獎勵流程
+        // 出口的開放與 EliminateAll 相同：等玩家選完獎勵（OnRewardCollected）後才顯示
+        DespawnVoters();
+        Debug.Log("[BattleFlowController] Survive 計時結束，觸發獎勵流程");
+        BattleEventManager.TriggerAllEnemiesDefeated();
     }
 
-    private void UnlockExitAndForceVotersLeave()
+    /// <summary>任何任務：玩家選完獎勵 → 暫停計時器、開出口、顯示出口提示</summary>
+    private void OnRewardCollected()
     {
         levelTimer?.PauseTimer();
+        ShowExit();
+    }
 
-        RoomExitController roomExitController = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
-        if (roomExitController != null)
+    // ── 出口處理 ─────────────────────────────────────────────────────
+
+    /// <summary>強制讓場上所有選民走向出口（Survive 計時結束時用）</summary>
+    private void DespawnVoters()
+    {
+        var exit = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        if (exit != null)
         {
-            roomExitController.UnlockExit();
+            Vector3 exitPos = exit.GetVoterExitPosition();
+            foreach (var voter in FindObjectsByType<VoterLogic>(FindObjectsSortMode.None))
+                voter.BeginExitMovement(exitPos);
+        }
+    }
+
+    /// <summary>解鎖出口並顯示出口提示</summary>
+    private void ShowExit()
+    {
+        var exit = FindFirstObjectByType<RoomExitController>(FindObjectsInactive.Include);
+        if (exit != null)
+        {
+            exit.UnlockExit();
             UIManager.Instance?.ShowExitPrompt();
-            
-            Vector3 exitPosition = roomExitController.GetVoterExitPosition();
-            VoterLogic[] voters = FindObjectsByType<VoterLogic>(FindObjectsSortMode.None);
-            foreach (VoterLogic voter in voters)
-            {
-                voter.BeginExitMovement(exitPosition);
-            }
         }
         else
         {
-            Debug.LogWarning("⚠️ 找不到 RoomExitController，無法開啟出口或強制選民離場");
+            Debug.LogWarning("⚠️ 找不到 RoomExitController");
         }
     }
 }

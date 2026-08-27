@@ -83,17 +83,38 @@ public class PlayerSkillManager : MonoBehaviour
     private Dictionary<SkillData, float> skillLastUseTime = new Dictionary<SkillData, float>();
 
     /// <summary>
-    /// 檢查傳入的戰鬥技能或大招是否可以施放
+    /// 檢查傳入的戰鬥技能或大招是否可以施放（冷卻 + 資源）
     /// </summary>
     public bool CanCastSkill(SkillData skillData)
     {
         if (skillData == null) return false;
 
+        // 冷卻檢查
         if (skillLastUseTime.TryGetValue(skillData, out float lastTime))
         {
             if (Time.time < lastTime + skillData.Cooldown)
             {
-                Debug.LogWarning($"⏳ 技能 [{skillData.AnimationTriggerName}] 冷卻中...");
+                Debug.LogWarning($"⏳ 技能 [{skillData.skillName}] 冷卻中...");
+                return false;
+            }
+        }
+
+        // MP 資源檢查
+        if (skillData.mpCost > 0 && GameDB.Instance != null)
+        {
+            if (GameDB.Instance.Run.CurrentMP < skillData.mpCost)
+            {
+                Debug.LogWarning($"💸 技能 [{skillData.skillName}] 資金不足（需要 {skillData.mpCost}，剩餘 {GameDB.Instance.Run.CurrentMP}）");
+                return false;
+            }
+        }
+
+        // HP 資源檢查（誠信消耗類技能，保留 1 點不讓玩家直接扣死）
+        if (skillData.hpCost > 0 && GameDB.Instance != null)
+        {
+            if (GameDB.Instance.Run.IntegrityHp <= skillData.hpCost)
+            {
+                Debug.LogWarning($"💔 技能 [{skillData.skillName}] 誠信不足（需要 {skillData.hpCost}，剩餘 {GameDB.Instance.Run.IntegrityHp:F1}）");
                 return false;
             }
         }

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3434cf435ca834b85886e773060f7766, type: 3}
+  m_Name: "\u611F\u52D5\u842C\u5206"
+  m_EditorClassIdentifier: Assembly-CSharp::PolicyCardData
+  cardName: "\u611F\u52D5\u842C\u5206"
+  description: "\u6BCF\u6B21\u8F49\u5316\u9078\u6C11\u5F8C\uFF0C3\u79D2\u5167\u8F49\u5316\u6A5F\u7387
+    +20%\u3002"
+  Rarity: 0
+  faction: {fileID: 11400000, guid: 2854ea893709e462fa5388c955e7c79c, type: 2}
+  cardArtwork: {fileID: 21300000, guid: 44cefc243f6da462598dbacd0b420bb0, type: 3}
+  socialClimateDelta: -5
+  trigger:
+    rid: 2100000000000001
+  Effects:
+  - rid: 2100000000000002
+  references:
+    version: 2
+    RefIds:
+    - rid: 2100000000000001
+      type: {class: OnVoterConvertedTrigger, ns: , asm: Assembly-CSharp}
+      data: 
+    - rid: 2100000000000002
+      type: {class: ComboAccelEffect, ns: , asm: Assembly-CSharp}
+      data:
+        delta: 0.2
+        durationSeconds: 3

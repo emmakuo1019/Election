@@ -14,14 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PolicyCardData
   cardName: "\u8DD1\u6524\u9054\u4EBA"
   description: "\u589E\u52A0\u79FB\u52D5\u901F\u5EA6"
-  Type: 0
   Rarity: 0
+  faction: {fileID: 11400000, guid: 5bd5eab0dfff344a99dbc795aad2f78b, type: 2}
+  cardArtwork: {fileID: 21300000, guid: 44cefc243f6da462598dbacd0b420bb0, type: 3}
   socialClimateDelta: 0
+  trigger:
+    rid: -2
   Effects:
   - rid: 1492401521481744387
   references:
     version: 2
     RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
     - rid: 1492401521481744387
       type: {class: StatModifierEffect, ns: , asm: Assembly-CSharp}
       data:

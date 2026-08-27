@@ -63,14 +63,28 @@ public class SkillState : IState
                     Debug.LogWarning($"[SkillState] ⚠️ {_skillData.skillName} 的 AnimationTriggerName 為空！");
             }
 
-            // 3. 呼叫多型介面執行真正的技能邏輯（生成特效、扣資源等）
+            // 3. 呼叫多型介面執行真正的技能邏輯（生成特效等）
             _skillData.ExecuteSkill(_ctx.gameObject);
-            
-            // 4. 紀錄施放時間並正式進入 CD
+
+            // 4. 扣除資源消耗（MP / HP）
+            if (GameDB.Instance != null)
+            {
+                if (_skillData.mpCost > 0)
+                    GameDB.Instance.Run.ModifyMP(-_skillData.mpCost);
+                if (_skillData.hpCost > 0)
+                    GameDB.Instance.Run.ModifyIntegrityHp(-_skillData.hpCost);
+                if (_skillData.socialClimateDelta != 0)
+                    GameDB.Instance.Run.ModifyAtmosphere(_skillData.socialClimateDelta);
+            }
+
+            // 5. 紀錄施放時間並正式進入 CD
             if (_ctx.SkillManager != null)
             {
                 _ctx.SkillManager.RecordSkillUse(_skillData);
             }
+
+            // 6. 廣播技能使用事件，供政策卡觸發條件偵聽
+            BattleEventManager.TriggerOnAnySkillUsed(_skillData);
             
             Debug.Log($"[SkillState] Enter — 施放技能");
         }

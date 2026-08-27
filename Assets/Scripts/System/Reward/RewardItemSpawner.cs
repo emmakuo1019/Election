@@ -92,6 +92,7 @@ public class RewardItemSpawner : MonoBehaviour
         int count = Mathf.Min(rewardCount, spawnPoints.Length, cards.Count);
         for (int i = 0; i < count; i++)
         {
+            // ponytail: 每關僅生成 3 個，GC 壓力可忽略，不入池；若未來需大量動態生成再改 PoolManager
             RewardItem item = Instantiate(rewardItemPrefab, spawnPoints[i].position, spawnPoints[i].rotation);
             item.Setup(cards[i]);
             item.OnItemSelected += HandleItemSelected;
@@ -124,8 +125,9 @@ public class RewardItemSpawner : MonoBehaviour
         _spawnedItems.Clear();
         _rewardActive = false;
 
-        // 通知過關，觸發 StageClearState
-        Debug.Log("[RewardItemSpawner] 選擇完成，觸發過關");
+        // 先通知「獎勵已領取」，讓 DoorController 完成第二道解鎖條件，再觸發過關
+        Debug.Log("[RewardItemSpawner] 選擇完成，通知獎勵完成並觸發過關");
+        BattleEventManager.TriggerRewardCollected();
         BattleEventManager.TriggerRoomCleared();
     }
 }

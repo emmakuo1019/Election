@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9e62f4f8a4d1456785bf2e0ca06bd9c, type: 3}
+  m_Name: MissionPool
+  m_EditorClassIdentifier: Assembly-CSharp::MissionPool
+  entries:
+  - mission: {fileID: 11400000, guid: 7b6bc2fa55f964f9981d4370a97589a6, type: 2}
+    weight: 5
+  - mission: {fileID: 11400000, guid: 91c8b081874c34ad29e53e5ffbbf8c39, type: 2}
+    weight: 5

@@ -24,6 +24,12 @@ public class MissionTracker : MonoBehaviour
     /// </summary>
     public static bool LastResult { get; private set; } = true;
 
+    /// <summary>
+    /// 重置為預設通過狀態。由 StageClearState.Enter() 主動呼叫，
+    /// 確保沒有放置 MissionTracker 的場景（如安全房）也不會殘留上一關結果。
+    /// </summary>
+    public static void Reset() => LastResult = true;
+
     private RoomMissionData _mission;
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
@@ -45,7 +51,8 @@ public class MissionTracker : MonoBehaviour
 
     private void Start()
     {
-        // 每關開始時重置，確保不帶入上一關的結果
+        // StageClearState.Enter() 已在進入結算前主動呼叫 Reset()
+        // 這裡再重置一次作為防禦，確保直接從場景開始測試時也能正確初始化
         LastResult = true;
 
         _mission = GameDB.Instance?.Campaign.ActiveRoom.mission;

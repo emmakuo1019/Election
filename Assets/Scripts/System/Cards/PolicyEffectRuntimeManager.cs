@@ -4,7 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// 政策卡持續性效果的執行器，負責管理定時生成等持續性行為的生命週期。
-/// 掛載於戰鬥場景中，在場景銷毀時會清理所有生成物，避免內存洩漏。
+/// 同時作為 ProcTriggerBridge：管理所有帶觸發條件的政策卡的事件訂閱生命週期。
+/// 掛載於戰鬥場景中，在場景銷毀時會清理所有生成物與觸發器訂閱，避免內存洩漏。
 /// </summary>
 public class PolicyEffectRuntimeManager : MonoBehaviour
 {
@@ -16,6 +17,11 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
     // 用於記錄運行中的協程，以便在需要時（如 RemoveEffect）停止它們
     private Dictionary<SpawnObjectEffect, Coroutine> runningCoroutines = new Dictionary<SpawnObjectEffect, Coroutine>();
 
+    // ── ProcTriggerBridge：追蹤所有已註冊的觸發器 ──────────────────────
+    // key = 卡名（與 RunData 的去重邏輯一致），value = 觸發器實體
+    private readonly Dictionary<string, IProcTrigger> _registeredTriggers =
+        new Dictionary<string, IProcTrigger>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -24,16 +30,75 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // 場景載入時，為當前 Run 已擁有的帶觸發卡片重新訂閱事件
+        // （跨場景切換後 Instance 重建，觸發器需要重新 Register）
+        RebindActiveCards();
     }
 
     private void OnDestroy()
     {
+        // 取消所有觸發器訂閱，防止跨場景懸空 delegate
+        UnregisterAllTriggers();
         Cleanup();
 
         if (Instance == this)
-        {
             Instance = null;
-        }
+    }
+
+    // ── ProcTriggerBridge 公開 API ─────────────────────────────────────
+
+    /// <summary>
+    /// 當玩家獲得一張新的政策卡時呼叫（由 RunData.AddPolicyCard 間接透過
+    /// PolicyCardData.ApplyAllEffects 後的 Bridge 呼叫，見下方整合點）。
+    /// 若該卡有觸發條件，向 BattleEventManager 訂閱對應事件。
+    /// </summary>
+    public void RegisterCard(PolicyCardData card)
+    {
+        if (card == null || card.trigger == null) return;
+        if (_registeredTriggers.ContainsKey(card.cardName)) return; // 防重複
+
+        card.trigger.Register(card.FireProcEffects);
+        _registeredTriggers[card.cardName] = card.trigger;
+        Debug.Log($"[ProcTriggerBridge] 已註冊觸發器：{card.cardName}");
+    }
+
+    /// <summary>
+    /// 移除指定卡的觸發器訂閱（目前設計卡片永久保留，預留給未來「失去卡牌」機制）。
+    /// </summary>
+    public void UnregisterCard(PolicyCardData card)
+    {
+        if (card == null || !_registeredTriggers.TryGetValue(card.cardName, out var trigger)) return;
+        trigger.Unregister();
+        _registeredTriggers.Remove(card.cardName);
+        Debug.Log($"[ProcTriggerBridge] 已取消觸發器：{card.cardName}");
+    }
+
+    private void UnregisterAllTriggers()
+    {
+        foreach (var kv in _registeredTriggers)
+            kv.Value.Unregister();
+        _registeredTriggers.Clear();
+    }
+
+    /// <summary>
+    /// 供 GameDB.ResetRunData() 呼叫，清除舊 Run 所有觸發器訂閱。
+    /// </summary>
+    public void ClearAllTriggers() => UnregisterAllTriggers();
+
+    /// <summary>
+    /// 場景重載後重新為 Run 中已擁有的卡片綁定觸發器。
+    /// </summary>
+    private void RebindActiveCards()
+    {
+        var activeCards = GameDB.Instance?.Run?.ActiveCards;
+        if (activeCards == null) return;
+
+        foreach (var card in activeCards)
+            RegisterCard(card);
+
+        if (activeCards.Count > 0)
+            Debug.Log($"[ProcTriggerBridge] 場景載入：重新綁定 {_registeredTriggers.Count} 個觸發器");
     }
 
     /// <summary>

@@ -39,8 +39,15 @@ public class TutorialState : IState
 
         Debug.Log("[TutorialState] 教學場景載入完成");
 
-        // 顯示 HUD（HP、MP、選票 bar 等）
+        // 場景切換後重新綁定場景內的 Tutorial UI（舊場景引用在切換後失效）
+        UIManager.Instance?.RebindTutorialUI();
+
+        // 顯示 HUD（HP、MP 等），並套用教學 HUD 布局（關閉選票條、計時器、敵人計數）
         UIManager.Instance?.ShowGameplayHUD();
+
+        // 讓 MissionHUDController 套用教學模式布局（隱藏選票條、計時器、敵人計數）
+        var missionHUDController = UnityEngine.Object.FindFirstObjectByType<MissionHUDController>();
+        missionHUDController?.ApplyTutorialLayout();
 
         // 教學場景不開倒數計時，LevelTimer 留給設計師手動設定
     }

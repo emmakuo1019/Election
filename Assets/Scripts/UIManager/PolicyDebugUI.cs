@@ -123,7 +123,7 @@ public class PolicyDebugUI : MonoBehaviour
                 var card = activeCards[i];
                 if (card != null)
                 {
-                    GUILayout.Label($"• {card.cardName} (<color=cyan>{card.Type}</color> | Rarity: {card.Rarity})");
+                    GUILayout.Label($"• {card.cardName} (<color=cyan>{card.faction?.factionName ?? "通用"}</color> | Rarity: {card.Rarity})");
                 }
             }
         }

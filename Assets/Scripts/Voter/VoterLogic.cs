@@ -386,6 +386,10 @@ public class VoterLogic : MonoBehaviour, IPoolable
         // 觸發全域事件
         BattleEventManager.TriggerOnVoterConverted(side);
 
+        // 深色選民被玩家轉化 → 額外觸發 Dark 專用事件
+        if (side == VoterData.PlayerSideSign && Data != null && Data.HasDarkAttribute)
+            BattleEventManager.TriggerOnDarkVoterConverted();
+
         // 顯示成功轉化的 UI
         Visuals?.ShowEmote(EmoteType.Success);
         

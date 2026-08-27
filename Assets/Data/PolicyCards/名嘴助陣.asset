@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3434cf435ca834b85886e773060f7766, type: 3}
+  m_Name: "\u540D\u5634\u52A9\u9663"
+  m_EditorClassIdentifier: Assembly-CSharp::PolicyCardData
+  cardName: "\u540D\u5634\u52A9\u9663"
+  description: "\u6BCF\u6B21\u4F7F\u7528\u6280\u80FD\u5F8C\uFF0C\u7372\u5F97\u4E00\u5C64\u8AA0\u4FE1\u8B77\u76FE\u3002"
+  Rarity: 1
+  faction: {fileID: 11400000, guid: 2854ea893709e462fa5388c955e7c79c, type: 2}
+  cardArtwork: {fileID: 21300000, guid: 44cefc243f6da462598dbacd0b420bb0, type: 3}
+  socialClimateDelta: -10
+  trigger:
+    rid: 2400000000000001
+  Effects: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 2400000000000001
+      type: {class: OnAnySkillUsedTrigger, ns: , asm: Assembly-CSharp}
+      data:
+        fireOncePerRoom: 0

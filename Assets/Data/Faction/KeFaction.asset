@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50e3d058b480c4bf0ad1fd2334d15c52, type: 3}
+  m_Name: KeFaction
+  m_EditorClassIdentifier: Assembly-CSharp::FactionData
+  factionName: "\u67EF\u6D3E"
+  description: "\u5584\u4E8E\u60C5\u611F\u6E32\u67D3\u7684\u4F5C\u6230\u65B9\u5F0F\u7372\u5F97\u5927\u91CF\u7684\u652F\u6301"
+  starterSkill: {fileID: 11400000, guid: 1b56f2f5959b4ea3a42f2261cbb0d9a8, type: 2}
+  factionColor: {r: 1, g: 0.77782524, b: 0.25098038, a: 1}

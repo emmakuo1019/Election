@@ -19,11 +19,20 @@ public static class BattleEventManager
     // 玩家死亡事件
     public static event Action OnPlayerDied;
 
+    // 獎勵選取完成事件（玩家選完卡牌後觸發，DoorController 以此作為第二道解鎖條件）
+    public static event Action OnRewardCollected;
+
     // 遊戲結束，玩家確認返回總部事件
     public static event Action OnReturnToHQConfirmed;
     
     // 選民被轉化成功事件 (int side 陣營: 1=玩家, -1=敵人)
     public static event Action<int> OnVoterConverted;
+
+    // 玩家使用任意技能 (J/K/L) 事件 (SkillData 為施放的技能)
+    public static event Action<SkillData> OnAnySkillUsed;
+
+    // 玩家轉化深色（Dark）選民事件
+    public static event Action OnDarkVoterConverted;
 
     /// <summary>
     /// 當最後一隻怪物死亡，或達成過關條件時呼叫
@@ -62,6 +71,17 @@ public static class BattleEventManager
     }
 
     /// <summary>
+    /// 當玩家在場景中選取完獎勵物件（政策卡或技能）後呼叫。
+    /// RewardItemSpawner.HandleItemSelected 在套用卡牌效果後、TriggerRoomCleared 前呼叫。
+    /// DoorController 訂閱此事件作為第二道解鎖條件，確保獎勵先被領取再允許玩家過門。
+    /// </summary>
+    public static void TriggerRewardCollected()
+    {
+        Debug.Log("[BattleEventManager] 觸發獎勵選取完成事件 (OnRewardCollected)");
+        OnRewardCollected?.Invoke();
+    }
+
+    /// <summary>
     /// 當玩家在結算面板點擊確認返回總部時呼叫
     /// </summary>
     public static void TriggerReturnToHQConfirmed()
@@ -77,5 +97,21 @@ public static class BattleEventManager
     public static void TriggerOnVoterConverted(int side)
     {
         OnVoterConverted?.Invoke(side);
+    }
+
+    /// <summary>
+    /// 當玩家施放任意技能 (J/K/L) 時呼叫
+    /// </summary>
+    public static void TriggerOnAnySkillUsed(SkillData skill)
+    {
+        OnAnySkillUsed?.Invoke(skill);
+    }
+
+    /// <summary>
+    /// 當玩家轉化深色（Dark）選民時呼叫
+    /// </summary>
+    public static void TriggerOnDarkVoterConverted()
+    {
+        OnDarkVoterConverted?.Invoke();
     }
 }

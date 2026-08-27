@@ -10,11 +10,21 @@ public static class EnemySpawnTracker
     private static int _aliveCount;
     private static bool _trackingActive;
 
+    /// <summary>場上目前存活的敵人數量（唯讀）</summary>
+    public static int AliveCount => _aliveCount;
+
+    /// <summary>
+    /// 存活數量變更時觸發，參數為最新的存活數。
+    /// EnemyCounterUI 訂閱此事件以即時更新顯示。
+    /// </summary>
+    public static event System.Action<int> OnAliveCountChanged;
+
     public static void StartTracking()
     {
         var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         _aliveCount = enemies.Length;
         _trackingActive = true;
+        OnAliveCountChanged?.Invoke(_aliveCount);
         Debug.Log($"[EnemySpawnTracker] 開始追蹤，場上敵人數：{_aliveCount}");
     }
 
@@ -22,6 +32,7 @@ public static class EnemySpawnTracker
     {
         _trackingActive = false;
         _aliveCount = 0;
+        OnAliveCountChanged?.Invoke(_aliveCount);
     }
 
     /// <summary>由 EnemyController.Die() 呼叫</summary>
@@ -29,6 +40,7 @@ public static class EnemySpawnTracker
     {
         if (!_trackingActive) return;
         _aliveCount = Mathf.Max(0, _aliveCount - 1);
+        OnAliveCountChanged?.Invoke(_aliveCount);
         Debug.Log($"[EnemySpawnTracker] 敵人死亡，剩餘：{_aliveCount}");
 
         if (_aliveCount == 0)
@@ -38,10 +50,14 @@ public static class EnemySpawnTracker
         }
     }
 
-    /// <summary>由 EnemyController.OnEnable 呼叫（波次追加生成時）</summary>
+    /// <summary>
+    /// 由 EnemyController.OnEnable 呼叫（波次追加生成時）。
+    /// 僅在追蹤器已啟動時才計入，避免 Survive 任務的敵人誤觸全滅判定。
+    /// </summary>
     public static void NotifyEnemySpawned()
     {
         if (!_trackingActive) return;
         _aliveCount++;
+        OnAliveCountChanged?.Invoke(_aliveCount);
     }
 }

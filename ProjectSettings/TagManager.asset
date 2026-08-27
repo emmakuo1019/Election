@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Enemy
   - Voter
+  - EnemySpawnPoint
   layers:
   - Default
   - TransparentFX

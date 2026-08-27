@@ -37,10 +37,10 @@ public class RewardItem : MonoBehaviour
     {
         _card = card;
 
-        // 顯示卡牌圖示（若有設定 icon sprite）
+        // 顯示卡牌圖示
         if (cardSpriteRenderer != null && card != null)
         {
-            // ponytail: 目前 PolicyCardData 無 icon 欄位，先留空；之後加 icon 欄位後接上
+            cardSpriteRenderer.sprite = card.cardArtwork;
             cardSpriteRenderer.gameObject.SetActive(true);
         }
     }

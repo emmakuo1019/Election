@@ -16,7 +16,8 @@ public class GameDB : MonoBehaviour
 
     [Header("任務系統")]
     [Tooltip("戰役可用的任務池")]
-    public MissionPool missionPool;
+    [SerializeField] private MissionPool _missionPool;
+    public MissionPool MissionPool => _missionPool;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
@@ -45,6 +46,9 @@ public class GameDB : MonoBehaviour
     /// </summary>
     public void ResetRunData()
     {
+        // 清除舊 Run 的觸發器訂閱（若 Manager 還在場景中）
+        PolicyEffectRuntimeManager.Instance?.ClearAllTriggers();
+
         Run = new RunData();
         Debug.Log("[GameDB] RunData 已重置");
     }
@@ -129,9 +133,13 @@ public class RunData
             AcquiredPolicyCards.Add(card.cardName);
             ActiveCards.Add(card);
 
-            // 套用卡牌效果
+            // 套用永久被動效果（有 trigger 的卡在 ApplyAllEffects 內只套氛圍）
             card.ApplyAllEffects();
-            
+
+            // 有觸發條件的卡 → 向 Bridge 註冊事件訂閱
+            if (card.trigger != null)
+                PolicyEffectRuntimeManager.Instance?.RegisterCard(card);
+
             // 通知 UI 數值可能已變更
             Stats.NotifyStatsChanged();
         }
@@ -357,9 +365,30 @@ public class CampaignData
     public const int TotalBlockCount = 3;
     public const int BossStageIndex = 4;
 
+    // ── Demo 固定流程：8 關，第 4、8 關為 Boss ────────────────────────
+    public const int TotalRooms = 8;
+    private static readonly int[] BossRooms = { 4, 8 };
+
+    /// <summary>
+    /// 全域累計房號（1-indexed），遊戲開始時為 0，
+    /// 每次 EnterNextRoom() 後 +1，重置時歸 0。
+    /// </summary>
+    public int TotalRoomNumber { get; private set; } = 0;
+
+    /// <summary>即將進入的下一關是否為 Boss 戰。</summary>
+    public bool IsNextRoomBoss()
+    {
+        int next = TotalRoomNumber + 1;
+        foreach (int b in BossRooms) if (next == b) return true;
+        return false;
+    }
+
+    /// <summary>是否已超過全部關卡（應進入結局）。</summary>
+    public bool IsRunComplete() => TotalRoomNumber >= TotalRooms;
+
     private const string NormalRoomSceneName = "TestMVP";
-    private const string SpecialRoomSceneName = "TestSpecial";
-    private const float SpecialRoomChance = 0.2f;
+    private const string SpecialRoomSceneName = "TestSpecial"; // ponytail: 僅供舊版 GenerateRoomSequence fallback 使用，新流程場景由 RoomMissionData.sceneName 決定
+    private const float SpecialRoomChance = 0.2f;              // ponytail: 同上，新流程出現機率改由 MissionPool.Entry.weight 控制
 
     // ── 已完成的 Block 數量 ──────────────────────────────────────────
     public int CompletedBlocks { get; private set; } = 0;
@@ -433,8 +462,14 @@ public class CampaignData
     public void EnterNextRoom()
     {
         CurrentRoomCount++;
+        TotalRoomNumber++;
         OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
     }
+
+    /// <summary>
+    /// 重置全域房號，通常在新局開始（BootState / HQState 返回主選單）時呼叫。
+    /// </summary>
+    public void ResetTotalRoomNumber() => TotalRoomNumber = 0;
 
     // ── 查詢 ─────────────────────────────────────────────────────────
     public bool HasBlockProgress() => MaxRoomsInBlock > 0 && CurrentRoomCount > 0;
@@ -457,19 +492,27 @@ public class CampaignData
 
     /// <summary>
     /// 結算後呼叫，為岔路口生成兩個待選房間選項。
-    /// mission 參數由外部（StageClearState 或關卡設定）傳入；
-    /// 傳 null 代表該路線無指定任務（保持舊行為）。
+    /// 場景名稱優先從 mission.sceneName 讀取；空白時 fallback 至 NormalRoomSceneName（TestMVP）。
+    /// 傳 null 代表該路線無指定任務，場景 fallback 至普通戰鬥房。
     /// </summary>
     public void GenerateNextOptions(RoomMissionData missionA = null, RoomMissionData missionB = null)
     {
-        string sceneA = UnityEngine.Random.value < SpecialRoomChance ? SpecialRoomSceneName : NormalRoomSceneName;
-        string sceneB = UnityEngine.Random.value < SpecialRoomChance ? SpecialRoomSceneName : NormalRoomSceneName;
+        string sceneA = ResolveScene(missionA);
+        string sceneB = ResolveScene(missionB);
         PendingOptions = new RoomOption[]
         {
             new RoomOption(sceneA, missionA),
             new RoomOption(sceneB, missionB),
         };
-        Debug.Log($"[CampaignData] 生成岔路選項：A={sceneA} B={sceneB}");
+        Debug.Log($"[CampaignData] 生成岔路選項：A={sceneA}({missionA?.name ?? "無任務"}) B={sceneB}({missionB?.name ?? "無任務"})");
+    }
+
+    private string ResolveScene(RoomMissionData mission)
+    {
+        // 任務有指定場景就用它，否則 fallback 至普通戰鬥房
+        if (mission != null && !string.IsNullOrWhiteSpace(mission.sceneName))
+            return mission.sceneName;
+        return NormalRoomSceneName;
     }
 
     /// <summary>

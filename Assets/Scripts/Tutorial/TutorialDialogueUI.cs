@@ -49,9 +49,15 @@ public class TutorialDialogueUI : MonoBehaviour
     /// <summary>打字機動畫是否正在播放中</summary>
     public bool IsTyping => typewriterCoroutine != null;
 
+    /// <summary>是否還有下一頁（尚未顯示完所有 dialogueLines）</summary>
+    public bool HasNextPage => _currentLineIndex < _lines.Length - 1;
+
     private Coroutine typewriterCoroutine;
     private Coroutine fadeCoroutine;
     private string fullText = "";
+
+    private string[] _lines = System.Array.Empty<string>();
+    private int _currentLineIndex = 0;
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -69,7 +75,7 @@ public class TutorialDialogueUI : MonoBehaviour
     // ── 公開 API ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// 顯示對話框並填入步驟資料，啟動打字機效果。
+    /// 顯示對話框並填入步驟資料，從第一頁開始打字機效果。
     /// </summary>
     public void Show(TutorialStepData step)
     {
@@ -88,27 +94,18 @@ public class TutorialDialogueUI : MonoBehaviour
         if (confirmHintText != null)
             confirmHintText.text = step.confirmHintText;
 
-        // 組合所有 bullet lines 成一個字串
-        fullText = BuildLinesText(step.dialogueLines);
+        // 儲存所有頁面，從第一頁開始
+        _lines = (step.dialogueLines != null && step.dialogueLines.Length > 0)
+            ? step.dialogueLines
+            : new string[] { "" };
+        _currentLineIndex = 0;
 
-        // 啟動打字機
-        StopTypewriter();
-        if (typewriterSpeed > 0f)
-        {
-            if (linesText != null) linesText.text = "";
-            typewriterCoroutine = StartCoroutine(TypewriterRoutine(fullText));
-        }
-        else
-        {
-            if (linesText != null) linesText.text = fullText;
-        }
-
-        // 淡入顯示
+        ShowPage(_currentLineIndex);
         SetVisible(true);
     }
 
     /// <summary>
-    /// 立即顯示全部文字，停止打字機動畫。
+    /// 立即顯示當前頁全部文字，停止打字機動畫。
     /// 通常在玩家第一次點擊時呼叫。
     /// </summary>
     public void SkipTypewriter()
@@ -116,6 +113,16 @@ public class TutorialDialogueUI : MonoBehaviour
         StopTypewriter();
         if (linesText != null)
             linesText.text = fullText;
+    }
+
+    /// <summary>
+    /// 推進到下一頁。由 TutorialManager 在打字機結束且還有下一頁時呼叫。
+    /// </summary>
+    public void ShowNextPage()
+    {
+        if (!HasNextPage) return;
+        _currentLineIndex++;
+        ShowPage(_currentLineIndex);
     }
 
     /// <summary>
@@ -129,22 +136,20 @@ public class TutorialDialogueUI : MonoBehaviour
 
     // ── 內部方法 ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 將 string[] dialogueLines 組合成帶有 bullet 的顯示字串。
-    /// </summary>
-    private string BuildLinesText(string[] lines)
+    private void ShowPage(int index)
     {
-        if (lines == null || lines.Length == 0) return "";
+        fullText = _lines[index] != null ? "• " + _lines[index] : "";
 
-        var sb = new System.Text.StringBuilder();
-        for (int i = 0; i < lines.Length; i++)
+        StopTypewriter();
+        if (typewriterSpeed > 0f)
         {
-            sb.Append("• ");
-            sb.Append(lines[i]);
-            if (i < lines.Length - 1)
-                sb.AppendLine();
+            if (linesText != null) linesText.text = "";
+            typewriterCoroutine = StartCoroutine(TypewriterRoutine(fullText));
         }
-        return sb.ToString();
+        else
+        {
+            if (linesText != null) linesText.text = fullText;
+        }
     }
 
     /// <summary>

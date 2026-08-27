@@ -166,6 +166,9 @@ public class UIManager : MonoBehaviour
 
             var timerUI = gameplayHUDPanel.GetComponentInChildren<LevelTimerUI>(true);
             if (timerUI != null) timerUI.Rebind();
+
+            var enemyCounter = gameplayHUDPanel.GetComponentInChildren<EnemyCounterUI>(true);
+            if (enemyCounter != null) enemyCounter.Rebind();
         }
     }
     public void HideGameplayHUD() { if (gameplayHUDPanel != null) gameplayHUDPanel.SetActive(false); }
@@ -350,6 +353,37 @@ public class UIManager : MonoBehaviour
         tutorialDialogueUI?.Hide();
         tutorialTipsUI?.Hide();
     }
+
+    /// <summary>
+    /// 場景載入後重新綁定所有場景內的 Tutorial / Reward UI 元件。
+    /// UIManager 是 DontDestroyOnLoad，但 TutorialDialogueUI / TutorialTipsUI / RewardDescriptionUI
+    /// 都放在戰鬥場景的 Canvas 下，場景切換後舊引用會失效（MissingReference）。
+    /// GameplayState.LoadBattleSceneRoutine 在場景載入完成後立即呼叫此方法。
+    /// </summary>
+    public void RebindTutorialUI()
+    {
+        tutorialDialogueUI  = FindFirstObjectByType<TutorialDialogueUI>(FindObjectsInactive.Include);
+        tutorialTipsUI      = FindFirstObjectByType<TutorialTipsUI>(FindObjectsInactive.Include);
+        rewardDescriptionUI = FindFirstObjectByType<RewardDescriptionUI>(FindObjectsInactive.Include);
+
+        if (tutorialDialogueUI == null)
+            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialDialogueUI。");
+        if (tutorialTipsUI == null)
+            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialTipsUI。");
+        if (rewardDescriptionUI == null)
+            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 RewardDescriptionUI。");
+    }
+
+    /// <summary>
+    /// 取得場景中的 TutorialDialogueUI 實例（供 TutorialManager 使用）。
+    /// UIManager 持有的是 RebindTutorialUI 後的場景 instance，確保不會指向 Prefab asset。
+    /// </summary>
+    public TutorialDialogueUI GetTutorialDialogueUI() => tutorialDialogueUI;
+
+    /// <summary>
+    /// 取得場景中的 TutorialTipsUI 實例（供 TutorialManager 使用）。
+    /// </summary>
+    public TutorialTipsUI GetTutorialTipsUI() => tutorialTipsUI;
 
     // ── Reward Description UI ─────────────────────────────────────────
 

@@ -2,69 +2,63 @@ using UnityEngine;
 
 /// <summary>
 /// 過關後的緩衝 State。
-/// 目前職責：推進房間進度、從任務池生成岔路選項、切換到下一個 State。
-/// 之後在此加入漫畫網點轉場動畫。
-/// 選卡與技能選擇已改為場景內互動，由 RewardItemSpawner 負責。
+/// Enter() → GenerateNextOptions → 等 OnRoomCleared（門或出口都用同一個事件）→ 推進下一關。
+/// SelectOption 由 DoorController.TrySelect() 在觸發 OnRoomCleared 之前呼叫，
+/// 此時 PendingOptions 已在 Enter() 填好，時序正確。
 /// </summary>
 public class StageClearState : IState
 {
     private int roomNumber;
 
-    public StageClearState(int roomNumber)
-    {
-        this.roomNumber = roomNumber;
-    }
+    public StageClearState(int roomNumber) => this.roomNumber = roomNumber;
 
     public void Enter()
     {
         Debug.Log($"[StageClearState] Enter - 房號: {roomNumber}");
+        MissionTracker.Reset();
 
-        // ponytail: 轉場動畫預留點，之後在此插入漫畫網點過場
-        Proceed();
-    }
+        // 重新顯示 HUD：GameplayState.Exit() 不再提前隱藏，但若 UIManager 狀態不一致時作為保險
+        // 主要目的是確保 ExitPrompt（含 HUD）在等玩家走門期間維持可見
+        UIManager.Instance?.ShowGameplayHUD();
 
-    private void Proceed()
-    {
         var campaign = GameDB.Instance?.Campaign;
-
         campaign?.EnterNextRoom();
 
-        // 最後一關 → Boss 戰
-        if (campaign != null && campaign.IsLastRoomInBlock())
+        // Demo 固定 8 關，第 4、8 關為 Boss（依 TotalRoomNumber 判斷，與 block 系統無關）
+        if (campaign != null && campaign.IsNextRoomBoss())
         {
-            Debug.Log("[StageClearState] 準備進入 Boss 戰！");
+            Debug.Log($"[StageClearState] 第 {campaign.TotalRoomNumber + 1} 關為 Boss 戰，準備進入！");
             GameFlowManager.Instance.ChangeState(new BossBattleState());
             return;
         }
 
-        // 從任務池抽兩個選項注入岔路
-        var pool = GameDB.Instance?.missionPool;
+        // 立即生成岔路選項，確保玩家走門時 PendingOptions 已有資料
+        var pool = GameDB.Instance?.MissionPool;
         if (pool != null)
         {
             var drawn = pool.DrawRandom(2);
             campaign?.GenerateNextOptions(drawn[0], drawn[1]);
+            Debug.Log($"[StageClearState] PendingOptions 已生成：{drawn[0]?.name ?? "null"} / {drawn[1]?.name ?? "null"}");
         }
         else
         {
-            // ponytail: 無任務池時 fallback，門口顯示「前往下一區域」
             campaign?.GenerateNextOptions();
+            Debug.LogWarning("[StageClearState] MissionPool 未設定，使用 fallback");
         }
 
-        if (UnityEngine.Random.value <= GameFlowManager.Instance.SafeRoomSpawnChance)
-        {
-            Debug.Log($"[StageClearState] 前往安全房: {roomNumber + 1}");
-            GameFlowManager.Instance.ChangeState(new SafeRoomState(roomNumber + 1));
-        }
-        else
-        {
-            Debug.Log($"[StageClearState] 前往下一關戰鬥: {roomNumber + 1}");
-            GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
-        }
+        BattleEventManager.OnRoomCleared += HandleRoomCleared;
+    }
+
+    private void HandleRoomCleared()
+    {
+        // ActiveRoom 已由 DoorController.SelectOption（或出口路徑不需要選項）寫入
+        Debug.Log($"[StageClearState] 過關，前往下一關: {roomNumber + 1}");
+        GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
     }
 
     public void Exit()
     {
-        Debug.Log($"[StageClearState] Exit - 房號: {roomNumber}");
+        BattleEventManager.OnRoomCleared -= HandleRoomCleared;
     }
 
     public void Update() { }
