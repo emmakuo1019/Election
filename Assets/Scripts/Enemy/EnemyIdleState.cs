@@ -8,6 +8,9 @@ public class EnemyIdleState : IState
     private EnemyController ctx;
     private StateMachine stateMachine;
 
+    private float _idleTimer;
+    private float _idleDuration;
+
     public EnemyIdleState(EnemyController controller, StateMachine stateMachine)
     {
         this.ctx = controller;
@@ -21,7 +24,10 @@ public class EnemyIdleState : IState
             ctx.Agent.isStopped = true;
         }
         
-        // 防呆：如果沒有抓到 Animator 也不會報錯
+        // 隨機等待時間，等待完後遊蕩
+        _idleDuration = UnityEngine.Random.Range(ctx.wanderIntervalMin, ctx.wanderIntervalMax);
+        _idleTimer = 0f;
+
         ctx.Animator?.Play("Idle");
         
         Debug.Log("Enemy: 進入 Idle 狀態");
@@ -38,28 +44,34 @@ public class EnemyIdleState : IState
             ctx.target = null;
         }
 
-        // 1. 如果目前沒有目標，尋找最近的選民
+        // 1. 如果目前沒有目標，尋找最近的目標（選民或玩家）
         if (ctx.target == null)
         {
-            ctx.FindNearestVoter();
+            ctx.FindNearestTarget();
+
             if (ctx.target == null)
             {
-                return; // 沒找到任何選民，繼續保持 Idle
+                // 仍然找不到目標：計時後切換到遊蕩狀態
+                _idleTimer += Time.deltaTime;
+                if (_idleTimer >= _idleDuration)
+                {
+                    stateMachine.ChangeState(ctx.WanderState);
+                }
+                return;
             }
         }
 
-        // 2. 計算與選民的距離
+        // 2. 計算與目標的距離
         float distance = Vector3.Distance(ctx.transform.position, ctx.target.position);
 
         // 3. 判斷是否進入偵測範圍
         if (distance <= ctx.detectionRange)
         {
-            // 【GC 優化】使用快取的狀態實例
             stateMachine.ChangeState(ctx.MoveState);
         }
         else if (distance > ctx.escapeRange)
         {
-            // 如果某種原因鎖定了目標但目標在脫戰範圍外，就清空目標重新尋找
+            // 目標太遠，清空並下一輪重新尋找
             ctx.target = null;
         }
     }

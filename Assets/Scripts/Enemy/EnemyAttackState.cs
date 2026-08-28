@@ -57,8 +57,8 @@ public class EnemyAttackState : IState
         // 3. 當動畫總時長結束時，切換狀態
         if (attackTimer >= ctx.attackDuration)
         {
-            // 攻擊結束後，強制重新尋找下一個最近的選民
-            ctx.FindNearestVoter();
+            // 攻擊結束後，強制重新尋找下一個最近的目標（選民或玩家）
+            ctx.FindNearestTarget();
 
             if (ctx.target == null)
             {
@@ -66,8 +66,7 @@ public class EnemyAttackState : IState
             }
             else
             {
-                // 如果找到選民，切換到 MoveState 繼續追擊
-                // (如果距離已經夠近，MoveState 下一幀就會自動切回 AttackState)
+                // 找到目標，切換到 MoveState 繼續追擊
                 stateMachine.ChangeState(ctx.MoveState);
             }
         }

@@ -18,6 +18,10 @@ public class GameDB : MonoBehaviour
     [Tooltip("戰役可用的任務池")]
     [SerializeField] private MissionPool _missionPool;
     public MissionPool MissionPool => _missionPool;
+
+    [Tooltip("教學關卡使用的任務資料（設 HUDLayout = Tutorial 即可隱藏不需要的 HUD）")]
+    [SerializeField] private RoomMissionData _tutorialMission;
+    public RoomMissionData TutorialMission => _tutorialMission;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
@@ -516,6 +520,17 @@ public class CampaignData
     }
 
     /// <summary>
+    /// 教學關卡專用：直接把 ActiveRoom 設為指定的教學任務，不走 PendingOptions 流程。
+    /// 由 TutorialState 在場景載入前呼叫。
+    /// </summary>
+    public void SetTutorialRoom(RoomMissionData tutorialMission)
+    {
+        string scene = tutorialMission?.sceneName ?? string.Empty;
+        ActiveRoom = new RoomOption(scene, tutorialMission);
+        Debug.Log($"[CampaignData] 教學 ActiveRoom 已設定（mission={tutorialMission?.name ?? "null"}）");
+    }
+
+    /// <summary>
     /// 玩家選擇岔路（0=左門, 1=右門），設定 ActiveRoom 並清空 PendingOptions。
     /// </summary>
     public void SelectOption(int index)
@@ -582,7 +597,9 @@ public class CampaignData
     }
 
     /// <summary>
-    /// 啟動指定 Block，生成房間序列並進入第一間房，回傳第一間房的場景名稱。
+    /// 啟動指定 Block，初始化房間序列。
+    /// 注意：不呼叫 EnterNextRoom()——計數推進由 StageClearState.Enter() 統一負責，
+    /// 避免 TotalRoomNumber 預先 +1 導致 Boss 判定提前一關觸發。
     /// </summary>
     public string StartRandomBlock(int blockIndex, int maxRooms = 5)
     {
@@ -591,7 +608,6 @@ public class CampaignData
 
         InitBlock(safeMaxRooms, safeBlockIndex);
         SetRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
-        EnterNextRoom();
 
         return GetCurrentRoomSceneName();
     }

@@ -47,8 +47,11 @@ public class HQSceneController : MonoBehaviour
 
     private void Start()
     {
-        // 將所有鏡頭壓低，等 BeginHQFlow 再啟動
+        // 先把所有鏡頭壓低，再立刻啟用候選人鏡頭，
+        // 讓 Cinemachine 從第一幀就接管攝影機，避免進場時從相機物理位置 blend 過來的問題。
         SetAllPriority(10);
+        if (vcamCandidate != null)
+            vcamCandidate.Priority.Value = 20;
     }
 
     private void OnDestroy()

@@ -121,7 +121,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     {
         if (!SceneContext.IsLevelScene())
         {
-            Debug.LogWarning("⚠️ 只能在關卡中進行攻擊！(SceneContext.IsLevelScene() 回傳 false)");
+            Debug.LogWarning($"⚠️ 只能在關卡中進行攻擊！(SceneContext.CurrentScene={SceneContext.CurrentScene}, IsLevelScene()=false)");
             return false;
         }
         
@@ -133,7 +133,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         
         if (Time.time < lastAttackTime + currentAttackCooldown)
         {
-            Debug.LogWarning("⚠️ 攻擊冷卻中！");
+            // 冷卻中不印 log，避免洗版
             return false;
         }
 
@@ -163,6 +163,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             voterLayer | enemyLayer
         );
 
+        Debug.Log($"[PlayerAttack] PerformAttack — pos={transform.position}, range={currentAttackRange}, " +
+                  $"voterLayer={voterLayer.value}, enemyLayer={enemyLayer.value}, hitCount={hitCount}");
+
         for (int i = 0; i < hitCount; i++)
         {
             Collider hit = hitBuffer[i];
@@ -170,6 +173,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
 
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             EnemyController enemy = hit.GetComponentInParent<EnemyController>();
+
+            Debug.Log($"[PlayerAttack]  hit[{i}]={hit.name} layer={hit.gameObject.layer} " +
+                      $"enemy={enemy != null} voter={voter != null}");
 
             Transform targetTransform = null;
             if (voter != null) targetTransform = voter.transform;

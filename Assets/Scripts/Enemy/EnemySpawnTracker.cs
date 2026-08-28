@@ -21,6 +21,13 @@ public static class EnemySpawnTracker
 
     public static void StartTracking()
     {
+        // 先重置，確保上一關的殘留狀態（_trackingActive=true）不影響本關
+        // 若不重置，上一關結束後 _trackingActive 仍為 true，
+        // 新場景敵人生成時 OnEnable → NotifyEnemySpawned 會提前累加 count，
+        // 甚至可能讓 NotifyEnemyDied 在追蹤器正式啟動前就意外觸發全滅事件。
+        _trackingActive = false;
+        _aliveCount = 0;
+
         var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         _aliveCount = enemies.Length;
         _trackingActive = true;

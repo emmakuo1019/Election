@@ -3441,8 +3441,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21b12e3edad8d4a3080a350f3d9a65a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialManager
-  dialogueUI: {fileID: 5127509763219995078, guid: 7994f84f09a4c44679a66ed3527271be, type: 3}
-  tipsUI: {fileID: 1464234513411017781, guid: 90b018d2c0ee04188b92635f4026755d, type: 3}
   confirmAction: {fileID: 392368643174621059, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   pauseWhileDialogue: 1
 --- !u!4 &1126575033
@@ -5949,15 +5947,16 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1817283412}
+  - {fileID: 1889988406}
   - {fileID: 81559361}
   - {fileID: 983773086}
+  - {fileID: 1244648806}
   - {fileID: 1185589390}
   - {fileID: 1588153416}
   - {fileID: 2134854204}
   - {fileID: 775669738}
   - {fileID: 1432403985}
   - {fileID: 236961311}
-  - {fileID: 1244648806}
   - {fileID: 659819674}
   - {fileID: 1047613781}
   - {fileID: 713388633}
@@ -5985,4 +5984,3 @@ SceneRoots:
   - {fileID: 707438161}
   - {fileID: 1783812804}
   - {fileID: 196687747}
-  - {fileID: 1889988406}

@@ -50,6 +50,12 @@ public class SocketBuilder : MonoBehaviour
     // 記錄替換前的原始材質，供 Clear 時還原
     private Material originalMaterial;
 
+    private void Start()
+    {
+        // 場景載入完成後自動生成配件並隨機化材質
+        GenerateProps();
+    }
+
 #if UNITY_EDITOR
     private void OnValidate()
     {
@@ -182,15 +188,7 @@ public class SocketBuilder : MonoBehaviour
 
             if (Application.isPlaying)
             {
-                if (PoolManager.HasInstance)
-                {
-                    propInstance = PoolManager.Instance.Get(selectedPrefab, socket.position, socket.rotation);
-                }
-                else
-                {
-                    Debug.LogError("[SocketBuilder] 場景中缺少 PoolManager，無法在 Play Mode 生成配件。");
-                    continue;
-                }
+                propInstance = Instantiate(selectedPrefab, socket.position, socket.rotation, socket);
             }
             else
             {
@@ -242,10 +240,7 @@ public class SocketBuilder : MonoBehaviour
 
             if (Application.isPlaying)
             {
-                if (PoolManager.HasInstance)
-                    PoolManager.Instance.Release(prop);
-                else
-                    Destroy(prop);
+                Destroy(prop);
             }
             else
             {

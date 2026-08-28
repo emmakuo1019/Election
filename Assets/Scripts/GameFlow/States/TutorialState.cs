@@ -15,6 +15,10 @@ public class TutorialState : IState
     {
         Debug.Log("[TutorialState] Enter - 載入教學場景");
 
+        // 先把教學任務寫入 ActiveRoom，讓 MissionHUDController 能在 Start() 讀到正確的 hudLayout
+        var tutorialMission = GameDB.Instance?.TutorialMission;
+        GameDB.Instance?.Campaign.SetTutorialRoom(tutorialMission);
+
         if (GameFlowManager.Instance != null)
             GameFlowManager.Instance.StartCoroutine(LoadTutorialSceneRoutine());
 
@@ -42,12 +46,19 @@ public class TutorialState : IState
         // 場景切換後重新綁定場景內的 Tutorial UI（舊場景引用在切換後失效）
         UIManager.Instance?.RebindTutorialUI();
 
-        // 顯示 HUD（HP、MP 等），並套用教學 HUD 布局（關閉選票條、計時器、敵人計數）
+        // 顯示 HUD
         UIManager.Instance?.ShowGameplayHUD();
 
-        // 讓 MissionHUDController 套用教學模式布局（隱藏選票條、計時器、敵人計數）
-        var missionHUDController = UnityEngine.Object.FindFirstObjectByType<MissionHUDController>();
-        missionHUDController?.ApplyTutorialLayout();
+        // 顯示教學開場對話（若教學 mission 有設定 briefingStep）
+        // 必須在 RebindTutorialUI 之後呼叫，確保 TutorialDialogueUI 引用是場景 instance
+        TutorialStepData briefing = GameDB.Instance?.TutorialMission?.briefingStep;
+        if (briefing != null)
+        {
+            if (TutorialManager.Instance != null)
+                TutorialManager.Instance.ShowDialogue(briefing);
+            else
+                UIManager.Instance?.ShowTutorialDialogue(briefing);
+        }
 
         // 教學場景不開倒數計時，LevelTimer 留給設計師手動設定
     }
@@ -55,7 +66,27 @@ public class TutorialState : IState
     private void HandleTutorialComplete()
     {
         Debug.Log("[TutorialState] 教學完成，前往第一關");
-        // 教學結束後進入正式第一關（房號 1）
+
+        // 教學結束後，從 MissionPool 抽第一關任務並設定 ActiveRoom，
+        // 確保 GameplayState 不會繼續讀到教學場景的 ActiveRoom.sceneName。
+        var campaign = GameDB.Instance?.Campaign;
+        if (campaign != null)
+        {
+            campaign.StartNextCampaignBlock();
+
+            var pool = GameDB.Instance.MissionPool;
+            if (pool != null)
+            {
+                var drawn = pool.DrawRandom(1);
+                campaign.GenerateNextOptions(drawn[0], null);
+            }
+            else
+            {
+                campaign.GenerateNextOptions(null, null);
+            }
+            campaign.SelectOption(0);
+        }
+
         GameFlowManager.Instance?.ChangeState(new GameplayState(1));
     }
 

@@ -1,81 +1,99 @@
 using UnityEngine;
 
 /// <summary>
-/// 根據當前房間的任務類型，決定 HUD 中各元件的顯示狀態。
-/// 放置在戰鬥場景（與 BattleFlowController 同層），在 Start() 時讀取一次任務並套用。
+/// 根據當前房間任務的 HUDLayout 設定，決定 HUD 中各元件的顯示狀態。
 ///
-/// 控制規則：
-///   EliminateAll → 隱藏計時器，顯示敵人計數器，顯示票數條
-///   Survive      → 顯示計時器，隱藏敵人計數器，顯示票數條
-///   null（無任務）→ 與 EliminateAll 相同
+/// 掛載位置：放在 gameplayHUDPanel（DontDestroyOnLoad 的 UIManager 子物件）底下，
+/// 並在 Inspector 把同層的 timerRoot / enemyCounterRoot / voteBarRoot 拖進來。
+/// 這樣可以確保引用永遠有效，不會有跨場景引用失效的問題。
+///
+/// 控制規則（HUDLayout.Auto 時依 objectiveType 決定）：
+///   EliminateAll     → 計時器隱藏，敵人計數顯示，票數條顯示
+///   Survive          → 計時器顯示，敵人計數隱藏，票數條顯示
+///   ReachVotePercent → 計時器顯示，敵人計數隱藏，票數條顯示
+///   Tutorial / HideAll → 全部隱藏，只保留 HP / MP
 /// </summary>
 public class MissionHUDController : MonoBehaviour
 {
-    [Header("HUD 元件參考（請拖拉 GameplayHUDPanel 底下的子物件）")]
+    [Header("HUD 子元件（從 gameplayHUDPanel 底下拖入）")]
     [SerializeField] private GameObject timerRoot;
     [SerializeField] private GameObject enemyCounterRoot;
     [SerializeField] private GameObject voteBarRoot;
 
+    // ── Unity 生命週期 ────────────────────────────────────────────────
+
     private void Start()
     {
+        // Start() 時 UIManager.ShowGameplayHUD() 還沒被呼叫，
+        // 這裡先套一次，之後 ShowGameplayHUD() 結束時會再呼叫一次確保正確。
         ApplyHUDLayout();
     }
 
+    // ── 公開 API ──────────────────────────────────────────────────────
+
     /// <summary>
-    /// 讀取當前 ActiveRoom.mission，套用對應的 HUD 布局。
-    /// 若任務在場景載入後才確定（例如測試場景直接開啟），也可由外部手動呼叫此方法。
+    /// 讀取當前 ActiveRoom.mission.hudLayout，套用對應的 HUD 布局。
+    /// 由 UIManager.ShowGameplayHUD() 在每次顯示 HUD 後呼叫。
     /// </summary>
     public void ApplyHUDLayout()
     {
         RoomMissionData mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
-        MissionObjectiveType type = mission?.objectiveType ?? MissionObjectiveType.EliminateAll;
+        HUDLayout layout = mission?.hudLayout ?? HUDLayout.Auto;
 
+        switch (layout)
+        {
+            case HUDLayout.Tutorial:
+            case HUDLayout.HideAll:
+                SetHUD(timer: false, enemy: false, vote: false);
+                Debug.Log("[MissionHUDController] 布局：Tutorial / HideAll");
+                return;
+
+            case HUDLayout.EnemyCountOnly:
+                SetHUD(timer: false, enemy: true, vote: false);
+                Debug.Log("[MissionHUDController] 布局：EnemyCountOnly");
+                return;
+
+            case HUDLayout.TimerAndVote:
+                SetHUD(timer: true, enemy: false, vote: true);
+                Debug.Log("[MissionHUDController] 布局：TimerAndVote");
+                return;
+
+            case HUDLayout.Auto:
+            default:
+                break;
+        }
+
+        // Auto：依 objectiveType 決定
+        MissionObjectiveType type = mission?.objectiveType ?? MissionObjectiveType.EliminateAll;
         switch (type)
         {
             case MissionObjectiveType.EliminateAll:
-                SetActive(timerRoot,        false);
-                SetActive(enemyCounterRoot, true);
-                SetActive(voteBarRoot,      true);
-                Debug.Log("[MissionHUDController] 布局：EliminateAll（顯示敵人計數，隱藏計時器）");
+                SetHUD(timer: false, enemy: true, vote: true);
+                Debug.Log("[MissionHUDController] 布局：Auto / EliminateAll");
                 break;
 
             case MissionObjectiveType.Survive:
-                SetActive(timerRoot,        true);
-                SetActive(enemyCounterRoot, false);
-                SetActive(voteBarRoot,      true);
-                Debug.Log("[MissionHUDController] 布局：Survive（顯示計時器，隱藏敵人計數）");
+                SetHUD(timer: true, enemy: false, vote: true);
+                Debug.Log("[MissionHUDController] 布局：Auto / Survive");
                 break;
 
             case MissionObjectiveType.ReachVotePercent:
-                // 搶票任務：兩者都顯示（計時器提供時間壓力，票數條是核心目標）
-                SetActive(timerRoot,        true);
-                SetActive(enemyCounterRoot, false);
-                SetActive(voteBarRoot,      true);
-                Debug.Log("[MissionHUDController] 布局：ReachVotePercent（顯示計時器 + 票數條）");
+                SetHUD(timer: true, enemy: false, vote: true);
+                Debug.Log("[MissionHUDController] 布局：Auto / ReachVotePercent");
                 break;
 
             default:
-                SetActive(timerRoot,        false);
-                SetActive(enemyCounterRoot, true);
-                SetActive(voteBarRoot,      true);
+                SetHUD(timer: false, enemy: true, vote: true);
                 break;
         }
     }
 
-    /// <summary>
-    /// 教學模式布局：隱藏選票條、計時器、敵人計數器，只保留 HP / MP 條。
-    /// 由 TutorialState 在場景載入後呼叫。
-    /// </summary>
-    public void ApplyTutorialLayout()
-    {
-        SetActive(timerRoot,        false);
-        SetActive(enemyCounterRoot, false);
-        SetActive(voteBarRoot,      false);
-        Debug.Log("[MissionHUDController] 布局：Tutorial（隱藏選票條、計時器、敵人計數）");
-    }
+    // ── 內部 ──────────────────────────────────────────────────────────
 
-    private static void SetActive(GameObject obj, bool active)
+    private void SetHUD(bool timer, bool enemy, bool vote)
     {
-        if (obj != null) obj.SetActive(active);
+        if (timerRoot        != null) timerRoot.SetActive(timer);
+        if (enemyCounterRoot != null) enemyCounterRoot.SetActive(enemy);
+        if (voteBarRoot      != null) voteBarRoot.SetActive(vote);
     }
 }

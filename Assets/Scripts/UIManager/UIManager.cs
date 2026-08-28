@@ -154,7 +154,7 @@ public class UIManager : MonoBehaviour
         {
             gameplayHUDPanel.SetActive(true); 
             
-            // 重新綁定 HUD 到當前場景的實例 (Bug 2 Fix)
+            // 重新綁定 HUD 到當前場景的實例
             var hpBar = gameplayHUDPanel.GetComponentInChildren<HPBarUI>(true);
             if (hpBar != null) hpBar.Rebind();
 
@@ -169,6 +169,11 @@ public class UIManager : MonoBehaviour
 
             var enemyCounter = gameplayHUDPanel.GetComponentInChildren<EnemyCounterUI>(true);
             if (enemyCounter != null) enemyCounter.Rebind();
+
+            // Rebind 之後重新套用 HUD 布局，確保 mission data 的 hudLayout 設定生效
+            // MissionHUDController 掛在 gameplayHUDPanel 底下，用 GetComponentInChildren 取得
+            var missionHUD = gameplayHUDPanel.GetComponentInChildren<MissionHUDController>(true);
+            if (missionHUD != null) missionHUD.ApplyHUDLayout();
         }
     }
     public void HideGameplayHUD() { if (gameplayHUDPanel != null) gameplayHUDPanel.SetActive(false); }

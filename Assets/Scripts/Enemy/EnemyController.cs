@@ -37,14 +37,21 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public EnemyMoveState MoveState { get; private set; }
     public EnemyAttackState AttackState { get; private set; }
     public EnemyStunState StunState { get; private set; }
+    public EnemyWanderState WanderState { get; private set; }
 
     // ==========================================
     // 共享數據與參考 (供各個 State 讀取/寫入)
     // ==========================================
 
     [Header("Targeting")]
-    [Tooltip("目標與拉票判定的圖層 (請統一設定為選民 Voter 的 Layer)")]
+    [Tooltip("選民的圖層，用於尋找選民目標與攻擊判定")]
     public LayerMask targetLayerMask;
+
+    [Tooltip("玩家的圖層，用於偵測並攻擊玩家")]
+    public LayerMask playerLayerMask;
+
+    [Tooltip("是否將玩家也納入攻擊目標（優先度低於選民）")]
+    public bool canTargetPlayer = true;
 
     [Tooltip("目前鎖定的目標。若一開始就拖曳指定，將不會進行範圍掃描。")]
     public Transform target;
@@ -52,6 +59,14 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Header("Faction")]
     [Tooltip("代表該敵人的陣營符號，預設為對應 VoterData 的敵方陣營 (-1)")]
     public int factionSign = -1;
+
+    [Header("Wander")]
+    [Tooltip("沒有目標時隨機遊蕩的半徑（0 = 使用偵測範圍的一半）")]
+    public float wanderRadius = 6f;
+    [Tooltip("抵達遊蕩點後停留最短時間（秒）")]
+    public float wanderIntervalMin = 1f;
+    [Tooltip("抵達遊蕩點後停留最長時間（秒）")]
+    public float wanderIntervalMax = 3f;
 
     [Header("Combat Stats")]
     [Tooltip("移動速度 (會自動覆蓋 NavMeshAgent 的 Speed)")]
@@ -101,7 +116,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public GameObject stunVfxPrefab;         // 暈眩時生成的 VFX Prefab
     public Vector3 stunVfxOffset = new Vector3(0f, 2f, 0f); // VFX 相對角色的偏移（預設頭頂）
     public EnemySkillData equippedSkill;          // 裝備的技能 ScriptableObject
-    [SerializeField] private LayerMask playerLayerMask; // 玩家偵測 Layer
     // 冷卻時間統一由 equippedSkill.cooldown 控制，不在此重複設定
 
     /// <summary>
@@ -157,6 +171,30 @@ public class EnemyController : MonoBehaviour, IAttackSource
         Animator = GetComponentInChildren<Animator>();
         Agent = GetComponent<NavMeshAgent>();
         mainCamera = Camera.main;
+
+        // ── 自動補上 Capsule Collider（若 Prefab 上忘記加）──────────────
+        // Physics.OverlapSphere 需要 Collider 才能偵測到此物件。
+        // 若 Root 上還沒有任何 Collider，就自動建立一個與 NavMeshAgent 同尺寸的 CapsuleCollider。
+        if (GetComponent<Collider>() == null)
+        {
+            float agentHeight = Agent != null ? Agent.height : 2f;
+            float agentRadius = Agent != null ? Agent.radius : 0.5f;
+            
+            // 防呆：NavMeshAgent 有時在 Awake 初始幀數值尚未就緒，強制使用合理的最小值
+            if (agentHeight <= 0f) agentHeight = 2f;
+            if (agentRadius <= 0f) agentRadius = 0.5f;
+            
+            var cap = gameObject.AddComponent<CapsuleCollider>();
+            cap.height = agentHeight;
+            cap.radius = agentRadius;
+            cap.center = new Vector3(0f, agentHeight * 0.5f, 0f);
+            cap.isTrigger = false;
+            Debug.Log($"[EnemyController] {name} 自動加入 CapsuleCollider (h={cap.height}, r={cap.radius}, layer={gameObject.layer})");
+        }
+        else
+        {
+            Debug.Log($"[EnemyController] {name} 已有 Collider，略過自動補建。(layer={gameObject.layer})");
+        }
         
         // 防呆：避免之前編譯錯誤時 Inspector 把數值存成了 0，導致狀態機死循環
         if (attackDuration <= 0.1f) attackDuration = 1.0f;
@@ -178,6 +216,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
         MoveState = new EnemyMoveState(this, StateMachine);
         AttackState = new EnemyAttackState(this, StateMachine);
         StunState = new EnemyStunState(this, StateMachine);
+        WanderState = new EnemyWanderState(this, StateMachine);
 
         _skillState = new EnemySkillState(this, StateMachine);
         _cachedPlayer = FindObjectOfType<PlayerController>();
@@ -243,6 +282,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public bool IsTargetValid(Transform t)
     {
         if (t == null) return false;
+
+        // 玩家目標永遠有效（只要 GameObject 還活著）
+        if (canTargetPlayer && t.GetComponentInParent<PlayerController>() != null)
+            return true;
+
         VoterLogic voter = t.GetComponentInParent<VoterLogic>();
         if (voter == null || voter.Data == null) return false;
         
@@ -256,36 +300,57 @@ public class EnemyController : MonoBehaviour, IAttackSource
     }
 
     /// <summary>
-    /// 尋找偵測範圍內最近的選民 (Voter)。
+    /// 尋找偵測範圍內最近的目標（選民優先，沒有選民時鎖定玩家）。
     /// 供狀態機在閒置或攻擊結束後呼叫，重新鎖定目標。
     /// </summary>
-    public void FindNearestVoter()
+    public void FindNearestTarget()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, detectionRange, targetLayerMask);
         float minDistance = float.MaxValue;
         Transform nearest = null;
 
-        foreach (var hit in hits)
+        // 1. 先在選民 Layer 找有效選民
+        Collider[] voterHits = Physics.OverlapSphere(transform.position, detectionRange, targetLayerMask);
+        foreach (var hit in voterHits)
         {
-            if (!IsTargetValid(hit.transform)) continue;
-
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
-            if (voter != null)
+            if (voter == null) continue;
+            if (!IsTargetValid(voter.transform)) continue;
+
+            float dist = Vector3.Distance(transform.position, voter.transform.position);
+            if (dist < minDistance)
             {
-                float dist = Vector3.Distance(transform.position, voter.transform.position);
+                minDistance = dist;
+                nearest = voter.transform;
+            }
+        }
+
+        // 2. 找不到選民時，若允許攻擊玩家則改鎖定玩家
+        if (nearest == null && canTargetPlayer && playerLayerMask != 0)
+        {
+            Collider[] playerHits = Physics.OverlapSphere(transform.position, detectionRange, playerLayerMask);
+            foreach (var hit in playerHits)
+            {
+                PlayerController pc = hit.GetComponentInParent<PlayerController>();
+                if (pc == null) continue;
+
+                float dist = Vector3.Distance(transform.position, pc.transform.position);
                 if (dist < minDistance)
                 {
                     minDistance = dist;
-                    nearest = voter.transform;
+                    nearest = pc.transform;
                 }
             }
         }
+
         target = nearest;
     }
 
+    /// <summary>舊版介面，保留供外部呼叫相容（內部轉發到 FindNearestTarget）。</summary>
+    public void FindNearestVoter() => FindNearestTarget();
+
     /// <summary>
     /// 由攻擊狀態 (EnemyAttackState) 在特定時間點 (動畫前搖結束) 呼叫。
-    /// 執行物理範圍偵測，並對範圍內的選民發動拉票 (Influence)。
+    /// 執行物理範圍偵測，對範圍內的選民發動拉票，對玩家造成誠信傷害。
     /// </summary>
     public void PerformAttackHit()
     {
@@ -305,41 +370,52 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         // 假設 attackHitOffset.z 為前方距離，attackHitOffset.y 為高度
         Vector3 hitCenter = transform.position + attackDir * attackHitOffset.z + Vector3.up * attackHitOffset.y;
-        
-        Collider[] hits = Physics.OverlapSphere(hitCenter, attackHitRadius, targetLayerMask);
-        foreach (Collider hit in hits)
+
+        // --- 對選民的判定 ---
+        Collider[] voterHits = Physics.OverlapSphere(hitCenter, attackHitRadius, targetLayerMask);
+        foreach (Collider hit in voterHits)
         {
-            // 取得目標身上的 VoterLogic 組件
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
-            if (voter != null)
+            if (voter == null) continue;
+
+            // 【陣營防呆】如果該選民已經是自己人，直接跳過
+            if (voter.Data != null && voter.Data.ConvertedSide == factionSign) continue;
+
+            // 扇形角度過濾
+            Vector3 dirToTarget = (voter.transform.position - transform.position);
+            dirToTarget.y = 0;
+            if (dirToTarget.sqrMagnitude > 0.001f)
             {
-                // 【陣營防呆】如果該選民已經是自己人，直接跳過，不進行拉票與干擾
-                if (voter.Data != null && voter.Data.ConvertedSide == factionSign)
+                dirToTarget.Normalize();
+                float angleToTarget = Vector3.Angle(AttackDirection, dirToTarget);
+                if (angleToTarget > AttackAngle / 2f) continue;
+            }
+
+            Debug.Log($"敵人對選民 {voter.name} 發動了拉票！");
+            voter.OnInfluence(attackInfluence, false, transform.position);
+        }
+
+        // --- 對玩家的判定 ---
+        if (canTargetPlayer && playerLayerMask != 0)
+        {
+            Collider[] playerHits = Physics.OverlapSphere(hitCenter, attackHitRadius, playerLayerMask);
+            foreach (Collider hit in playerHits)
+            {
+                PlayerController pc = hit.GetComponentInParent<PlayerController>();
+                if (pc == null) continue;
+
+                // 扇形角度過濾
+                Vector3 dirToPlayer = (pc.transform.position - transform.position);
+                dirToPlayer.y = 0;
+                if (dirToPlayer.sqrMagnitude > 0.001f)
                 {
-                    continue;
+                    dirToPlayer.Normalize();
+                    float angleToPlayer = Vector3.Angle(AttackDirection, dirToPlayer);
+                    if (angleToPlayer > AttackAngle / 2f) continue;
                 }
 
-                // 計算敵人指向該選民的水平向量
-                Vector3 dirToTarget = (voter.transform.position - transform.position);
-                dirToTarget.y = 0;
-                
-                if (dirToTarget.sqrMagnitude > 0.001f)
-                {
-                    dirToTarget.Normalize();
-                    
-                    // 計算與當前攻擊面向的夾角
-                    float angleToTarget = Vector3.Angle(AttackDirection, dirToTarget);
-                    
-                    // 若角度大於扇形的一半，代表在扇形範圍外，忽略該選民
-                    if (angleToTarget > AttackAngle / 2f)
-                    {
-                        continue;
-                    }
-                }
-
-                Debug.Log($"敵人對選民 {voter.name} 發動了拉票！");
-                // 呼叫選民改變支持度的方法 (使用 attackInfluence)
-                voter.OnInfluence(attackInfluence, false, transform.position);
+                Debug.Log($"敵人對玩家 {pc.name} 發動了攻擊，造成誠信傷害！");
+                PlayerHealthSystem.Instance?.TakeDamage(1f);
             }
         }
     }

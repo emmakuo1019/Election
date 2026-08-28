@@ -48,6 +48,12 @@ public class EnemySpawner : MonoBehaviour
         // 解析生成點（供所有子流程共用）
         _resolvedSpawnPoints = ResolveSpawnPoints();
 
+        // 生成敵人前先重置追蹤器，清除上一關的殘留狀態（_trackingActive / _aliveCount）
+        // 若不在這裡重置，上一關正常結束後 _trackingActive 仍為 true，
+        // 新場景敵人 OnEnable → NotifyEnemySpawned 會在 StartTracking() 前就累加 count，
+        // 甚至可能讓 count 意外歸零並提前觸發全滅事件。
+        EnemySpawnTracker.StopTracking();
+
         switch (config)
         {
             case EliminateAllSpawnConfig eliminateConfig:
@@ -177,12 +183,26 @@ public class EnemySpawner : MonoBehaviour
 
     // ── 停止 ─────────────────────────────────────────────────────────
 
-    private void StopSpawning()
+    public void StopSpawning()
     {
         if (_spawnCoroutine != null)
         {
             StopCoroutine(_spawnCoroutine);
             _spawnCoroutine = null;
         }
+    }
+
+    /// <summary>
+    /// 停止生成並立即清除場上所有敵人。
+    /// Survive 任務計時結束時由 BattleFlowController 呼叫。
+    /// </summary>
+    public void ClearAllEnemies()
+    {
+        StopSpawning();
+        var enemies = Object.FindObjectsByType<EnemyController>(
+            FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var e in enemies)
+            e.gameObject.SetActive(false);
+        Debug.Log($"[EnemySpawner] ClearAllEnemies — 清除 {enemies.Length} 隻敵人");
     }
 }

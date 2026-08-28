@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: d1531749cc6d34c5f8b338d2fabeb8f0, type: 3}
   m_Name: SpawnConfig_Survive
   m_EditorClassIdentifier: Assembly-CSharp::SurviveSpawnConfig
   enemyPrefabs:

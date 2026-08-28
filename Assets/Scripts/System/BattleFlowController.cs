@@ -38,9 +38,18 @@ public class BattleFlowController : MonoBehaviour
 
     // ── 事件處理 ─────────────────────────────────────────────────────
 
-    /// <summary>Survive 任務：計時結束 → 生成獎勵卡（與 EliminateAll 共用相同流程）</summary>
+    /// <summary>計時結束：僅 Survive 任務才執行清場與獎勵流程；其他任務類型忽略此事件</summary>
     private void OnBattleTimeEnd()
     {
+        // 只有 Survive 任務才依賴計時器結束作為勝利條件
+        // EliminateAll / ReachVotePercent 等任務有各自的結算路徑，計時器對它們無意義
+        var mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
+        if (mission == null || mission.objectiveType != MissionObjectiveType.Survive)
+        {
+            Debug.Log($"[BattleFlowController] 計時結束，但任務類型為 {mission?.objectiveType.ToString() ?? "null"}，略過 Survive 流程。");
+            return;
+        }
+
         bool isLastRoomInBlock = GameDB.Instance?.Campaign != null &&
                                  GameDB.Instance.Campaign.HasBlockProgress() &&
                                  GameDB.Instance.Campaign.IsLastRoomInBlock();
@@ -53,8 +62,15 @@ public class BattleFlowController : MonoBehaviour
             GameDB.Instance?.Campaign.FailCurrentBlock();
         }
 
-        // Survive 任務計時結束後，強制讓選民離場，再觸發獎勵流程
-        // 出口的開放與 EliminateAll 相同：等玩家選完獎勵（OnRewardCollected）後才顯示
+        // Survive 任務計時結束後：
+        // 1. 停止敵人生成並清除場上所有敵人
+        // 2. 重置 EnemySpawnTracker（確保 alive count 歸零，不觸發 counter UI）
+        // 3. 強制讓選民離場
+        // 4. 觸發獎勵流程（與 EliminateAll 相同路徑）
+        var spawner = FindFirstObjectByType<EnemySpawner>();
+        spawner?.ClearAllEnemies();
+        EnemySpawnTracker.StopTracking();
+
         DespawnVoters();
         Debug.Log("[BattleFlowController] Survive 計時結束，觸發獎勵流程");
         BattleEventManager.TriggerAllEnemiesDefeated();

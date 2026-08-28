@@ -129,8 +129,15 @@ MonoBehaviour:
   targetLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  playerLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  canTargetPlayer: 1
   target: {fileID: 0}
   factionSign: -1
+  wanderRadius: 6
+  wanderIntervalMin: 1
+  wanderIntervalMax: 3
   moveSpeed: 8
   attackRange: 2
   attackInfluence: -3
@@ -146,9 +153,6 @@ MonoBehaviour:
   stunVfxPrefab: {fileID: 1171678833857807218, guid: 2b25135aae7404d37a47543c9919b0eb, type: 3}
   stunVfxOffset: {x: 0, y: 2, z: 0}
   equippedSkill: {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
-  playerLayerMask:
-    serializedVersion: 2
-    m_Bits: 8
 --- !u!1 &566546161834736190
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,7 +164,7 @@ GameObject:
   - component: {fileID: 3526306566502448459}
   - component: {fileID: 8685642538695100475}
   - component: {fileID: 2015423965123667066}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -235,7 +239,7 @@ GameObject:
   - component: {fileID: 206451944593933154}
   - component: {fileID: 4443648634738365114}
   - component: {fileID: 2682262052723828278}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -416,7 +420,7 @@ GameObject:
   - component: {fileID: 10304905856310794}
   - component: {fileID: 8533834163863677560}
   - component: {fileID: 1246861615004930085}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -607,7 +611,7 @@ GameObject:
   - component: {fileID: 5292692476195520221}
   - component: {fileID: 1701992432710433781}
   - component: {fileID: 1356372295820075687}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -719,7 +723,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4608293549351592865}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -756,7 +760,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7973242621879742425}
   - component: {fileID: 5052590446858905916}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Slider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -845,7 +849,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4566127401837566438}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Handle Slide Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomMissionData
   sceneName: TestMVP
   objectiveType: 2
-  targetValue: 40
+  targetValue: 20
   icon: {fileID: 21300000, guid: e230062e232a242e398251f4021c81f5, type: 3}
-  briefingStep: {fileID: 11400000, guid: 7db52395f59a24909b703a254fd47dd7, type: 2}
+  briefingStep: {fileID: 11400000, guid: 30885f93bbff84af59d6c092232cd597, type: 2}
+  hudLayout: 0
   spawnConfig: {fileID: 11400000, guid: bc582dbfa6a47421884e9a9bace79c78, type: 2}

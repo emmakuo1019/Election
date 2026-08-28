@@ -22,7 +22,7 @@ public class EnemyMoveState : IState
         }
 
         ctx.Animator?.Play("Move");
-        Debug.Log("Enemy: 進入 Move 狀態，開始追擊選民");
+        Debug.Log("Enemy: 進入 Move 狀態，開始追擊目標");
     }
 
     public void Update()
@@ -30,7 +30,7 @@ public class EnemyMoveState : IState
         // 持續更新 Sprite 朝向
         ctx.UpdateFacingDirection();
 
-        // 如果沒有選民目標，或是目標變得不合法 (已被轉化)，退回 IdleState 重新索敵
+        // 目標失效（選民被轉化、玩家死亡或消失等）→ 退回 Idle 重新索敵
         if (!ctx.IsTargetValid(ctx.target))
         {
             ctx.target = null;
