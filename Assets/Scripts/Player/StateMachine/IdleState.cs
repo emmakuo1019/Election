@@ -18,12 +18,14 @@ public class IdleState : IState
     {
         if (_ctx.AttackInputThisFrame)
         {
+            Debug.Log("[IdleState] 偵測到攻擊輸入，切換至 AttackState");
             _ctx.StateMachine.ChangeState(_ctx.AttackState);
             return;
         }
 
         if (_ctx.DashInputThisFrame && _ctx.CanDash)
         {
+            Debug.Log("[IdleState] 偵測到衝刺輸入，切換至 DashState");
             _ctx.StateMachine.ChangeState(new DashState(_ctx));
             return;
         }

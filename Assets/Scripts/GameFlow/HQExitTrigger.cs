@@ -23,27 +23,16 @@ public class HQExitTrigger : MonoBehaviour
                 var campaign = GameDB.Instance?.Campaign;
                 if (campaign != null)
                 {
-                    // 初始化 Block 進度（設定 RoomSequence，供舊 fallback 使用）
-                    campaign.StartNextCampaignBlock();
-
-                    // 為第一關設定 ActiveRoom：從 MissionPool 抽一個任務直接設為選項 0
-                    // ponytail: 第一關只有一間房，不需要岔路，直接 GenerateNextOptions + SelectOption(0)
-                    var pool = GameDB.Instance.MissionPool;
-                    if (pool != null)
+                    if (!campaign.StartFormalCampaign())
                     {
-                        var drawn = pool.DrawRandom(1);
-                        campaign.GenerateNextOptions(drawn[0], null);
+                        Debug.LogError("[HQExitTrigger] 無法啟動正式戰役。");
+                        return;
                     }
-                    else
-                    {
-                        campaign.GenerateNextOptions(null, null);
-                    }
-                    campaign.SelectOption(0);
                 }
 
                 UIManager.Instance.FadeOut(1.0f, () => 
                 {
-                    GameFlowManager.Instance.ChangeState(new GameplayState(1));
+                    GameFlowManager.Instance.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
                 });
             }
             else

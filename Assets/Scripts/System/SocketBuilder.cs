@@ -95,12 +95,6 @@ public class SocketBuilder : MonoBehaviour
                 sockets.Add(child);
             }
         }
-
-        Debug.Log($"[SocketBuilder] 總共找到 {sockets.Count} 個掛點。");
-        if (sockets.Count == 0)
-        {
-            Debug.LogWarning("[SocketBuilder] 找不到任何名稱包含 'Socket' 的子物件，請檢查模型命名或階層。");
-        }
     }
 
     /// <summary>
@@ -122,8 +116,6 @@ public class SocketBuilder : MonoBehaviour
             Undo.RecordObject(buildingRenderer, "Randomize Building Material");
 #endif
         buildingRenderer.sharedMaterial = picked;
-
-        Debug.Log($"[SocketBuilder] 材質替換：{buildingRenderer.name} → {picked.name}");
     }
 
     /// <summary>
@@ -158,7 +150,6 @@ public class SocketBuilder : MonoBehaviour
 
         if (categories == null || categories.Count == 0)
         {
-            Debug.LogError("[SocketBuilder] categories 分類清單為空，無法生成物件。");
             return;
         }
 
@@ -220,12 +211,8 @@ public class SocketBuilder : MonoBehaviour
                 if (!Application.isPlaying)
                     Undo.RegisterCreatedObjectUndo(propInstance, "Generate Props");
 #endif
-
-                Debug.Log($"[SocketBuilder] 成功在 {socket.name} 上掛載了 {selectedPrefab.name}。");
             }
         }
-
-        Debug.Log($"[SocketBuilder] 生成完畢！掛點 {sockets.Count} 個，配件 {spawnedProps.Count} 個。");
     }
 
     /// <summary>
@@ -253,7 +240,5 @@ public class SocketBuilder : MonoBehaviour
 
         // 還原建築材質
         RestoreMaterial();
-
-        Debug.Log("[SocketBuilder] 已清除所有生成的配件並還原材質。");
     }
 }

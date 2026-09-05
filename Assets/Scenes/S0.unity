@@ -6391,6 +6391,7 @@ GameObject:
   - component: {fileID: 1854772411}
   - component: {fileID: 1854772410}
   - component: {fileID: 1854772412}
+  - component: {fileID: 1854772413}
   m_Layer: 0
   m_Name: GameDB
   m_TagString: Untagged
@@ -6420,8 +6421,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e7598f59b68c1427fb2ba57c4c912327, type: 2}
   - {fileID: 11400000, guid: 40014ce5a72bd4137963c7163e769edd, type: 2}
   - {fileID: 11400000, guid: 9d7418e624295433c84f2a64474fd8f1, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000031, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000032, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000033, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000034, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000035, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000036, type: 2}
+  - {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000037, type: 2}
   _missionPool: {fileID: 11400000, guid: 89beb75a9a1874c45846d6147aaf9c5b, type: 2}
   _tutorialMission: {fileID: 11400000, guid: 942f6cffd2c364e3bbf8297bca580bb9, type: 2}
+  _campaignDefinition: {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000010, type: 2}
 --- !u!4 &1854772411
 Transform:
   m_ObjectHideFlags: 0
@@ -6437,6 +6446,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1854772413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854772409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c11aa4e1f0c94168a0a0000000000005, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NarrativeDirector
 --- !u!114 &1854772412
 MonoBehaviour:
   m_ObjectHideFlags: 0

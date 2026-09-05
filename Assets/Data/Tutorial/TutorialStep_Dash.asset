@@ -15,7 +15,9 @@ MonoBehaviour:
   advisorName: "\u7AF6\u9078\u52A9\u7406"
   advisorPortrait: {fileID: 21300000, guid: a68de2eb09a7843a49792d60d444845e, type: 3}
   dialogueLines:
-  - 
+  - "LShift\uFF1A\u885D\u523A"
   tipsText: "LShift\uFF1A\u885D\u523A"
   tipsIcon: {fileID: 21300000, guid: 55e2a32cf218a461d94de0870dc4cdad, type: 3}
   confirmHintText: "\u25B6 \u7E7C\u7E8C"
+  completionCondition: 0
+  completedTipsText: 

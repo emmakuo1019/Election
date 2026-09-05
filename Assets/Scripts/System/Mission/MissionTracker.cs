@@ -18,19 +18,8 @@ public class MissionTracker : MonoBehaviour
     /// <summary>任務失敗時觸發</summary>
     public static event System.Action OnMissionFailed;
 
-    /// <summary>
-    /// 本關任務的最終結果。StageClearState 在 Enter 時讀取一次。
-    /// 無任務時預設 true（視為達成，走原本獎勵流程）。
-    /// </summary>
-    public static bool LastResult { get; private set; } = true;
-
-    /// <summary>
-    /// 重置為預設通過狀態。由 StageClearState.Enter() 主動呼叫，
-    /// 確保沒有放置 MissionTracker 的場景（如安全房）也不會殘留上一關結果。
-    /// </summary>
-    public static void Reset() => LastResult = true;
-
     private RoomMissionData _mission;
+    private bool _resolved;
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -42,6 +31,9 @@ public class MissionTracker : MonoBehaviour
             return;
         }
         Instance = this;
+        
+        // 提前讀取任務資料，避免在 Start() 時 GameDB 尚未就緒
+        _mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
     }
 
     private void OnDestroy()
@@ -51,15 +43,17 @@ public class MissionTracker : MonoBehaviour
 
     private void Start()
     {
-        // StageClearState.Enter() 已在進入結算前主動呼叫 Reset()
-        // 這裡再重置一次作為防禦，確保直接從場景開始測試時也能正確初始化
-        LastResult = true;
-
-        _mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
+        // _mission 在 Awake() 已讀取，此時只需檢查和訂閱
+        if (IsFinalBossEncounter())
+        {
+            Debug.Log("[MissionTracker] 最終戰：等待對手生命歸零。");
+            Subscribe();
+            return;
+        }
 
         if (_mission == null)
         {
-            Debug.Log("[MissionTracker] 當前房間無指定任務，追蹤器閒置。");
+            Debug.LogWarning("[MissionTracker] 當前房間無指定任務，追蹤器閒置。");
             return;
         }
 
@@ -76,15 +70,38 @@ public class MissionTracker : MonoBehaviour
 
     private void Subscribe()
     {
+        if (IsFinalBossEncounter())
+        {
+            BattleEventManager.OnFinalBossDefeated += HandleFinalBossDefeated;
+            return;
+        }
+
+        if (_mission == null) return;
+
         switch (_mission.objectiveType)
         {
             case MissionObjectiveType.EliminateAll:
                 BattleEventManager.OnAllEnemiesDefeated += HandleEliminateAll;
+                
+                // 立即檢查是否已經全滅（處理訂閱延遲的邊界情況）
+                if (EnemySpawnTracker.AliveCount == 0)
+                {
+                    // 雙重確認：確保場上真的沒有敵人
+                    var remaining = Object.FindObjectsByType<EnemyController>(
+                        FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                    if (remaining.Length == 0)
+                    {
+                        Debug.LogWarning("[MissionTracker] 訂閱時敵人已全滅，立即觸發完成判定。");
+                        HandleEliminateAll();
+                    }
+                }
                 break;
 
             case MissionObjectiveType.ReachVotePercent:
-                // 在出口觸發時評估票數，不需要即時監聽
-                BattleEventManager.OnRoomCleared += HandleRoomClearedVoteCheck;
+                RunData run = GameDB.Instance?.Run;
+                if (run != null) run.OnVotesChanged += HandleVotesChanged;
+                BattleEventManager.OnTimerExpired += HandleTimerExpired;
+                HandleVotesChanged(0, 0);
                 break;
 
             case MissionObjectiveType.Survive:
@@ -95,8 +112,11 @@ public class MissionTracker : MonoBehaviour
 
     private void Unsubscribe()
     {
+        BattleEventManager.OnFinalBossDefeated -= HandleFinalBossDefeated;
         BattleEventManager.OnAllEnemiesDefeated -= HandleEliminateAll;
-        BattleEventManager.OnRoomCleared        -= HandleRoomClearedVoteCheck;
+        if (GameDB.Instance != null)
+            GameDB.Instance.Run.OnVotesChanged -= HandleVotesChanged;
+        BattleEventManager.OnTimerExpired       -= HandleTimerExpired;
         BattleEventManager.OnSurvivalTimeUp     -= HandleSurvivalTimeUp;
     }
 
@@ -108,17 +128,23 @@ public class MissionTracker : MonoBehaviour
         NotifyResult(true);
     }
 
-    private void HandleRoomClearedVoteCheck()
+    private void HandleFinalBossDefeated()
     {
-        if (_mission == null) return;
+        NotifyResult(true);
+    }
 
-        float percent = GameDB.Instance != null
-            ? GameDB.Instance.Run.PlayerVotePercentage * 100f
-            : 0f;
+    private void HandleVotesChanged(int _, int __)
+    {
+        if (_mission == null || GameDB.Instance == null) return;
+        float percent = GameDB.Instance.Run.PlayerVotePercentage * 100f;
+        if (percent >= _mission.targetValue)
+            NotifyResult(true);
+    }
 
-        bool achieved = percent >= _mission.targetValue;
-        Debug.Log($"[MissionTracker] 票數結算：{percent:F1}% vs 目標 {_mission.targetValue}%，達成：{achieved}");
-        NotifyResult(achieved);
+    private void HandleTimerExpired()
+    {
+        if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVotePercent)
+            NotifyResult(false);
     }
 
     private void HandleSurvivalTimeUp()
@@ -129,16 +155,23 @@ public class MissionTracker : MonoBehaviour
 
     private void NotifyResult(bool success)
     {
-        LastResult = success;
+        if (_resolved) return;
+        _resolved = true;
+        
         if (success)
         {
-            Debug.Log("[MissionTracker] 任務達成！");
             OnMissionCompleted?.Invoke();
         }
         else
         {
-            Debug.Log("[MissionTracker] 任務失敗。");
             OnMissionFailed?.Invoke();
         }
+        
+        BattleEventManager.TriggerObjectiveResolved(success ? EncounterOutcome.Success : EncounterOutcome.Failed);
+    }
+
+    private static bool IsFinalBossEncounter()
+    {
+        return GameDB.Instance?.Campaign.CurrentRole == EncounterNodeRole.FinalBoss;
     }
 }

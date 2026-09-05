@@ -9,14 +9,18 @@ public class AttackState : IState
 
     public void Enter()
     {
-        Debug.Log("[AttackState] Enter 觸發了！");
+        Debug.Log("[AttackState] ═══ Enter 開始執行 ═══");
+        
         // 1. 檢查是否可以攻擊（冷卻限制邏輯）
         if (_ctx.PlayerAttack == null)
         {
-            Debug.LogWarning("[AttackState] 錯誤：_ctx.PlayerAttack 為空！");
+            Debug.LogError("[AttackState] 錯誤：_ctx.PlayerAttack 為 null！");
             attackTimer = _ctx.attackDuration;
             return;
         }
+        
+        Debug.Log($"[AttackState] PlayerAttack 存在，準備檢查 CanAttack()");
+        
         if (!_ctx.PlayerAttack.CanAttack())
         {
             Debug.LogWarning("[AttackState] CanAttack() 回傳 false，中斷攻擊！");
@@ -24,6 +28,8 @@ public class AttackState : IState
             attackTimer = _ctx.attackDuration;
             return;
         }
+
+        Debug.Log("[AttackState] CanAttack() 通過，開始攻擊流程");
 
         // 2. 初始化動作
         attackTimer = 0f;
@@ -34,11 +40,15 @@ public class AttackState : IState
         // 3. 播放攻擊動畫
         if (_ctx.AnimController != null)
         {
+            Debug.Log("[AttackState] 播放攻擊動畫");
             _ctx.AnimController.PlayAttackAnimation(_ctx.lastFacingDirection);
         }
 
         // 4. 呼叫 PlayerAttack 的物理機制與數值判定
+        Debug.Log($"[AttackState] 呼叫 PerformAttack，方向={_ctx.LastMoveDirection}");
         _ctx.PlayerAttack.PerformAttack(_ctx.LastMoveDirection);
+        
+        Debug.Log("[AttackState] ═══ Enter 執行完畢 ═══");
     }
 
     public void Update()

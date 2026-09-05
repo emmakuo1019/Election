@@ -33,12 +33,12 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        BattleEventManager.OnRoomCleared += StopSpawning;
+        BattleEventManager.OnObjectiveResolved += HandleObjectiveResolved;
     }
 
     private void OnDisable()
     {
-        BattleEventManager.OnRoomCleared -= StopSpawning;
+        BattleEventManager.OnObjectiveResolved -= HandleObjectiveResolved;
     }
 
     private void Start()
@@ -93,8 +93,12 @@ public class EnemySpawner : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             SpawnEnemy(config.GetRandomPrefab());
-            // 每 5 隻讓出一幀，避免生成卡頓
-            if (i > 0 && i % 5 == 0) yield return null;
+            
+            // 等待兩個 FixedUpdate 確保：
+            // 1. Collider 完全註冊到 PhysicsSystem
+            // 2. NavMeshAgent 完全初始化
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
         }
 
         // 所有敵人已放置完畢，開始追蹤存活數
@@ -129,7 +133,8 @@ public class EnemySpawner : MonoBehaviour
         for (int i = 0; i < fallbackCount; i++)
         {
             SpawnEnemy(fallbackEnemyPrefab);
-            if (i > 0 && i % 5 == 0) yield return null;
+            // 同樣等待 FixedUpdate 確保 Physics 同步
+            yield return new WaitForFixedUpdate();
         }
         EnemySpawnTracker.StartTracking();
     }
@@ -192,6 +197,11 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+    private void HandleObjectiveResolved(EncounterOutcome _)
+    {
+        StopSpawning();
+    }
+
     /// <summary>
     /// 停止生成並立即清除場上所有敵人。
     /// Survive 任務計時結束時由 BattleFlowController 呼叫。
@@ -202,7 +212,7 @@ public class EnemySpawner : MonoBehaviour
         var enemies = Object.FindObjectsByType<EnemyController>(
             FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var e in enemies)
-            e.gameObject.SetActive(false);
-        Debug.Log($"[EnemySpawner] ClearAllEnemies — 清除 {enemies.Length} 隻敵人");
+            Object.Destroy(e.gameObject);
+        Debug.Log($"[EnemySpawner] ClearAllEnemies — 銷毀 {enemies.Length} 隻敵人");
     }
 }

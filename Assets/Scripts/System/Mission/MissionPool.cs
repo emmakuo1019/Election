@@ -70,4 +70,48 @@ public class MissionPool : ScriptableObject
 
         return result;
     }
+
+    /// <summary>以固定 seed 從符合節點資格的任務中抽取不重複選項。</summary>
+    public RoomMissionData[] DrawEligible(int count, int nodeNumber, int seed, IReadOnlyList<EncounterResult> history)
+    {
+        if (entries == null)
+        {
+            Debug.LogError("[MissionPool] 任務列表為空。");
+            return System.Array.Empty<RoomMissionData>();
+        }
+
+        var candidates = new List<Entry>();
+        foreach (Entry entry in entries)
+        {
+            if (entry.mission != null && entry.weight > 0 && entry.mission.IsEligibleForNode(nodeNumber))
+                candidates.Add(entry);
+        }
+
+        if (candidates.Count < count)
+        {
+            Debug.LogError($"[MissionPool] 第 {nodeNumber} 節點只有 {candidates.Count} 個有效任務，至少需要 {count} 個。");
+            return System.Array.Empty<RoomMissionData>();
+        }
+
+        var random = new System.Random(seed);
+        var result = new RoomMissionData[count];
+        for (int draw = 0; draw < count; draw++)
+        {
+            int totalWeight = 0;
+            foreach (Entry entry in candidates) totalWeight += entry.weight;
+
+            int roll = random.Next(totalWeight);
+            int cumulative = 0;
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                cumulative += candidates[index].weight;
+                if (roll >= cumulative) continue;
+                result[draw] = candidates[index].mission;
+                candidates.RemoveAt(index);
+                break;
+            }
+        }
+
+        return result;
+    }
 }

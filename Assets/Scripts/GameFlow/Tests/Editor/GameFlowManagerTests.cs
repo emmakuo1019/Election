@@ -1,130 +1,189 @@
 #if UNITY_EDITOR && UNITY_INCLUDE_TESTS
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
+/// <summary>
+/// 戰役規則測試刻意不載入場景：它們驗證唯一的 CampaignData 來源，
+/// 因此不會被 UI、計時器或 Unity 的載入時序干擾。
+/// </summary>
 public class GameFlowManagerTests
 {
-    private GameFlowManager _gameFlowManager;
-    private UIManager _uiManager;
+    private readonly List<Object> _createdAssets = new List<Object>();
 
-    [SetUp]
-    public void SetUp()
+    [Test]
+    public void Campaign_EliteIsNodeFour_AndFinalBossIsTheOnlyRunEnd()
     {
-        // 建立測試用的 GameObject
-        var go = new GameObject("TestGameFlowManager");
-        _gameFlowManager = go.AddComponent<GameFlowManager>();
+        CampaignDefinition definition = CreateDefinition();
+        MissionPool pool = CreatePool();
+        var campaign = new CampaignData(definition, pool);
 
-        var uiGo = new GameObject("TestUIManager");
-        _uiManager = uiGo.AddComponent<UIManager>();
+        Assert.That(campaign.StartFormalCampaign(), Is.True);
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(1));
+        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.Opening));
 
-        // ⚠️ 關鍵修復：Edit Mode 下不能執行 DontDestroyOnLoad，否則會拋出 InvalidOperationException。
-        // 所以我們不呼叫 Awake，而是直接利用反射 (Reflection) 把必要的欄位和單例設好。
+        ResolveAndChoose(campaign); // 1 -> choose 2
+        ResolveAndChoose(campaign); // 2 -> choose 3
 
-        // 1. 手動設定 GameFlowManager.Instance
-        var gameFlowInstanceProp = typeof(GameFlowManager).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-        if (gameFlowInstanceProp != null)
-        {
-            gameFlowInstanceProp.GetSetMethod(true)?.Invoke(null, new object[] { _gameFlowManager });
-        }
+        campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
+        Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAtElite, out bool endedAtElite), Is.True);
+        Assert.That(hasChoiceAtElite, Is.False);
+        Assert.That(endedAtElite, Is.False);
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(4));
+        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.Elite));
 
-        // 2. 手動實例化 GameFlowManager 內部的 stateMachine
-        var stateMachineField = typeof(GameFlowManager).GetField("stateMachine", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (stateMachineField != null)
-        {
-            // 由於 StateMachine 的建構子可能是預設的，我們透過 Activator 建立它
-            var stateMachineInstance = System.Activator.CreateInstance(stateMachineField.FieldType);
-            stateMachineField.SetValue(_gameFlowManager, stateMachineInstance);
-        }
+        // Elite 的結算依然生成第 5 節點的雙選項，不能結束這一局。
+        campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
+        Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAfterElite, out bool endedAfterElite), Is.True);
+        Assert.That(hasChoiceAfterElite, Is.True);
+        Assert.That(endedAfterElite, Is.False);
+        Assert.That(campaign.PendingOptions, Has.Length.EqualTo(2));
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(4));
 
-        // 3. 手動設定 UIManager.Instance
-        var uiInstanceProp = typeof(UIManager).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-        if (uiInstanceProp != null)
-        {
-            uiInstanceProp.GetSetMethod(true)?.Invoke(null, new object[] { _uiManager });
-        }
+        Assert.That(campaign.TrySelectRoute(0), Is.True); // 5
+        ResolveAndChoose(campaign); // 5 -> choose 6
+        ResolveAndChoose(campaign); // 6 -> choose 7
+
+        campaign.ResolveCurrentEncounter(EncounterOutcome.Failed);
+        Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceBeforeFinal, out bool endedBeforeFinal), Is.True);
+        Assert.That(hasChoiceBeforeFinal, Is.False);
+        Assert.That(endedBeforeFinal, Is.False);
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(8));
+        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.FinalBoss));
+
+        campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
+        Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAfterFinal, out bool endedAfterFinal), Is.True);
+        Assert.That(hasChoiceAfterFinal, Is.False);
+        Assert.That(endedAfterFinal, Is.True);
+        Assert.That(campaign.Results, Has.Count.EqualTo(8));
     }
 
     [Test]
-    public void GameplayState_OnRoomCleared_ShouldTransitionToStageClearState()
+    public void Campaign_SameSeedProducesTheSamePendingMissionOptions()
     {
-        // ==========================================
-        // Arrange (準備)
-        // ==========================================
-        int testRoomNumber = 1;
-        var gameplayState = new GameplayState(testRoomNumber);
-        
-        // 預期在 Edit Mode 執行 GameplayState.Enter() 裡的 SceneManager.LoadSceneAsync 會拋出錯誤，我們主動忽略它
-        UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Exception, new System.Text.RegularExpressions.Regex(".*EditorSceneManager\\.OpenScene.*"));
+        CampaignDefinition definition = CreateDefinition();
+        MissionPool pool = CreatePool();
+        var first = new CampaignData(definition, pool);
+        var second = new CampaignData(definition, pool);
 
-        // 強制將當前狀態設置為 GameplayState
-        _gameFlowManager.ChangeState(gameplayState);
+        Assert.That(first.StartFormalCampaign(), Is.True);
+        Assert.That(second.StartFormalCampaign(), Is.True);
+        first.ResolveCurrentEncounter(EncounterOutcome.Success);
+        second.ResolveCurrentEncounter(EncounterOutcome.Success);
 
-        // 斷言初始狀態確實為 GameplayState，且狀態機初始化成功
-        Assert.IsNotNull(_gameFlowManager.CurrentState, "狀態機的 CurrentState 不應為 null。");
-        Assert.IsInstanceOf<GameplayState>(_gameFlowManager.CurrentState, "初始狀態切換失敗，當前狀態並非 GameplayState。");
+        Assert.That(first.TryPrepareNextStep(out bool firstNeedsChoice, out _), Is.True);
+        Assert.That(second.TryPrepareNextStep(out bool secondNeedsChoice, out _), Is.True);
+        Assert.That(firstNeedsChoice && secondNeedsChoice, Is.True);
+        Assert.That(first.PendingOptions, Has.Length.EqualTo(2));
+        Assert.That(second.PendingOptions, Has.Length.EqualTo(2));
+        Assert.That(first.PendingOptions[0].mission, Is.SameAs(second.PendingOptions[0].mission));
+        Assert.That(first.PendingOptions[1].mission, Is.SameAs(second.PendingOptions[1].mission));
 
-        // ==========================================
-        // Act (執行)
-        // ==========================================
-        // 模擬玩家踩到出口，直接呼叫廣播，觸發房間過關事件
-        BattleEventManager.TriggerRoomCleared();
+        // 重複請求不應重抽：選項在 CampaignData 中只生成一次。
+        RoomMissionData firstOption = first.PendingOptions[0].mission;
+        Assert.That(first.TryPrepareNextStep(out bool repeatedNeedsChoice, out _), Is.True);
+        Assert.That(repeatedNeedsChoice, Is.True);
+        Assert.That(first.PendingOptions[0].mission, Is.SameAs(firstOption));
+    }
 
-        // ==========================================
-        // Assert (驗證)
-        // ==========================================
-        // 斷言 GameFlowManager 的當前狀態是否已成功切換為 StageClearState
-        Assert.IsInstanceOf<StageClearState>(_gameFlowManager.CurrentState, "觸發過關事件後，狀態機未能正確切換到 StageClearState。");
+    [Test]
+    public void FinalBossOpponent_OnlyReportsVictoryWhenItsHealthReachesZero()
+    {
+        GameObject bossObject = Track(new GameObject("FinalBossOpponent"));
+        bossObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
+        EnemyController boss = bossObject.AddComponent<EnemyController>();
+        SetPrivateField(boss, "isFinalBossOpponent", true);
+
+        int defeatedCount = 0;
+        System.Action handler = () => defeatedCount++;
+        BattleEventManager.OnFinalBossDefeated += handler;
+        try
+        {
+            boss.TakeDamage(boss.maxHP - 1);
+            Assert.That(defeatedCount, Is.Zero);
+
+            boss.TakeDamage(1);
+            Assert.That(defeatedCount, Is.EqualTo(1));
+        }
+        finally
+        {
+            BattleEventManager.OnFinalBossDefeated -= handler;
+        }
+    }
+
+    private void ResolveAndChoose(CampaignData campaign)
+    {
+        campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
+        Assert.That(campaign.TryPrepareNextStep(out bool needsChoice, out bool isRunComplete), Is.True);
+        Assert.That(needsChoice, Is.True);
+        Assert.That(isRunComplete, Is.False);
+        Assert.That(campaign.PendingOptions, Has.Length.EqualTo(2));
+        Assert.That(campaign.TrySelectRoute(0), Is.True);
+    }
+
+    private CampaignDefinition CreateDefinition()
+    {
+        RoomMissionData opening = CreateMission("Opening", 1, 1);
+        RoomMissionData elite = CreateMission("Elite", 4, 4);
+        CampaignDefinition definition = Track(ScriptableObject.CreateInstance<CampaignDefinition>());
+        SetPrivateField(definition, "defaultSeed", 424242);
+        SetPrivateField(definition, "routeDoorPrefab", Track(new GameObject("RouteDoorPrefab")));
+        SetPrivateField(definition, "nodes", new List<CampaignNodeDefinition>
+        {
+            new CampaignNodeDefinition { nodeNumber = 1, role = EncounterNodeRole.Opening, fixedMission = opening },
+            new CampaignNodeDefinition { nodeNumber = 2, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 3, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 4, role = EncounterNodeRole.Elite, fixedMission = elite },
+            new CampaignNodeDefinition { nodeNumber = 5, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 6, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 7, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 8, role = EncounterNodeRole.FinalBoss, sceneName = "TestSmallBoss" },
+        });
+        return definition;
+    }
+
+    private MissionPool CreatePool()
+    {
+        MissionPool pool = Track(ScriptableObject.CreateInstance<MissionPool>());
+        pool.entries = new List<MissionPool.Entry>
+        {
+            new MissionPool.Entry { mission = CreateMission("Eliminate", 2, 7), weight = 5 },
+            new MissionPool.Entry { mission = CreateMission("Survive", 2, 7), weight = 5 },
+            new MissionPool.Entry { mission = CreateMission("Vote", 2, 7), weight = 5 },
+        };
+        return pool;
+    }
+
+    private RoomMissionData CreateMission(string name, int minNode, int maxNode)
+    {
+        RoomMissionData mission = Track(ScriptableObject.CreateInstance<RoomMissionData>());
+        mission.name = name;
+        mission.sceneName = "TestMVP";
+        mission.minCampaignNode = minNode;
+        mission.maxCampaignNode = maxNode;
+        return mission;
+    }
+
+    private T Track<T>(T asset) where T : Object
+    {
+        _createdAssets.Add(asset);
+        return asset;
+    }
+
+    private static void SetPrivateField(object target, string fieldName, object value)
+    {
+        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null, $"找不到測試需要的欄位：{fieldName}");
+        field.SetValue(target, value);
     }
 
     [TearDown]
     public void TearDown()
     {
-        // ==========================================
-        // 清理 (防止 Memory Leak 污染其他測試)
-        // ==========================================
-
-        // 1. 銷毀測試用的 GameObject，釋放資源 (Edit Mode 需使用 DestroyImmediate)
-        if (_gameFlowManager != null && _gameFlowManager.gameObject != null)
-        {
-            Object.DestroyImmediate(_gameFlowManager.gameObject);
-        }
-        if (_uiManager != null && _uiManager.gameObject != null)
-        {
-            Object.DestroyImmediate(_uiManager.gameObject);
-        }
-
-        // 2. 利用反射清空 單例 Instance，確保下次測試能擁有乾淨的單例環境
-        var instanceProperty = typeof(GameFlowManager).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-        if (instanceProperty != null)
-        {
-            var setter = instanceProperty.GetSetMethod(true); // true 表示包含 private set
-            setter?.Invoke(null, new object[] { null });
-        }
-
-        var uiInstanceProperty = typeof(UIManager).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
-        if (uiInstanceProperty != null)
-        {
-            var setter = uiInstanceProperty.GetSetMethod(true);
-            setter?.Invoke(null, new object[] { null });
-        }
-
-        // 3. 確保靜態事件沒有殘留的訂閱者，防止記憶體洩漏與幽靈呼叫
-        ClearStaticEvent(typeof(BattleEventManager), "OnRoomCleared");
-        ClearStaticEvent(typeof(BattleEventManager), "OnPlayerDied");
-    }
-
-    /// <summary>
-    /// 輔助方法：透過反射清空靜態事件的所有訂閱者
-    /// </summary>
-    private void ClearStaticEvent(System.Type type, string eventName)
-    {
-        // C# 編譯器在處理 event 時，會在背景產生一個與事件同名的 private 委派欄位
-        var fieldInfo = type.GetField(eventName, BindingFlags.Static | BindingFlags.NonPublic);
-        if (fieldInfo != null)
-        {
-            fieldInfo.SetValue(null, null);
-        }
+        foreach (Object asset in _createdAssets)
+            if (asset != null) Object.DestroyImmediate(asset);
+        _createdAssets.Clear();
     }
 }
 #endif

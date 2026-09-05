@@ -24,9 +24,9 @@ public class MissionHUDController : MonoBehaviour
 
     private void Start()
     {
-        // Start() 時 UIManager.ShowGameplayHUD() 還沒被呼叫，
-        // 這裡先套一次，之後 ShowGameplayHUD() 結束時會再呼叫一次確保正確。
-        ApplyHUDLayout();
+        // 不在 Start() 時呼叫 ApplyHUDLayout()
+        // 原因：此時 GameDB.Instance.Campaign.ActiveRoom 可能尚未載入
+        // UIManager.ShowGameplayHUD() 會在適當時機呼叫 ApplyHUDLayout()
     }
 
     // ── 公開 API ──────────────────────────────────────────────────────
@@ -37,25 +37,28 @@ public class MissionHUDController : MonoBehaviour
     /// </summary>
     public void ApplyHUDLayout()
     {
-        RoomMissionData mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
-        HUDLayout layout = mission?.hudLayout ?? HUDLayout.Auto;
+        RoomMissionData mission = GameDB.Instance?.Campaign?.ActiveRoom.mission;
+        if (mission == null)
+        {
+            SetHUD(timer: false, enemy: true, vote: true); // 預設為 EliminateAll 布局
+            return;
+        }
+
+        HUDLayout layout = mission.hudLayout;
 
         switch (layout)
         {
             case HUDLayout.Tutorial:
             case HUDLayout.HideAll:
                 SetHUD(timer: false, enemy: false, vote: false);
-                Debug.Log("[MissionHUDController] 布局：Tutorial / HideAll");
                 return;
 
             case HUDLayout.EnemyCountOnly:
                 SetHUD(timer: false, enemy: true, vote: false);
-                Debug.Log("[MissionHUDController] 布局：EnemyCountOnly");
                 return;
 
             case HUDLayout.TimerAndVote:
                 SetHUD(timer: true, enemy: false, vote: true);
-                Debug.Log("[MissionHUDController] 布局：TimerAndVote");
                 return;
 
             case HUDLayout.Auto:
@@ -64,22 +67,19 @@ public class MissionHUDController : MonoBehaviour
         }
 
         // Auto：依 objectiveType 決定
-        MissionObjectiveType type = mission?.objectiveType ?? MissionObjectiveType.EliminateAll;
+        MissionObjectiveType type = mission.objectiveType;
         switch (type)
         {
             case MissionObjectiveType.EliminateAll:
                 SetHUD(timer: false, enemy: true, vote: true);
-                Debug.Log("[MissionHUDController] 布局：Auto / EliminateAll");
                 break;
 
             case MissionObjectiveType.Survive:
                 SetHUD(timer: true, enemy: false, vote: true);
-                Debug.Log("[MissionHUDController] 布局：Auto / Survive");
                 break;
 
             case MissionObjectiveType.ReachVotePercent:
                 SetHUD(timer: true, enemy: false, vote: true);
-                Debug.Log("[MissionHUDController] 布局：Auto / ReachVotePercent");
                 break;
 
             default:

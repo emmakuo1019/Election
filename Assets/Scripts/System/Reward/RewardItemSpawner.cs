@@ -8,12 +8,12 @@ using UnityEngine;
 /// 在 Inspector 設定三個生成點（spawnPoints）與 RewardItem Prefab。
 ///
 /// 流程：
-///   OnAllEnemiesDefeated
+///   OnRewardSelectionRequested
 ///   → 從牌池抽 3 張卡
 ///   → 在 spawnPoints 生成 3 個 RewardItem
 ///   → 玩家選擇其中一個
 ///   → 套用卡牌效果、其餘物件消失
-///   → 解鎖出口（TriggerAllEnemiesDefeated 已觸發，DoorController 已解鎖門）
+///   → 通知 StageClearState 自動進入固定下一節點，或顯示雙門路線選擇
 ///
 /// 第 5/10 關技能選擇：
 ///   條件符合時生成技能選擇物件而非政策卡（TODO：待技能選擇系統建立後實作）
@@ -37,52 +37,47 @@ public class RewardItemSpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        BattleEventManager.OnAllEnemiesDefeated += OnEnemiesDefeated;
+        BattleEventManager.OnRewardSelectionRequested += OnRewardSelectionRequested;
     }
 
     private void OnDisable()
     {
-        BattleEventManager.OnAllEnemiesDefeated -= OnEnemiesDefeated;
+        BattleEventManager.OnRewardSelectionRequested -= OnRewardSelectionRequested;
     }
 
     // ── 事件處理 ─────────────────────────────────────────────────────
 
-    private void OnEnemiesDefeated()
+    private void OnRewardSelectionRequested(bool useDistressReward)
     {
         if (_rewardActive) return;
-
-        // 第 5/10 關：技能選擇（ponytail: TODO 待技能選擇系統建立後替換此分支）
-        int roomNumber = GameDB.Instance?.Campaign.CurrentRoomCount ?? 0;
-        if (roomNumber % 5 == 0 && roomNumber > 0)
-        {
-            Debug.Log($"[RewardItemSpawner] 第 {roomNumber} 關，技能選擇預留（尚未實作）");
-            // TODO: SpawnSkillChoices();
-            // 暫時 fallback 至普通選卡
-        }
-
-        SpawnRewardCards();
+        SpawnRewardCards(useDistressReward);
     }
 
     // ── 生成邏輯 ─────────────────────────────────────────────────────
 
-    private void SpawnRewardCards()
+    private void SpawnRewardCards(bool distressReward)
     {
         if (rewardItemPrefab == null)
         {
             Debug.LogWarning("[RewardItemSpawner] rewardItemPrefab 未設定！");
+            BattleEventManager.TriggerRewardCollected();
             return;
         }
 
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
             Debug.LogWarning("[RewardItemSpawner] spawnPoints 未設定！");
+            BattleEventManager.TriggerRewardCollected();
             return;
         }
 
-        var cards = GameDB.Instance?.Run.DrawRandomPolicyCards(rewardCount);
+        var cards = distressReward
+            ? GameDB.Instance?.Run.DrawDistressPolicyCards(rewardCount)
+            : GameDB.Instance?.Run.DrawRandomPolicyCards(rewardCount);
         if (cards == null || cards.Count == 0)
         {
             Debug.LogWarning("[RewardItemSpawner] 牌池為空，無法生成獎勵");
+            BattleEventManager.TriggerRewardCollected();
             return;
         }
 
@@ -90,6 +85,11 @@ public class RewardItemSpawner : MonoBehaviour
         _spawnedItems.Clear();
 
         int count = Mathf.Min(rewardCount, spawnPoints.Length, cards.Count);
+        if (count == 0)
+        {
+            BattleEventManager.TriggerRewardCollected();
+            return;
+        }
         for (int i = 0; i < count; i++)
         {
             // ponytail: 每關僅生成 3 個，GC 壓力可忽略，不入池；若未來需大量動態生成再改 PoolManager
@@ -125,9 +125,7 @@ public class RewardItemSpawner : MonoBehaviour
         _spawnedItems.Clear();
         _rewardActive = false;
 
-        // 先通知「獎勵已領取」，讓 DoorController 完成第二道解鎖條件，再觸發過關
-        Debug.Log("[RewardItemSpawner] 選擇完成，通知獎勵完成並觸發過關");
+        Debug.Log("[RewardItemSpawner] 選擇完成，通知獎勵完成");
         BattleEventManager.TriggerRewardCollected();
-        BattleEventManager.TriggerRoomCleared();
     }
 }

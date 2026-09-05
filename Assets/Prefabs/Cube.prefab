@@ -121,8 +121,8 @@ MonoBehaviour:
   optionIndex: 0
   requiresUnlock: 0
   requiresRewardBeforeUnlock: 0
-  lockedVisual: {fileID: 0}
-  unlockedVisual: {fileID: 0}
+  lockedVisual: {fileID: 5594269665286831399}
+  unlockedVisual: {fileID: 5594269665286831399}
 --- !u!1 &5828624305913550198
 GameObject:
   m_ObjectHideFlags: 0

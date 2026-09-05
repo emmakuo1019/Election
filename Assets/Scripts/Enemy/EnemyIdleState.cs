@@ -19,10 +19,8 @@ public class EnemyIdleState : IState
 
     public void Enter()
     {
-        if (ctx.Agent.isOnNavMesh)
-        {
-            ctx.Agent.isStopped = true;
-        }
+        // 強制停止導航（EnemyController.Start 已確保 Agent 在 NavMesh 上）
+        ctx.Agent.isStopped = true;
         
         // 隨機等待時間，等待完後遊蕩
         _idleDuration = UnityEngine.Random.Range(ctx.wanderIntervalMin, ctx.wanderIntervalMax);

@@ -56,10 +56,10 @@ public class PlayerSkillManager : MonoBehaviour
 
     private void Start()
     {
-        // 讀取 GameDB.Instance.Campaign.UnlockedSkills 並自動掛載已解鎖的技能 (資料驅動)
-        if (GameDB.Instance != null && GameDB.Instance.Campaign != null)
+        // 解鎖技能屬於跨局玩家資料，不依賴本局 Campaign 節點進度。
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
         {
-            foreach (var skill in GameDB.Instance.Campaign.UnlockedSkills)
+            foreach (var skill in GameDB.Instance.Player.UnlockedSkills)
             {
                 if (skill != null)
                 {

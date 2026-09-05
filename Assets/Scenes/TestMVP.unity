@@ -309,6 +309,48 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
+--- !u!114 &38687479 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3558619343004431794, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
+  m_PrefabInstance: {fileID: 38687478}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06cea3255c8f84f2393b2218f39b1833, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
+--- !u!1 &87735176
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 87735177}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &87735177
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87735176}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -13.23, y: 0, z: 2.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &199332011
 GameObject:
   m_ObjectHideFlags: 0
@@ -832,12 +874,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f37739a5d31d741c9aabba56a57b80e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lockedVisual: {fileID: 1951885031}
-  unlockedVisual: {fileID: 1617313007}
-  triggerOnlyOnce: 1
-  unlockOnStart: 0
+  singleDoor: {fileID: 0}
+  routeDoorLeft: {fileID: 0}
+  routeDoorRight: {fileID: 0}
   voterExitTarget: {fileID: 364505765}
   voterExitForwardOffset: 6
+  unlockOnStart: 0
 --- !u!65 &364505762
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2054,6 +2096,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
+--- !u!114 &918544748 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3558619343004431794, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
+  m_PrefabInstance: {fileID: 918544747}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06cea3255c8f84f2393b2218f39b1833, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorController
 --- !u!1 &952103809
 GameObject:
   m_ObjectHideFlags: 0
@@ -2798,6 +2851,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1166792765
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1166792766}
+  - component: {fileID: 1166792767}
+  m_Layer: 0
+  m_Name: RoomExitController
+  m_TagString: Untagged
+  m_Icon: {fileID: 8418204508859773708, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1166792766
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166792765}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18.71, y: 0, z: 9.28}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1976119068}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1166792767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166792765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f37739a5d31d741c9aabba56a57b80e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomExitController
+  singleDoor: {fileID: 0}
+  routeDoorLeft: {fileID: 918544748}
+  routeDoorRight: {fileID: 38687479}
+  voterExitTarget: {fileID: 87735177}
+  voterExitForwardOffset: 6
+  unlockOnStart: 0
 --- !u!1 &1199617883
 GameObject:
   m_ObjectHideFlags: 0
@@ -4200,6 +4303,7 @@ Transform:
   - {fileID: 325841365}
   - {fileID: 1098425575}
   - {fileID: 1401303422}
+  - {fileID: 1166792766}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1976119069
@@ -4506,3 +4610,4 @@ SceneRoots:
   - {fileID: 1551684396}
   - {fileID: 918544747}
   - {fileID: 38687478}
+  - {fileID: 87735177}

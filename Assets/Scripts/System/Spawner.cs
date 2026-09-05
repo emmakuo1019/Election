@@ -22,12 +22,12 @@ public class Spawner : MonoBehaviour
 
     private void OnEnable()
     {
-        BattleEventManager.OnRoomCleared += StopSpawning;
+        BattleEventManager.OnObjectiveResolved += HandleObjectiveResolved;
     }
 
     private void OnDisable()
     {
-        BattleEventManager.OnRoomCleared -= StopSpawning;
+        BattleEventManager.OnObjectiveResolved -= HandleObjectiveResolved;
     }
 
     private void Start()
@@ -42,6 +42,11 @@ public class Spawner : MonoBehaviour
             StopCoroutine(spawnCoroutine);
             spawnCoroutine = null;
         }
+    }
+
+    private void HandleObjectiveResolved(EncounterOutcome _)
+    {
+        StopSpawning();
     }
 
     private void OnDestroy()

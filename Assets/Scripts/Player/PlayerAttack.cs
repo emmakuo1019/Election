@@ -38,8 +38,22 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     void Awake()
     {
         impulseSource = GetComponent<CinemachineImpulseSource>();
-        
         playerController = GetComponent<PlayerController>();
+        
+        // ── LayerMask 驗證與自動修正 ─────────────────────────────────
+        // 防止第二關場景的 Player prefab instance 遺失 LayerMask 設定
+        if (voterLayer.value == 0)
+        {
+            voterLayer = LayerMask.GetMask("Voter");
+            Debug.LogWarning("[PlayerAttack] voterLayer 未設定，已自動修正為 Voter 層。");
+        }
+        
+        if (enemyLayer.value == 0)
+        {
+            enemyLayer = LayerMask.GetMask("Enemy");
+            Debug.LogWarning("[PlayerAttack] enemyLayer 未設定，已自動修正為 Enemy 層。");
+        }
+        
         baseAttackRange = attackRange;
         currentAttackRange = attackRange;
         currentAttackCooldown = attackCooldown;
@@ -145,7 +159,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     /// </summary>
     public void PerformAttack(Vector3 facingDirection)
     {
-        if (!CanAttack()) return;
+        Debug.Log("[PlayerAttack] PerformAttack 被呼叫！");
+        
+        if (!CanAttack())
+        {
+            Debug.LogWarning($"[PlayerAttack] CanAttack() 返回 false，中止攻擊。lastAttackTime={lastAttackTime}, currentTime={Time.time}, cooldown={currentAttackCooldown}");
+            return;
+        }
 
         lastAttackTime = Time.time;
 
@@ -156,6 +176,14 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
         SyncAttackRangeMeshRotation(attackDir);
         bool hitAny = false;
 
+        Debug.Log($"[PlayerAttack] ═══ 攻擊偵測開始 ═══");
+        Debug.Log($"[PlayerAttack] 玩家位置: {transform.position}");
+        Debug.Log($"[PlayerAttack] 玩家 Y 軸高度: {transform.position.y}");
+        Debug.Log($"[PlayerAttack] 攻擊範圍（球體半徑）: {currentAttackRange}");
+        Debug.Log($"[PlayerAttack] voterLayer: {voterLayer.value}");
+        Debug.Log($"[PlayerAttack] enemyLayer: {enemyLayer.value}");
+        Debug.Log($"[PlayerAttack] 合併LayerMask: {(voterLayer.value | enemyLayer.value)}");
+
         int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             currentAttackRange,
@@ -163,8 +191,16 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             voterLayer | enemyLayer
         );
 
-        Debug.Log($"[PlayerAttack] PerformAttack — pos={transform.position}, range={currentAttackRange}, " +
-                  $"voterLayer={voterLayer.value}, enemyLayer={enemyLayer.value}, hitCount={hitCount}");
+        Debug.Log($"[PlayerAttack] Physics.OverlapSphereNonAlloc 返回 {hitCount} 個碰撞體");
+        
+        // Debug：手動列出附近所有 layer=7 的物件
+        Collider[] allEnemies = Physics.OverlapSphere(transform.position, 20f, enemyLayer);
+        Debug.Log($"[PlayerAttack] DEBUG: 20公尺內所有 layer=7 物件共 {allEnemies.Length} 個");
+        foreach (var e in allEnemies)
+        {
+            float dist = Vector3.Distance(transform.position, e.transform.position);
+            Debug.Log($"[PlayerAttack]   - {e.name} at {e.transform.position}, 距離={dist:F2}");
+        }
 
         for (int i = 0; i < hitCount; i++)
         {
@@ -174,8 +210,9 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             EnemyController enemy = hit.GetComponentInParent<EnemyController>();
 
-            Debug.Log($"[PlayerAttack]  hit[{i}]={hit.name} layer={hit.gameObject.layer} " +
-                      $"enemy={enemy != null} voter={voter != null}");
+            Debug.Log($"[PlayerAttack]  [{i}] 碰撞體={hit.name}, layer={hit.gameObject.layer}, tag={hit.gameObject.tag}");
+            Debug.Log($"[PlayerAttack]      GetComponentInParent<VoterLogic>()={voter != null}");
+            Debug.Log($"[PlayerAttack]      GetComponentInParent<EnemyController>()={enemy != null}");
 
             Transform targetTransform = null;
             if (voter != null) targetTransform = voter.transform;
@@ -194,11 +231,17 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             Vector3 dirToTarget = toTarget.normalized;
 
             // 判斷是否在攻擊扇形範圍內
-            if (Vector3.Angle(attackDir, dirToTarget) < attackAngle / 2f)
+            float angle = Vector3.Angle(attackDir, dirToTarget);
+            Debug.Log($"[PlayerAttack]      攻擊方向角度={angle}°, 扇形半角={attackAngle / 2f}°");
+            
+            if (angle < attackAngle / 2f)
             {
+                Debug.Log($"[PlayerAttack]      ✓ 在攻擊範圍內！");
+                
                 // 如果是敵人，直接打斷並造成硬直
                 if (enemy != null)
                 {
+                    Debug.Log($"[PlayerAttack]      🎯 對敵人 {enemy.name} 造成傷害！");
                     enemy.TakeDamage(10, 1.0f);
                     hitAny = true;
                 }
@@ -224,7 +267,13 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                     hitAny = true;
                 }
             }
+            else
+            {
+                Debug.Log($"[PlayerAttack]      ✗ 不在攻擊範圍（角度過大）");
+            }
         }
+
+        Debug.Log($"[PlayerAttack] ═══ 攻擊偵測結束，hitAny={hitAny} ═══\n");
 
         if (hitAny)
         {

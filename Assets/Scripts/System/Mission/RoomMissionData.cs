@@ -62,4 +62,16 @@ public class RoomMissionData : ScriptableObject
     [Header("敵人生成設定")]
     [Tooltip("此任務的敵人生成配置；留空時 EnemySpawner 使用場景 fallback 設定")]
     public EnemySpawnConfig spawnConfig;
+
+    [Header("戰役資格")]
+    [Tooltip("可被抽到的最小正式節點；0 代表不限制。")]
+    [Min(0)] public int minCampaignNode = 0;
+    [Tooltip("可被抽到的最大正式節點；0 代表不限制。")]
+    [Min(0)] public int maxCampaignNode = 0;
+
+    public bool IsEligibleForNode(int nodeNumber)
+    {
+        return (minCampaignNode == 0 || nodeNumber >= minCampaignNode) &&
+               (maxCampaignNode == 0 || nodeNumber <= maxCampaignNode);
+    }
 }

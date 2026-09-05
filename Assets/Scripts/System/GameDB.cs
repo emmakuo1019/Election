@@ -22,10 +22,15 @@ public class GameDB : MonoBehaviour
     [Tooltip("教學關卡使用的任務資料（設 HUDLayout = Tutorial 即可隱藏不需要的 HUD）")]
     [SerializeField] private RoomMissionData _tutorialMission;
     public RoomMissionData TutorialMission => _tutorialMission;
+
+    [Header("戰役定義")]
+    [SerializeField] private CampaignDefinition _campaignDefinition;
+    public CampaignDefinition CampaignDefinition => _campaignDefinition;
     
     public PlayerData Player { get; private set; }
     public RunData Run { get; private set; }
     public CampaignData Campaign { get; private set; }
+    public event Action<CampaignData> OnCampaignChanged;
 
     private void Awake()
     {
@@ -41,7 +46,7 @@ public class GameDB : MonoBehaviour
         // 初始化資料模組
         Player = new PlayerData();
         Run = new RunData();
-        Campaign = new CampaignData();
+        Campaign = new CampaignData(_campaignDefinition, _missionPool);
     }
 
     /// <summary>
@@ -63,7 +68,8 @@ public class GameDB : MonoBehaviour
     /// </summary>
     public void ResetCampaignData()
     {
-        Campaign = new CampaignData();
+        Campaign = new CampaignData(_campaignDefinition, _missionPool);
+        OnCampaignChanged?.Invoke(Campaign);
         Debug.Log("[GameDB] CampaignData 已重置");
     }
 }
@@ -77,6 +83,8 @@ public class PlayerData
     // 當前裝備的技能
     public SkillData EquippedPartySkill { get; private set; }
     public SkillData BaseSkillJ { get; private set; }
+    private readonly List<SkillData> _unlockedSkills = new List<SkillData>();
+    public IReadOnlyList<SkillData> UnlockedSkills => _unlockedSkills;
 
     public event Action<SkillData> OnPartySkillEquipped;
     public event Action<SkillData> OnBaseSkillJEquipped;
@@ -95,6 +103,14 @@ public class PlayerData
     {
         BaseSkillJ = skill;
         OnBaseSkillJEquipped?.Invoke(skill);
+    }
+
+    /// <summary>技能解鎖屬於玩家資料，不屬於每局會重置的 CampaignData。</summary>
+    public bool UnlockSkill(SkillData skill)
+    {
+        if (skill == null || _unlockedSkills.Contains(skill)) return false;
+        _unlockedSkills.Add(skill);
+        return true;
     }
 
     /// <summary>
@@ -192,6 +208,37 @@ public class RunData
             int randomIndex = UnityEngine.Random.Range(0, tempPool.Count);
             result.Add(tempPool[randomIndex]);
             tempPool.RemoveAt(randomIndex);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 失勢獎勵只提供普通卡，且在可行時保證至少一張通用卡。
+    /// 這是可恢復的 Build 壓力，不是隨機塞入負面效果的隱性死刑。
+    /// </summary>
+    public List<PolicyCardData> DrawDistressPolicyCards(int count)
+    {
+        var available = new List<PolicyCardData>();
+        foreach (PolicyCardData card in GameDB.Instance.allPolicyCards)
+        {
+            if (card != null && card.Rarity == CardRarity.Common && !AcquiredPolicyCards.Contains(card.cardName))
+                available.Add(card);
+        }
+
+        var result = new List<PolicyCardData>();
+        PolicyCardData neutral = available.Find(card => card.faction == null);
+        if (neutral != null)
+        {
+            result.Add(neutral);
+            available.Remove(neutral);
+        }
+
+        while (result.Count < count && available.Count > 0)
+        {
+            int index = UnityEngine.Random.Range(0, available.Count);
+            result.Add(available[index]);
+            available.RemoveAt(index);
         }
 
         return result;
@@ -341,317 +388,217 @@ public class RunData
 
 }
 
-/// <summary>
-/// 一個待選/已選的房間選項，包含場景名稱與任務定義。
-/// </summary>
+/// <summary>一個待選或已選的任務，場景由 CampaignDefinition 統一驗證。</summary>
 [System.Serializable]
 public struct RoomOption
 {
     public string sceneName;
-    public RoomMissionData mission;  // null = 無任務（例如 Boss 房）
+    public RoomMissionData mission;
 
-    public RoomOption(string sceneName, RoomMissionData mission = null)
+    public RoomOption(string sceneName, RoomMissionData mission)
     {
         this.sceneName = sceneName;
-        this.mission   = mission;
+        this.mission = mission;
     }
 }
 
-/// <summary>
-/// 戰役/推進進度資料，取代原本分散在 BlockProgressManager 與
-/// CampaignProgressManager 裡的 PlayerPrefs 儲存。
-/// 所有欄位存活於 GameDB (DontDestroyOnLoad)，遊戲崩潰不會留下殘留狀態。
-/// </summary>
 [System.Serializable]
 public class CampaignData
 {
-    // ── 戰役常數與設定 ────────────────────────────────────────────────
-    public const int TotalBlockCount = 3;
-    public const int BossStageIndex = 4;
+    private const string DefaultArenaScene = "TestMVP";
+    private readonly CampaignDefinition _definition;
+    private readonly MissionPool _missionPool;
 
-    // ── Demo 固定流程：8 關，第 4、8 關為 Boss ────────────────────────
-    public const int TotalRooms = 8;
-    private static readonly int[] BossRooms = { 4, 8 };
-
-    /// <summary>
-    /// 全域累計房號（1-indexed），遊戲開始時為 0，
-    /// 每次 EnterNextRoom() 後 +1，重置時歸 0。
-    /// </summary>
-    public int TotalRoomNumber { get; private set; } = 0;
-
-    /// <summary>即將進入的下一關是否為 Boss 戰。</summary>
-    public bool IsNextRoomBoss()
-    {
-        int next = TotalRoomNumber + 1;
-        foreach (int b in BossRooms) if (next == b) return true;
-        return false;
-    }
-
-    /// <summary>是否已超過全部關卡（應進入結局）。</summary>
-    public bool IsRunComplete() => TotalRoomNumber >= TotalRooms;
-
-    private const string NormalRoomSceneName = "TestMVP";
-    private const string SpecialRoomSceneName = "TestSpecial"; // ponytail: 僅供舊版 GenerateRoomSequence fallback 使用，新流程場景由 RoomMissionData.sceneName 決定
-    private const float SpecialRoomChance = 0.2f;              // ponytail: 同上，新流程出現機率改由 MissionPool.Entry.weight 控制
-
-    // ── 已完成的 Block 數量 ──────────────────────────────────────────
-    public int CompletedBlocks { get; private set; } = 0;
-
-    // ── 當前 Block 進度 ──────────────────────────────────────────────
-    public int CurrentBlockIndex   { get; private set; } = 1;
-    public int CurrentRoomCount    { get; private set; } = 0;
-    public int MaxRoomsInBlock     { get; private set; } = 5;
-
-    // 當前 Block 的房間場景序列，例如 ["TestMVP","TestSpecial","TestMVP",...]
-    // ponytail: 保留供舊呼叫端相容，新流程走 PendingOptions/ActiveRoom
-    public string[] RoomSequence   { get; private set; } = System.Array.Empty<string>();
-
-    // ── 任務選項系統 ──────────────────────────────────────────────────
-    // 玩家到達岔路口時顯示的兩個選項（由上一關結算後生成）
-    public RoomOption[] PendingOptions { get; private set; } = System.Array.Empty<RoomOption>();
-
-    // 玩家選擇後的當前房間（進入關卡時讀取任務資料）
+    public int Seed { get; private set; }
+    public int CurrentNodeNumber { get; private set; }
+    public EncounterNodeRole CurrentRole { get; private set; }
     public RoomOption ActiveRoom { get; private set; }
+    public RoomOption[] PendingOptions { get; private set; } = System.Array.Empty<RoomOption>();
+    public List<EncounterResult> Results { get; } = new List<EncounterResult>();
+    public bool IsTutorialActive { get; private set; }
+    public event Action OnProgressChanged;
+    private int _resolvedNodeNumber = -1;
 
-    // 用於強制覆蓋下一間房間要載入的場景 (例如失敗跳結算畫面)
-    public string NextSceneOverride { get; private set; } = string.Empty;
-
-    // ── 已解鎖技能列表 ────────────────────────────────────────────────
-    public List<SkillData> UnlockedSkills { get; private set; } = new List<SkillData>();
-    public event System.Action<SkillData> OnSkillUnlocked;
-
-    public void UnlockSkill(SkillData skill)
+    public CampaignData(CampaignDefinition definition, MissionPool missionPool)
     {
-        if (skill != null && !UnlockedSkills.Contains(skill))
-        {
-            UnlockedSkills.Add(skill);
-            OnSkillUnlocked?.Invoke(skill);
-            Debug.Log($"[CampaignData] 技能解鎖成功：{skill.skillName}");
-        }
+        _definition = definition;
+        _missionPool = missionPool;
+        Seed = definition != null ? definition.DefaultSeed : 0;
     }
 
-    // ── 事件 ─────────────────────────────────────────────────────────
-    public event System.Action<int, int> OnRoomProgressChanged;
-
-    // ── CompletedBlocks ──────────────────────────────────────────────
-    public void AddCompletedBlock()
+    public bool StartTutorial(RoomMissionData fallbackTutorialMission)
     {
-        CompletedBlocks++;
-    }
+        RoomMissionData mission = _definition != null && _definition.TutorialMission != null
+            ? _definition.TutorialMission
+            : fallbackTutorialMission;
+        if (mission == null) return false;
 
-    public void ResetCompletedBlocks()
-    {
-        CompletedBlocks = 0;
-    }
-
-    // ── Block 初始化 ─────────────────────────────────────────────────
-    public void InitBlock(int maxRooms, int blockIndex)
-    {
-        CurrentRoomCount  = 0;
-        MaxRoomsInBlock   = Mathf.Max(1, maxRooms);
-        CurrentBlockIndex = Mathf.Max(1, blockIndex);
-        RoomSequence      = System.Array.Empty<string>();
-        NextSceneOverride = string.Empty;
-        PendingOptions    = System.Array.Empty<RoomOption>();
-        ActiveRoom        = default;
-        OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
-    }
-
-    public void SetRoomSequence(string[] sequence)
-    {
-        RoomSequence = sequence ?? System.Array.Empty<string>();
-    }
-
-    // ── 房間推進 ─────────────────────────────────────────────────────
-    public void EnterNextRoom()
-    {
-        CurrentRoomCount++;
-        TotalRoomNumber++;
-        OnRoomProgressChanged?.Invoke(CurrentRoomCount, MaxRoomsInBlock);
-    }
-
-    /// <summary>
-    /// 重置全域房號，通常在新局開始（BootState / HQState 返回主選單）時呼叫。
-    /// </summary>
-    public void ResetTotalRoomNumber() => TotalRoomNumber = 0;
-
-    // ── 查詢 ─────────────────────────────────────────────────────────
-    public bool HasBlockProgress() => MaxRoomsInBlock > 0 && CurrentRoomCount > 0;
-
-    public bool IsLastRoomInBlock() => CurrentRoomCount >= MaxRoomsInBlock;
-
-    public string GetCurrentRoomSceneName()
-    {
-        // 優先從玩家已選的 ActiveRoom 取場景名
-        if (!string.IsNullOrEmpty(ActiveRoom.sceneName))
-            return ActiveRoom.sceneName;
-
-        // ponytail: fallback 至舊 RoomSequence，供尚未切換新流程的呼叫端相容
-        if (RoomSequence.Length == 0) return string.Empty;
-        int idx = Mathf.Clamp(CurrentRoomCount - 1, 0, RoomSequence.Length - 1);
-        return RoomSequence[idx];
-    }
-
-    // ── 任務選項 ─────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 結算後呼叫，為岔路口生成兩個待選房間選項。
-    /// 場景名稱優先從 mission.sceneName 讀取；空白時 fallback 至 NormalRoomSceneName（TestMVP）。
-    /// 傳 null 代表該路線無指定任務，場景 fallback 至普通戰鬥房。
-    /// </summary>
-    public void GenerateNextOptions(RoomMissionData missionA = null, RoomMissionData missionB = null)
-    {
-        string sceneA = ResolveScene(missionA);
-        string sceneB = ResolveScene(missionB);
-        PendingOptions = new RoomOption[]
-        {
-            new RoomOption(sceneA, missionA),
-            new RoomOption(sceneB, missionB),
-        };
-        Debug.Log($"[CampaignData] 生成岔路選項：A={sceneA}({missionA?.name ?? "無任務"}) B={sceneB}({missionB?.name ?? "無任務"})");
-    }
-
-    private string ResolveScene(RoomMissionData mission)
-    {
-        // 任務有指定場景就用它，否則 fallback 至普通戰鬥房
-        if (mission != null && !string.IsNullOrWhiteSpace(mission.sceneName))
-            return mission.sceneName;
-        return NormalRoomSceneName;
-    }
-
-    /// <summary>
-    /// 教學關卡專用：直接把 ActiveRoom 設為指定的教學任務，不走 PendingOptions 流程。
-    /// 由 TutorialState 在場景載入前呼叫。
-    /// </summary>
-    public void SetTutorialRoom(RoomMissionData tutorialMission)
-    {
-        string scene = tutorialMission?.sceneName ?? string.Empty;
-        ActiveRoom = new RoomOption(scene, tutorialMission);
-        Debug.Log($"[CampaignData] 教學 ActiveRoom 已設定（mission={tutorialMission?.name ?? "null"}）");
-    }
-
-    /// <summary>
-    /// 玩家選擇岔路（0=左門, 1=右門），設定 ActiveRoom 並清空 PendingOptions。
-    /// </summary>
-    public void SelectOption(int index)
-    {
-        if (PendingOptions.Length == 0)
-        {
-            Debug.LogWarning("[CampaignData] SelectOption 呼叫時 PendingOptions 為空");
-            return;
-        }
-        int safeIndex = Mathf.Clamp(index, 0, PendingOptions.Length - 1);
-        ActiveRoom = PendingOptions[safeIndex];
+        IsTutorialActive = true;
+        CurrentNodeNumber = 0;
+        CurrentRole = EncounterNodeRole.Opening;
+        ActiveRoom = new RoomOption(ResolveScene(mission), mission);
         PendingOptions = System.Array.Empty<RoomOption>();
-        Debug.Log($"[CampaignData] 玩家選擇選項 {safeIndex}，場景：{ActiveRoom.sceneName}");
-    }
-
-    // ── 場景覆蓋 ─────────────────────────────────────────────────────
-    public void SetNextSceneOverride(string sceneName)
-    {
-        NextSceneOverride = sceneName ?? string.Empty;
-    }
-
-    /// <summary>取出並清除場景覆蓋，一次性使用。</summary>
-    public string ConsumeNextSceneOverride()
-    {
-        string scene = NextSceneOverride;
-        NextSceneOverride = string.Empty;
-        return scene;
-    }
-
-    // ── 清除 ─────────────────────────────────────────────────────────
-    public void ClearBlockProgress()
-    {
-        CurrentRoomCount  = 0;
-        MaxRoomsInBlock   = 0;
-        CurrentBlockIndex = 1;
-        RoomSequence      = System.Array.Empty<string>();
-        NextSceneOverride = string.Empty;
-        PendingOptions    = System.Array.Empty<RoomOption>();
-        ActiveRoom        = default;
-    }
-
-    // ── 戰役進度與 Block 推進移植 ──────────────────────────────────────
-
-    public int GetNextBlockIndex()
-    {
-        return Mathf.Clamp(CompletedBlocks + 1, 1, TotalBlockCount);
-    }
-
-    public bool IsBlockCompleted(int blockIndex)
-    {
-        int normalized = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
-        return CompletedBlocks >= normalized;
-    }
-
-    public bool CanEnterBlock(int blockIndex)
-    {
-        int normalized = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
-        return CompletedBlocks == normalized - 1;
-    }
-
-    public bool CanEnterBossStage()
-    {
-        return CompletedBlocks >= TotalBlockCount;
-    }
-
-    /// <summary>
-    /// 啟動指定 Block，初始化房間序列。
-    /// 注意：不呼叫 EnterNextRoom()——計數推進由 StageClearState.Enter() 統一負責，
-    /// 避免 TotalRoomNumber 預先 +1 導致 Boss 判定提前一關觸發。
-    /// </summary>
-    public string StartRandomBlock(int blockIndex, int maxRooms = 5)
-    {
-        int safeBlockIndex = Mathf.Clamp(blockIndex, 1, TotalBlockCount);
-        int safeMaxRooms   = Mathf.Max(1, maxRooms);
-
-        InitBlock(safeMaxRooms, safeBlockIndex);
-        SetRoomSequence(GenerateRoomSequence(safeBlockIndex, safeMaxRooms));
-
-        return GetCurrentRoomSceneName();
-    }
-
-    /// <summary>
-    /// 依照戰役進度，啟動下一個 Block。
-    /// </summary>
-    public string StartNextCampaignBlock(int maxRooms = 5)
-    {
-        int nextBlockIndex = GetNextBlockIndex();
-        return StartRandomBlock(nextBlockIndex, maxRooms);
-    }
-
-    public bool TryCompleteCurrentBlock()
-    {
-        if (!HasBlockProgress() || !IsLastRoomInBlock())
-            return false;
-
-        AddCompletedBlock();
-        
-        // 標記待選技能
-        if (GameDB.Instance != null && GameDB.Instance.Run != null)
-        {
-            GameDB.Instance.Run.HasPendingSkillSelection = true;
-        }
-
-        ClearBlockProgress();
+        _resolvedNodeNumber = -1;
+        NotifyProgressChanged();
         return true;
     }
 
-    public void FailCurrentBlock()
+    public bool StartFormalCampaign()
     {
-        ClearBlockProgress();
+        string error = _definition == null ? "缺少 CampaignDefinition。" : string.Empty;
+        if (_definition == null || !_definition.IsValid(out error))
+        {
+            Debug.LogError($"[CampaignData] 無法啟動戰役：{error}");
+            return false;
+        }
+
+        if (!HasValidMissionChoices(out error))
+        {
+            Debug.LogError($"[CampaignData] 無法啟動戰役：{error}");
+            return false;
+        }
+
+        Results.Clear();
+        PendingOptions = System.Array.Empty<RoomOption>();
+        IsTutorialActive = false;
+        _resolvedNodeNumber = -1;
+        return ActivateFixedNode(1);
     }
 
-    private string[] GenerateRoomSequence(int blockIndex, int maxRooms)
+    public void ResolveCurrentEncounter(EncounterOutcome outcome)
     {
-        string[] sequence = new string[maxRooms];
-        for (int i = 0; i < maxRooms; i++)
+        if (IsTutorialActive || CurrentNodeNumber <= 0 || _resolvedNodeNumber == CurrentNodeNumber) return;
+        Results.Add(new EncounterResult(CurrentNodeNumber, ActiveRoom.mission, outcome));
+        _resolvedNodeNumber = CurrentNodeNumber;
+    }
+
+    public bool TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete)
+    {
+        needsRouteChoice = false;
+        isRunComplete = false;
+
+        if (IsTutorialActive)
         {
-            sequence[i] = UnityEngine.Random.value < SpecialRoomChance
-                ? SpecialRoomSceneName
-                : NormalRoomSceneName;
+            IsTutorialActive = false;
+            return StartFormalCampaign();
         }
-        return sequence;
+
+        if (_resolvedNodeNumber != CurrentNodeNumber)
+        {
+            Debug.LogError("[CampaignData] 任務尚未結算，不能推進正式節點。");
+            return false;
+        }
+
+        if (CurrentNodeNumber >= CampaignDefinition.FormalNodeCount)
+        {
+            isRunComplete = true;
+            return true;
+        }
+
+        int nextNode = CurrentNodeNumber + 1;
+        CampaignNodeDefinition next = _definition.GetNode(nextNode);
+        if (next == null)
+        {
+            Debug.LogError($"[CampaignData] 缺少第 {nextNode} 節點定義。");
+            return false;
+        }
+
+        if (next.role == EncounterNodeRole.MissionChoice)
+        {
+            // UI 重載、雙門重進 Trigger 都只能讀到同一組已存選項，絕不能重新抽取。
+            if (PendingOptions.Length == 2)
+            {
+                needsRouteChoice = true;
+                return true;
+            }
+
+            PendingOptions = BuildOffers(nextNode);
+            needsRouteChoice = PendingOptions.Length == 2;
+            return needsRouteChoice;
+        }
+
+        return ActivateFixedNode(nextNode);
+    }
+
+    public bool TrySelectRoute(int optionIndex)
+    {
+        if (PendingOptions.Length != 2 || optionIndex < 0 || optionIndex >= PendingOptions.Length)
+            return false;
+
+        ActiveRoom = PendingOptions[optionIndex];
+        PendingOptions = System.Array.Empty<RoomOption>();
+        CurrentNodeNumber++;
+        CurrentRole = EncounterNodeRole.MissionChoice;
+        _resolvedNodeNumber = -1;
+        NotifyProgressChanged();
+        return true;
+    }
+
+    public string GetCurrentRoomSceneName() => ActiveRoom.sceneName;
+
+    public CampaignNodeDefinition GetCurrentNode()
+    {
+        return CurrentNodeNumber > 0 ? _definition?.GetNode(CurrentNodeNumber) : null;
+    }
+
+    private bool ActivateFixedNode(int nodeNumber)
+    {
+        CampaignNodeDefinition node = _definition.GetNode(nodeNumber);
+        if (node == null) return false;
+
+        CurrentNodeNumber = nodeNumber;
+        CurrentRole = node.role;
+        PendingOptions = System.Array.Empty<RoomOption>();
+        _resolvedNodeNumber = -1;
+        ActiveRoom = new RoomOption(
+            !string.IsNullOrWhiteSpace(node.sceneName) ? node.sceneName : ResolveScene(node.fixedMission),
+            node.fixedMission);
+        NotifyProgressChanged();
+        return !string.IsNullOrWhiteSpace(ActiveRoom.sceneName);
+    }
+
+    private RoomOption[] BuildOffers(int nextNode)
+    {
+        if (_missionPool == null) return System.Array.Empty<RoomOption>();
+        RoomMissionData[] missions = _missionPool.DrawEligible(2, nextNode, Seed + nextNode, Results);
+        if (missions.Length != 2 || missions[0] == null || missions[1] == null) return System.Array.Empty<RoomOption>();
+        return new[] { new RoomOption(ResolveScene(missions[0]), missions[0]), new RoomOption(ResolveScene(missions[1]), missions[1]) };
+    }
+
+    private void NotifyProgressChanged() => OnProgressChanged?.Invoke();
+
+    private static string ResolveScene(RoomMissionData mission)
+    {
+        return mission != null && !string.IsNullOrWhiteSpace(mission.sceneName)
+            ? mission.sceneName
+            : DefaultArenaScene;
+    }
+
+    private bool HasValidMissionChoices(out string error)
+    {
+        if (_missionPool == null || _missionPool.entries == null)
+        {
+            error = "缺少 MissionPool 或任務列表。";
+            return false;
+        }
+
+        foreach (int nodeNumber in new[] { 2, 3, 5, 6, 7 })
+        {
+            int eligibleCount = 0;
+            foreach (MissionPool.Entry entry in _missionPool.entries)
+            {
+                if (entry.mission != null && entry.weight > 0 && entry.mission.IsEligibleForNode(nodeNumber))
+                    eligibleCount++;
+            }
+
+            if (eligibleCount < 2)
+            {
+                error = $"第 {nodeNumber} 節點至少需要 2 個有效任務，目前只有 {eligibleCount} 個。";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
     }
 }

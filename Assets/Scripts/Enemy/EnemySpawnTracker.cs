@@ -2,16 +2,14 @@ using UnityEngine;
 
 /// <summary>
 /// 追蹤場上敵人存活數量。
-/// BattleFlowController 在戰鬥開始時呼叫 StartTracking()，
-/// 全部死亡時觸發 BattleEventManager.TriggerAllEnemiesDefeated()。
+/// 不再使用計數器，改為每次死亡時直接掃描場上敵人。
 /// </summary>
 public static class EnemySpawnTracker
 {
-    private static int _aliveCount;
     private static bool _trackingActive;
 
-    /// <summary>場上目前存活的敵人數量（唯讀）</summary>
-    public static int AliveCount => _aliveCount;
+    /// <summary>場上目前存活的敵人數量（即時查詢）</summary>
+    public static int AliveCount => GetAliveEnemies().Length;
 
     /// <summary>
     /// 存活數量變更時觸發，參數為最新的存活數。
@@ -19,52 +17,91 @@ public static class EnemySpawnTracker
     /// </summary>
     public static event System.Action<int> OnAliveCountChanged;
 
+    /// <summary>
+    /// 開始追蹤敵人。由 EnemySpawner 在生成完畢後呼叫。
+    /// </summary>
     public static void StartTracking()
     {
-        // 先重置，確保上一關的殘留狀態（_trackingActive=true）不影響本關
-        // 若不重置，上一關結束後 _trackingActive 仍為 true，
-        // 新場景敵人生成時 OnEnable → NotifyEnemySpawned 會提前累加 count，
-        // 甚至可能讓 NotifyEnemyDied 在追蹤器正式啟動前就意外觸發全滅事件。
-        _trackingActive = false;
-        _aliveCount = 0;
-
-        var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        _aliveCount = enemies.Length;
         _trackingActive = true;
-        OnAliveCountChanged?.Invoke(_aliveCount);
-        Debug.Log($"[EnemySpawnTracker] 開始追蹤，場上敵人數：{_aliveCount}");
+        int count = GetAliveEnemies().Length;
+        OnAliveCountChanged?.Invoke(count);
+        Debug.Log($"[EnemySpawnTracker] 開始追蹤，場上敵人數：{count}");
+
+        // 防呆：若場上完全沒有敵人就立刻觸發
+        if (count == 0)
+        {
+            Debug.LogWarning("[EnemySpawnTracker] StartTracking 時場上已無敵人，立即觸發全滅事件。");
+            BattleEventManager.TriggerAllEnemiesDefeated();
+        }
     }
 
+    /// <summary>
+    /// 停止追蹤。場景切換時呼叫。
+    /// </summary>
     public static void StopTracking()
     {
         _trackingActive = false;
-        _aliveCount = 0;
-        OnAliveCountChanged?.Invoke(_aliveCount);
+        OnAliveCountChanged?.Invoke(0);
+        Debug.Log("[EnemySpawnTracker] 停止追蹤");
     }
 
-    /// <summary>由 EnemyController.Die() 呼叫</summary>
+    /// <summary>
+    /// 由 EnemyController.Die() 呼叫。
+    /// 直接檢查場上敵人數量，如果為 0 則觸發全滅事件。
+    /// </summary>
     public static void NotifyEnemyDied()
     {
-        if (!_trackingActive) return;
-        _aliveCount = Mathf.Max(0, _aliveCount - 1);
-        OnAliveCountChanged?.Invoke(_aliveCount);
-        Debug.Log($"[EnemySpawnTracker] 敵人死亡，剩餘：{_aliveCount}");
-
-        if (_aliveCount == 0)
+        if (!_trackingActive)
         {
-            Debug.Log("[EnemySpawnTracker] 場上敵人全滅，解鎖出口！");
+            Debug.LogWarning("[EnemySpawnTracker] NotifyEnemyDied 被呼叫但追蹤器未啟動，已忽略。");
+            return;
+        }
+
+        // 等待一幀，確保 Destroy 完成
+        CoroutineHelper.Instance.StartCoroutine(CheckEnemiesAfterFrame());
+    }
+
+    /// <summary>
+    /// 等待一幀後檢查場上敵人數量。
+    /// 確保 Destroy() 已經執行完畢。
+    /// </summary>
+    private static System.Collections.IEnumerator CheckEnemiesAfterFrame()
+    {
+        yield return null; // 等待一幀
+
+        if (!_trackingActive) yield break;
+
+        var enemies = GetAliveEnemies();
+        int count = enemies.Length;
+        
+        Debug.Log($"[EnemySpawnTracker] 敵人死亡，場上剩餘：{count}");
+        OnAliveCountChanged?.Invoke(count);
+
+        if (count == 0)
+        {
+            Debug.Log("[EnemySpawnTracker] 場上敵人全滅，觸發 OnAllEnemiesDefeated 事件！");
             BattleEventManager.TriggerAllEnemiesDefeated();
         }
     }
 
     /// <summary>
     /// 由 EnemyController.OnEnable 呼叫（波次追加生成時）。
-    /// 僅在追蹤器已啟動時才計入，避免 Survive 任務的敵人誤觸全滅判定。
     /// </summary>
     public static void NotifyEnemySpawned()
     {
         if (!_trackingActive) return;
-        _aliveCount++;
-        OnAliveCountChanged?.Invoke(_aliveCount);
+        int count = GetAliveEnemies().Length;
+        OnAliveCountChanged?.Invoke(count);
+        Debug.Log($"[EnemySpawnTracker] 敵人生成，場上數量：{count}");
+    }
+
+    /// <summary>
+    /// 取得場上所有活著的敵人。
+    /// </summary>
+    private static EnemyController[] GetAliveEnemies()
+    {
+        return Object.FindObjectsByType<EnemyController>(
+            FindObjectsInactive.Exclude, 
+            FindObjectsSortMode.None);
     }
 }

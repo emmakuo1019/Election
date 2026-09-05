@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c11aa4e1f0c94168a0a0000000000001, type: 3}
+  m_Name: CampaignDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::CampaignDefinition
+  defaultSeed: 20260905
+  tutorialMission: {fileID: 11400000, guid: 942f6cffd2c364e3bbf8297bca580bb9, type: 2}
+  routeDoorPrefab: {fileID: 5594269665286831399, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
+  nodes:
+  - nodeNumber: 1
+    role: 0
+    fixedMission: {fileID: 11400000, guid: 91c8b081874c34ad29e53e5ffbbf8c39, type: 2}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 2
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 3
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 4
+    role: 2
+    fixedMission: {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000021, type: 2}
+    sceneName: TestMVP
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 5
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 6
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 7
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 8
+    role: 3
+    fixedMission: {fileID: 0}
+    sceneName: TestSmallBoss
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}

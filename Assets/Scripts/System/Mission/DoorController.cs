@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 岔路門的進入觸發器（門框大小的小範圍）。
-/// 玩家走進門 → SelectOption + TriggerRoomCleared。
+/// 路線門只回報選項索引；不直接改寫戰役資料或觸發場景切換。
 ///
 /// 解鎖條件（requiresUnlock = true 時）：
 ///   有獎勵流程（RewardItemSpawner 存在）→ 必須同時滿足：
@@ -42,6 +42,7 @@ public class DoorController : MonoBehaviour
     private bool _rewardCollected = false;
     private bool _isUnlocked = false;
     private bool _hasSelected = false;  // 防重複觸發
+    private bool _isRouteDoor;
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -75,6 +76,15 @@ public class DoorController : MonoBehaviour
     /// <summary>外部強制解鎖（不走雙重條件），供不需要獎勵的場景直接呼叫</summary>
     public void ForceUnlock()
     {
+        _isUnlocked = true;
+        UpdateVisual();
+    }
+
+    /// <summary>由 RouteDoorSpawner 注入；門只回報索引，絕不直接改寫 CampaignData。</summary>
+    public void ConfigureRoute(int routeIndex)
+    {
+        optionIndex = routeIndex;
+        _isRouteDoor = true;
         _isUnlocked = true;
         UpdateVisual();
     }
@@ -146,10 +156,14 @@ public class DoorController : MonoBehaviour
         _hasSelected = true;
 
         UIManager.Instance?.HideTutorialTips();
-        GameDB.Instance?.Campaign.SelectOption(optionIndex);
+        if (_isRouteDoor)
+        {
+            BattleEventManager.TriggerRouteSelected(optionIndex);
+            return;
+        }
 
-        Debug.Log($"[DoorController] 玩家選擇門 {optionIndex}，觸發過關");
-        BattleEventManager.TriggerRoomCleared();
+        // 只保留教學/舊場景相容；正式戰役不用此路徑推進。
+        BattleEventManager.TriggerExitReached();
     }
 
     private RoomMissionData GetMission()

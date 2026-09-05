@@ -152,7 +152,18 @@ public class HQSceneController : MonoBehaviour
 
         UIManager.Instance?.FadeOut(1.0f, () =>
         {
-            GameFlowManager.Instance?.ChangeState(new TutorialState());
+            // 🔧 暫時跳過教學，直接進入第一關
+            // GameFlowManager.Instance?.ChangeState(new TutorialState());
+            
+            if (GameDB.Instance?.Campaign.StartFormalCampaign() == true)
+            {
+                Debug.Log("[HQSceneController] 跳過教學，直接開始第一關戰役");
+                GameFlowManager.Instance?.ChangeState(new GameplayState(GameDB.Instance.Campaign.CurrentNodeNumber));
+            }
+            else
+            {
+                Debug.LogError("[HQSceneController] 無法啟動戰役，請檢查 CampaignDefinition 和 MissionPool 配置");
+            }
         });
     }
 

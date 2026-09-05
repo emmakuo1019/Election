@@ -69,6 +69,7 @@ public class LevelTimer : MonoBehaviour
             isTimeUp = true;
             isActive = false;
 
+            BattleEventManager.TriggerTimerExpired();
             BattleEventManager.TriggerOnSurvivalTimeUp();
             OnTimerEnd?.Invoke();
             OnTimeUpFinal?.Invoke();

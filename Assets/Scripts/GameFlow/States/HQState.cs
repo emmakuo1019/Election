@@ -10,6 +10,9 @@ public class HQState : IState
     {
         Debug.Log("[HQState] Enter - 進入總部 (純介面流程)");
         Time.timeScale = 1f;
+        // 回到總部代表上一局已結束；下一次出發必須建立新的 Run/Campaign。
+        GameDB.Instance?.ResetRunData();
+        GameDB.Instance?.ResetCampaignData();
 
         if (GameFlowManager.Instance != null)
         {

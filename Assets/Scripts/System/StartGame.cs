@@ -26,7 +26,8 @@ public class StartGame : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             // 點擊時呼叫：
-            GameFlowManager.Instance.ChangeState(new GameplayState(1));
+            if (GameDB.Instance?.Campaign.StartFormalCampaign() == true)
+                GameFlowManager.Instance.ChangeState(new GameplayState(GameDB.Instance.Campaign.CurrentNodeNumber));
 
         }
     }
@@ -41,10 +42,8 @@ public class StartGame : MonoBehaviour
     
     private void OpenUpgradePanel()
     {
-        string firstRoomScene = GameDB.Instance != null && GameDB.Instance.Campaign != null
-            ? GameDB.Instance.Campaign.StartNextCampaignBlock()
-            : "TestMVP";
-        SceneManager.LoadScene(firstRoomScene);
+        if (GameDB.Instance?.Campaign.StartFormalCampaign() == true)
+            GameFlowManager.Instance.ChangeState(new GameplayState(GameDB.Instance.Campaign.CurrentNodeNumber));
     }
     
 }

@@ -1,64 +1,103 @@
 using UnityEngine;
 
-/// <summary>
-/// 過關後的緩衝 State。
-/// Enter() → GenerateNextOptions → 等 OnRoomCleared（門或出口都用同一個事件）→ 推進下一關。
-/// SelectOption 由 DoorController.TrySelect() 在觸發 OnRoomCleared 之前呼叫，
-/// 此時 PendingOptions 已在 Enter() 填好，時序正確。
-/// </summary>
+/// <summary>唯一的結算入口：記錄結果、等待選卡、再自動前進或等待雙門選路。</summary>
 public class StageClearState : IState
 {
-    private int roomNumber;
+    private readonly EncounterOutcome _outcome;
+    private bool _transitioned;
 
-    public StageClearState(int roomNumber) => this.roomNumber = roomNumber;
+    public StageClearState(EncounterOutcome outcome) => _outcome = outcome;
 
     public void Enter()
     {
-        Debug.Log($"[StageClearState] Enter - 房號: {roomNumber}");
-        MissionTracker.Reset();
-
-        // 重新顯示 HUD：GameplayState.Exit() 不再提前隱藏，但若 UIManager 狀態不一致時作為保險
-        // 主要目的是確保 ExitPrompt（含 HUD）在等玩家走門期間維持可見
         UIManager.Instance?.ShowGameplayHUD();
+        GameDB.Instance?.Campaign.ResolveCurrentEncounter(_outcome);
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.ObjectiveResolved);
 
-        var campaign = GameDB.Instance?.Campaign;
-        campaign?.EnterNextRoom();
+        BattleEventManager.OnRewardCollected += HandleRewardCollected;
+        BattleEventManager.OnRouteSelected += HandleRouteSelected;
 
-        // Demo 固定 8 關，第 4、8 關為 Boss（依 TotalRoomNumber 判斷，與 block 系統無關）
-        if (campaign != null && campaign.IsNextRoomBoss())
+        CampaignData campaign = GameDB.Instance?.Campaign;
+        CampaignNodeDefinition node = campaign?.GetCurrentNode();
+        NarrativeDirector.PlaySequence(BuildResolutionBeats(node), BeginPostObjective);
+    }
+
+    private NarrativeBeat[] BuildResolutionBeats(CampaignNodeDefinition node)
+    {
+        if (node == null) return System.Array.Empty<NarrativeBeat>();
+
+        NarrativeBeat resultBeat = _outcome == EncounterOutcome.Success
+            ? node.onSuccessBeat
+            : node.onFailureBeat;
+        if (node.role == EncounterNodeRole.Elite)
+            return new[] { resultBeat, node.afterEliteBeat };
+        if (node.role == EncounterNodeRole.FinalBoss)
+            return new[] { resultBeat, node.finalEndingBeat };
+        return new[] { resultBeat };
+    }
+
+    private void BeginPostObjective()
+    {
+        if (GameFlowManager.Instance?.CurrentState != this) return;
+        if (GameDB.Instance?.Campaign.CurrentRole == EncounterNodeRole.FinalBoss)
         {
-            Debug.Log($"[StageClearState] 第 {campaign.TotalRoomNumber + 1} 關為 Boss 戰，準備進入！");
-            GameFlowManager.Instance.ChangeState(new BossBattleState());
+            TransitionToEnd();
             return;
         }
 
-        // 立即生成岔路選項，確保玩家走門時 PendingOptions 已有資料
-        var pool = GameDB.Instance?.MissionPool;
-        if (pool != null)
-        {
-            var drawn = pool.DrawRandom(2);
-            campaign?.GenerateNextOptions(drawn[0], drawn[1]);
-            Debug.Log($"[StageClearState] PendingOptions 已生成：{drawn[0]?.name ?? "null"} / {drawn[1]?.name ?? "null"}");
-        }
-        else
-        {
-            campaign?.GenerateNextOptions();
-            Debug.LogWarning("[StageClearState] MissionPool 未設定，使用 fallback");
-        }
-
-        BattleEventManager.OnRoomCleared += HandleRoomCleared;
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.RewardSelection);
+        BattleEventManager.TriggerRewardSelectionRequested(_outcome == EncounterOutcome.Failed);
     }
 
-    private void HandleRoomCleared()
+    private void HandleRewardCollected()
     {
-        // ActiveRoom 已由 DoorController.SelectOption（或出口路徑不需要選項）寫入
-        Debug.Log($"[StageClearState] 過關，前往下一關: {roomNumber + 1}");
-        GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber + 1));
+        if (_transitioned) return;
+        CampaignData campaign = GameDB.Instance?.Campaign;
+        if (campaign == null || !campaign.TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete))
+        {
+            Debug.LogError("[StageClearState] 無法準備下一個戰役節點。");
+            return;
+        }
+
+        if (isRunComplete) { TransitionToEnd(); return; }
+        
+        // RoomExitController 會自動顯示對應的門
+        // 選路模式下，等待 HandleRouteSelected 被觸發
+        // 非選路模式下，直接推進下一關
+        if (needsRouteChoice)
+        {
+            BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.RouteSelection);
+            return;
+        }
+
+        _transitioned = true;
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
+        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+    }
+
+    private void HandleRouteSelected(int optionIndex)
+    {
+        if (_transitioned) return;
+        CampaignData campaign = GameDB.Instance?.Campaign;
+        if (campaign == null || !campaign.TrySelectRoute(optionIndex)) return;
+        _transitioned = true;
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
+        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+    }
+
+    private void TransitionToEnd()
+    {
+        if (_transitioned) return;
+        _transitioned = true;
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
+        GameFlowManager.Instance?.ChangeState(new GameEndState(_outcome == EncounterOutcome.Success));
     }
 
     public void Exit()
     {
-        BattleEventManager.OnRoomCleared -= HandleRoomCleared;
+        BattleEventManager.OnRewardCollected -= HandleRewardCollected;
+        BattleEventManager.OnRouteSelected -= HandleRouteSelected;
+        // 不再需要手動清理門，RoomExitController 會在下一關場景載入時自動銷毀
     }
 
     public void Update() { }

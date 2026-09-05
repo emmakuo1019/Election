@@ -14,10 +14,14 @@ public class TutorialState : IState
     public void Enter()
     {
         Debug.Log("[TutorialState] Enter - 載入教學場景");
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Loading);
 
-        // 先把教學任務寫入 ActiveRoom，讓 MissionHUDController 能在 Start() 讀到正確的 hudLayout
-        var tutorialMission = GameDB.Instance?.TutorialMission;
-        GameDB.Instance?.Campaign.SetTutorialRoom(tutorialMission);
+        // 教學關獨立於正式 8 節點，仍使用同一個 CampaignData 作為唯一狀態來源。
+        if (GameDB.Instance?.Campaign.StartTutorial(GameDB.Instance.TutorialMission) != true)
+        {
+            Debug.LogError("[TutorialState] 教學任務尚未設定。");
+            return;
+        }
 
         if (GameFlowManager.Instance != null)
             GameFlowManager.Instance.StartCoroutine(LoadTutorialSceneRoutine());
@@ -60,34 +64,22 @@ public class TutorialState : IState
                 UIManager.Instance?.ShowTutorialDialogue(briefing);
         }
 
-        // 教學場景不開倒數計時，LevelTimer 留給設計師手動設定
+        // 教學場景不開倒數計時；它也遵守同一個輸入階段，而不計入正式節點。
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Active);
     }
 
     private void HandleTutorialComplete()
     {
         Debug.Log("[TutorialState] 教學完成，前往第一關");
 
-        // 教學結束後，從 MissionPool 抽第一關任務並設定 ActiveRoom，
-        // 確保 GameplayState 不會繼續讀到教學場景的 ActiveRoom.sceneName。
         var campaign = GameDB.Instance?.Campaign;
-        if (campaign != null)
+        if (campaign == null || !campaign.TryPrepareNextStep(out _, out _))
         {
-            campaign.StartNextCampaignBlock();
-
-            var pool = GameDB.Instance.MissionPool;
-            if (pool != null)
-            {
-                var drawn = pool.DrawRandom(1);
-                campaign.GenerateNextOptions(drawn[0], null);
-            }
-            else
-            {
-                campaign.GenerateNextOptions(null, null);
-            }
-            campaign.SelectOption(0);
+            Debug.LogError("[TutorialState] 無法啟動正式戰役第一節點。");
+            return;
         }
 
-        GameFlowManager.Instance?.ChangeState(new GameplayState(1));
+        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
     }
 
     private void HandlePlayerDied()
@@ -100,6 +92,7 @@ public class TutorialState : IState
     public void Exit()
     {
         Debug.Log("[TutorialState] Exit");
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
         UIManager.Instance?.HideGameplayHUD();
 
         BattleEventManager.OnRoomCleared -= HandleTutorialComplete;

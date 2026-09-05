@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MapNodeButton : MonoBehaviour
@@ -61,51 +60,22 @@ public class MapNodeButton : MonoBehaviour
             return;
         }
 
-        string targetSceneName = GetTargetSceneName();
-        if (!Application.CanStreamedLevelBeLoaded(targetSceneName))
-        {
-            Debug.LogWarning($"MapNodeButton：無法載入場景 {targetSceneName}");
-            return;
-        }
-        SceneManager.LoadScene(targetSceneName);
+        // 地圖 UI 只能請戰役流程控制器推進；不能自行載入場景或跳過生命週期。
+        CampaignData campaign = GameDB.Instance?.Campaign;
+        if (campaign?.StartFormalCampaign() == true)
+            GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
     }
 
     private bool IsCompleted()
     {
-        if (routeType == RouteType.BossStage)
-        {
-            return false;
-        }
-
-        if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return false;
-
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
-        return GameDB.Instance.Campaign.IsBlockCompleted(normalizedBlockOrder);
+        return false; // 舊地圖 Block UI 已停用；正式流程使用 CampaignDefinition。
     }
 
     private bool IsAvailable()
     {
         if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return false;
 
-        if (routeType == RouteType.BossStage)
-        {
-            return GameDB.Instance.Campaign.CanEnterBossStage();
-        }
-
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
-        return GameDB.Instance.Campaign.CanEnterBlock(normalizedBlockOrder);
+        return routeType == RouteType.StandardBlock && GameDB.Instance.Campaign.CurrentNodeNumber == 0;
     }
 
-    private string GetTargetSceneName()
-    {
-        if (routeType == RouteType.BossStage)
-        {
-            return BossSceneName;
-        }
-
-        if (GameDB.Instance == null || GameDB.Instance.Campaign == null) return "TestMVP";
-
-        int normalizedBlockOrder = Mathf.Clamp(blockOrder, 1, CampaignData.TotalBlockCount);
-        return GameDB.Instance.Campaign.StartRandomBlock(normalizedBlockOrder);
-    }
 }

@@ -9,7 +9,7 @@ using UnityEngine;
 
 /// <summary>
 /// 使用任意技能 (J/K/L) 後觸發一次。
-/// fireOncePerRoom = true 時，每個房間只觸發第一次（透過 BattleEventManager.OnRoomCleared 重置）。
+/// fireOncePerRoom = true 時，每個房間只觸發第一次（透過 EncounterPhase.Active 重置）。
 /// </summary>
 [Serializable]
 public class OnAnySkillUsedTrigger : IProcTrigger
@@ -26,14 +26,14 @@ public class OnAnySkillUsedTrigger : IProcTrigger
         _firedThisRoom = false;
         BattleEventManager.OnAnySkillUsed += OnSkillUsed;
         if (fireOncePerRoom)
-            BattleEventManager.OnRoomCleared += ResetFired;
+            BattleEventManager.OnEncounterPhaseChanged += HandlePhaseChanged;
     }
 
     public void Unregister()
     {
         BattleEventManager.OnAnySkillUsed -= OnSkillUsed;
         if (fireOncePerRoom)
-            BattleEventManager.OnRoomCleared -= ResetFired;
+            BattleEventManager.OnEncounterPhaseChanged -= HandlePhaseChanged;
         _callback = null;
     }
 
@@ -45,6 +45,11 @@ public class OnAnySkillUsedTrigger : IProcTrigger
     }
 
     private void ResetFired() => _firedThisRoom = false;
+
+    private void HandlePhaseChanged(BattleEventManager.EncounterPhase phase)
+    {
+        if (phase == BattleEventManager.EncounterPhase.Active) ResetFired();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

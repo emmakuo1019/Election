@@ -83,6 +83,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Header("HP")]
     [Tooltip("最大血量")]
     public int maxHP = 3;
+    [Tooltip("只標記第 8 節點的主要對手。其生命歸零才會結束最終戰；護衛與召喚物不可勾選。")]
+    [SerializeField] private bool isFinalBossOpponent;
     private int _currentHP;
 
     [Header("UI")]
@@ -158,7 +160,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
     private void Die()
     {
         EnemySpawnTracker.NotifyEnemyDied();
-        gameObject.SetActive(false);
+        if (isFinalBossOpponent)
+            BattleEventManager.TriggerFinalBossDefeated();
+        Destroy(gameObject);
     }
 
     // ==========================================
@@ -227,6 +231,58 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
     private void Start()
     {
+        // ── NavMesh 驗證與修正 ────────────────────────────────────────
+        // 確保敵人在有效的 NavMesh 上，避免跨場景初始化時序問題導致無法被攻擊
+        if (Agent != null && !Agent.isOnNavMesh)
+        {
+            // 嘗試將 Agent 放到最近的 NavMesh 表面
+            if (UnityEngine.AI.NavMesh.SamplePosition(
+                transform.position, out UnityEngine.AI.NavMeshHit hit, 
+                5f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                Agent.Warp(hit.position);
+                Debug.LogWarning($"[EnemyController] {name} 初始不在 NavMesh 上，已自動修正至 {hit.position}");
+            }
+            else
+            {
+                Debug.LogError($"[EnemyController] {name} 附近 5 公尺內找不到 NavMesh！敵人可能無法正常移動。");
+            }
+        }
+        
+        // ── Collider 驗證 ─────────────────────────────────────────────
+        // 確保 Collider 存在且啟用，避免無法被玩家攻擊偵測
+        Collider col = GetComponent<Collider>();
+        if (col == null)
+        {
+            Debug.LogError($"[EnemyController] {name} 沒有 Collider！無法被攻擊！");
+        }
+        else
+        {
+            if (!col.enabled)
+            {
+                col.enabled = true;
+                Debug.LogWarning($"[EnemyController] {name} Collider 被停用，已強制啟用。");
+            }
+            
+            // 計算 Collider 的世界座標中心點（用於 Physics 查詢）
+            Vector3 colliderWorldCenter = transform.position;
+            if (col is CapsuleCollider capsule)
+            {
+                colliderWorldCenter += capsule.center;
+            }
+            else if (col is BoxCollider box)
+            {
+                colliderWorldCenter += box.center;
+            }
+            else if (col is SphereCollider sphere)
+            {
+                colliderWorldCenter += sphere.center;
+            }
+            
+            Debug.Log($"[EnemyController] {name} Collider 狀態: enabled={col.enabled}, isTrigger={col.isTrigger}, layer={gameObject.layer}");
+            Debug.Log($"[EnemyController] {name} 位置: GameObject={transform.position}, Collider中心={colliderWorldCenter}");
+        }
+        
         // 防呆：確保脫戰距離大於偵測距離，形成正確的遲滯區間 (Hysteresis)
         if (escapeRange <= detectionRange)
         {
@@ -245,14 +301,49 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
     private void OnEnable()
     {
-        // 復活或波次追加時通知追蹤器
+        // 防禦性 reset：若物件被 re-enable 時 HP 已歸零（例如物件池或 SetActive 誤用），
+        // 強制完整初始化，確保第二關以後敵人狀態正確。
+        if (_currentHP <= 0 && StateMachine != null)
+        {
+            ResetState();
+        }
+
+        // 重新抓場景內的 PlayerController，避免跨場景時持有已銷毀的舊參考
+        if (_cachedPlayer == null)
+            _cachedPlayer = FindObjectOfType<PlayerController>();
+
+        // 通知追蹤器：此敵人已上場（Awake 後首次 OnEnable，或波次追加時）
         if (_currentHP > 0)
             EnemySpawnTracker.NotifyEnemySpawned();
     }
 
     private void OnDisable()
     {
-        // SetActive(false) 時確保不重複扣計數（Die() 已呼叫過 NotifyEnemyDied）
+        // 不需額外操作：Die() 已在 Destroy 前呼叫 NotifyEnemyDied()，不會重複扣數
+    }
+
+    /// <summary>
+    /// 重置所有運行時狀態，用於物件 re-enable 或未來接入物件池時的防禦性保護。
+    /// </summary>
+    private void ResetState()
+    {
+        _currentHP = maxHP;
+        _skillCooldownTimer = 0f;
+        target = null;
+
+        // 重新查找場景中的 PlayerController（跨場景後舊參考已失效）
+        _cachedPlayer = FindObjectOfType<PlayerController>();
+
+        hpBarUI?.Refresh(_currentHP, maxHP);
+
+        // 重置狀態機回 Idle（避免從死亡/暈眩等中途狀態繼續執行）
+        if (StateMachine != null && IdleState != null)
+            StateMachine.Initialize(IdleState);
+
+        if (attackRangeMesh != null)
+            attackRangeMesh.ShowIdle();
+
+        Debug.Log($"[EnemyController] {name} ResetState — HP 與狀態機已重置。");
     }    private void Update()
     {
         StateMachine.CurrentState?.Update();

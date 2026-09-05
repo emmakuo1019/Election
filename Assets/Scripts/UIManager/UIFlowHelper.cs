@@ -29,7 +29,7 @@ public class UIFlowHelper : MonoBehaviour
     /// </summary>
     public void GoToStageClear(int roomNumber = 1)
     {
-        GameFlowManager.Instance.ChangeState(new StageClearState(roomNumber));
+        GameFlowManager.Instance.ChangeState(new StageClearState(EncounterOutcome.Success));
     }
 
     /// <summary>

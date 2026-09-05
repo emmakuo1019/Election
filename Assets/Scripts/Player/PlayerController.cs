@@ -111,33 +111,39 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        if (LevelTimer.Instance != null)
-            LevelTimer.Instance.OnTimerEnd += OnGameEnd;
+        BattleEventManager.OnEncounterPhaseChanged += HandleEncounterPhase;
     }
 
     private void OnDisable()
     {
-        if (LevelTimer.Instance != null)
-            LevelTimer.Instance.OnTimerEnd -= OnGameEnd;
+        BattleEventManager.OnEncounterPhaseChanged -= HandleEncounterPhase;
     }
 
     private void Start()
     {
         // 初始化狀態機，給予起始狀態
         StateMachine.Initialize(new IdleState(this));
+        
+        // 場景換載後仍顯式啟用 action；是否接收輸入完全由 EncounterPhase 決定。
+        EnableInputAction(moveAction);
+        EnableInputAction(attackAction);
+        EnableInputAction(dashAction);
+        EnableInputAction(skillJAction);
+        EnableInputAction(skillKAction);
+        EnableInputAction(skillLAction);
+        ApplyEncounterPhase(BattleEventManager.CurrentEncounterPhase);
     }
 
     private void Update()
     {
-        MoveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
+        MoveInput = _movementInputEnabled && moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
 
         // 輪詢輸入，徹底避開 C# Event 殘留的坑
-        DashInputThisFrame = !IsTimeUp && dashAction != null && dashAction.action.WasPerformedThisFrame();
-        AttackInputThisFrame = !IsTimeUp && attackAction != null && attackAction.action.WasPerformedThisFrame();
-
-        SkillJInputThisFrame = !IsTimeUp && skillJAction != null && skillJAction.action.WasPerformedThisFrame();
-        SkillKInputThisFrame = !IsTimeUp && skillKAction != null && skillKAction.action.WasPerformedThisFrame();
-        SkillLInputThisFrame = !IsTimeUp && skillLAction != null && skillLAction.action.WasPerformedThisFrame();
+        DashInputThisFrame = _combatInputEnabled && dashAction != null && dashAction.action.WasPerformedThisFrame();
+        AttackInputThisFrame = _combatInputEnabled && attackAction != null && attackAction.action.WasPerformedThisFrame();
+        SkillJInputThisFrame = _combatInputEnabled && skillJAction != null && skillJAction.action.WasPerformedThisFrame();
+        SkillKInputThisFrame = _combatInputEnabled && skillKAction != null && skillKAction.action.WasPerformedThisFrame();
+        SkillLInputThisFrame = _combatInputEnabled && skillLAction != null && skillLAction.action.WasPerformedThisFrame();
 
         // 將輸入交由狀態機目前的狀態處理
         StateMachine.CurrentState?.HandleInput();
@@ -154,17 +160,48 @@ public class PlayerController : MonoBehaviour
 
     public void SetDashCooldown() => _dashReadyTime = Time.time + dashCooldown;
 
-    public bool IsTimeUp { get; private set; } = false;
+    // 保留舊 API 的語意：非戰鬥階段不能施放攻擊／技能；但選卡與選門仍可走動。
+    public bool IsTimeUp => !_combatInputEnabled;
+    private bool _movementInputEnabled;
+    private bool _combatInputEnabled;
 
-    // 時間結束：停用攻擊/技能，但保留移動讓玩家能走到出口
+    private void HandleEncounterPhase(BattleEventManager.EncounterPhase phase)
+    {
+        ApplyEncounterPhase(phase);
+    }
+
+    private void ApplyEncounterPhase(BattleEventManager.EncounterPhase phase)
+    {
+        bool movementAllowed = phase == BattleEventManager.EncounterPhase.Active ||
+                               phase == BattleEventManager.EncounterPhase.RewardSelection ||
+                               phase == BattleEventManager.EncounterPhase.RouteSelection;
+        bool combatAllowed = phase == BattleEventManager.EncounterPhase.Active;
+        SetInputAvailability(movementAllowed, combatAllowed);
+    }
+
+    private void SetInputAvailability(bool movementAllowed, bool combatAllowed)
+    {
+        _movementInputEnabled = movementAllowed;
+        _combatInputEnabled = combatAllowed;
+        if (!combatAllowed) StateMachine?.ChangeState(new IdleState(this));
+    }
+
+    private static void EnableInputAction(InputActionReference actionReference)
+    {
+        if (actionReference?.action != null) actionReference.action.Enable();
+    }
+
+    // 相容舊呼叫；計時器不再直接呼叫此方法。
     public void OnGameEnd()
     {
-        IsTimeUp = true;
-        StateMachine.ChangeState(new IdleState(this));
+        SetInputAvailability(false, false);
     }
 
     // 房間結算後恢復玩家輸入
-    public void ResumeIdle() => StateMachine.ChangeState(new IdleState(this));
+    public void ResumeIdle()
+    {
+        SetInputAvailability(true, true);
+    }
 
     // 委派給當前狀態，讓狀態決定是否要被打斷
     public void ApplyStun(float duration)

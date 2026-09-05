@@ -23,13 +23,13 @@ public class HQSkillActivator : MonoBehaviour
             return;
         }
 
-        if (GameDB.Instance != null && GameDB.Instance.Campaign != null)
+        if (GameDB.Instance != null && GameDB.Instance.Player != null)
         {
-            GameDB.Instance.Campaign.UnlockSkill(skillToUnlock);
+            GameDB.Instance.Player.UnlockSkill(skillToUnlock);
         }
         else
         {
-            Debug.LogError("[HQSkillActivator] 找不到 GameDB 或 Campaign 資料，解鎖失敗！");
+            Debug.LogError("[HQSkillActivator] 找不到 GameDB 或 Player 資料，解鎖失敗！");
         }
     }
 }

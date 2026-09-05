@@ -9,8 +9,6 @@ public class HeadquartersManager : MonoBehaviour
 void Start()
 {
     Time.timeScale = 1f;
-    CampaignProgressManager.ResetCampaign();
-    BlockProgressManager.ClearBlockProgress();
     if (GameDB.Instance?.Run != null)
         GameDB.Instance.Run.HasPendingSkillSelection = false;
     if (GameDB.Instance != null && GameDB.Instance.Player != null)
@@ -19,6 +17,7 @@ void Start()
         GameDB.Instance.Player.EquipBaseSkillJ(null);
     }
     GameDB.Instance?.ResetRunData();
+    GameDB.Instance?.ResetCampaignData();
     
     if (backBtn != null)
     {
