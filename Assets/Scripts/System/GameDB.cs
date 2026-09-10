@@ -321,6 +321,61 @@ public class RunData
 
     public void AddPlayerVotes(int amount) => AddVote(amount, 0);
     public void AddOpponentVotes(int amount) => AddVote(0, amount);
+    
+    // ── 即時票數統計（基於場上選民）────────────────────────────────
+    
+    /// <summary>取得場上玩家陣營的選民數量（即時統計）</summary>
+    public int GetCurrentPlayerVotes()
+    {
+        int count = 0;
+        foreach (var voter in VoterLogic.GetAllActiveVoters())
+        {
+            if (voter != null && voter.Data != null && 
+                voter.Data.ConvertedSide == VoterData.PlayerSideSign)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /// <summary>取得場上對手陣營的選民數量（即時統計）</summary>
+    public int GetCurrentOpponentVotes()
+    {
+        int count = 0;
+        foreach (var voter in VoterLogic.GetAllActiveVoters())
+        {
+            if (voter != null && voter.Data != null && 
+                voter.Data.ConvertedSide == VoterData.EnemySideSign)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /// <summary>取得場上總選民數量（即時統計），包含所有選民（已轉化 + 中立 + 深色選民）</summary>
+    public int GetCurrentTotalVotes()
+    {
+        int count = 0;
+        foreach (var voter in VoterLogic.GetAllActiveVoters())
+        {
+            if (voter != null && voter.Data != null)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /// <summary>取得玩家當前得票率（即時統計，基於場上所有選民，包含深色選民和中立選民）</summary>
+    public float GetCurrentVotePercentage()
+    {
+        int total = GetCurrentTotalVotes();
+        return total > 0 ? (float)GetCurrentPlayerVotes() / total : 0f;
+    }
+    
+    // ──────────────────────────────────────────────────────────────
     #endregion
 
     #region 社會風氣 (Social Atmosphere)
@@ -467,15 +522,25 @@ public class CampaignData
 
     public void ResolveCurrentEncounter(EncounterOutcome outcome)
     {
-        if (IsTutorialActive || CurrentNodeNumber <= 0 || _resolvedNodeNumber == CurrentNodeNumber) return;
+        Debug.Log($"[CampaignData] ResolveCurrentEncounter 被調用：CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}, IsTutorialActive={IsTutorialActive}, outcome={outcome}");
+        
+        if (IsTutorialActive || CurrentNodeNumber <= 0 || _resolvedNodeNumber == CurrentNodeNumber)
+        {
+            Debug.Log($"[CampaignData] 跳過結算：IsTutorialActive={IsTutorialActive}, CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}");
+            return;
+        }
+        
         Results.Add(new EncounterResult(CurrentNodeNumber, ActiveRoom.mission, outcome));
         _resolvedNodeNumber = CurrentNodeNumber;
+        Debug.Log($"[CampaignData] ✓ 已結算節點 {CurrentNodeNumber}，_resolvedNodeNumber 已更新為 {_resolvedNodeNumber}");
     }
 
     public bool TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete)
     {
         needsRouteChoice = false;
         isRunComplete = false;
+
+        Debug.Log($"[CampaignData] TryPrepareNextStep 被調用：CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}, IsTutorialActive={IsTutorialActive}");
 
         if (IsTutorialActive)
         {
@@ -485,7 +550,7 @@ public class CampaignData
 
         if (_resolvedNodeNumber != CurrentNodeNumber)
         {
-            Debug.LogError("[CampaignData] 任務尚未結算，不能推進正式節點。");
+            Debug.LogError($"[CampaignData] 任務尚未結算，不能推進正式節點。CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}");
             return false;
         }
 
@@ -503,17 +568,21 @@ public class CampaignData
             return false;
         }
 
+        Debug.Log($"[CampaignData] 準備進入節點 {nextNode}，角色：{next.role}");
+
         if (next.role == EncounterNodeRole.MissionChoice)
         {
             // UI 重載、雙門重進 Trigger 都只能讀到同一組已存選項，絕不能重新抽取。
             if (PendingOptions.Length == 2)
             {
+                Debug.Log($"[CampaignData] 已有待選路線，直接返回");
                 needsRouteChoice = true;
                 return true;
             }
 
             PendingOptions = BuildOffers(nextNode);
             needsRouteChoice = PendingOptions.Length == 2;
+            Debug.Log($"[CampaignData] 已生成 {PendingOptions.Length} 個路線選項，needsRouteChoice={needsRouteChoice}");
             return needsRouteChoice;
         }
 

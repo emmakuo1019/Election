@@ -618,8 +618,8 @@ MonoBehaviour:
   - {fileID: 1968182468}
   - {fileID: 735351122}
   factions:
-  - {fileID: 11400000, guid: 5bd5eab0dfff344a99dbc795aad2f78b, type: 2}
   - {fileID: 11400000, guid: 2854ea893709e462fa5388c955e7c79c, type: 2}
+  - {fileID: 11400000, guid: 5bd5eab0dfff344a99dbc795aad2f78b, type: 2}
 --- !u!114 &368455974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1642,7 +1642,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u5927\u4F6C"
+  m_text: Skill2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 67393bfc3a860b042baa08f7fbeadd93, type: 2}
   m_sharedMaterial: {fileID: -4543751221255232905, guid: 67393bfc3a860b042baa08f7fbeadd93, type: 2}
@@ -1823,7 +1823,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u5927\u4F6C1"
+  m_text: Skill1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 67393bfc3a860b042baa08f7fbeadd93, type: 2}
   m_sharedMaterial: {fileID: -4543751221255232905, guid: 67393bfc3a860b042baa08f7fbeadd93, type: 2}

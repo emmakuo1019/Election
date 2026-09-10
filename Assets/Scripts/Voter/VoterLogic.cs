@@ -1,10 +1,19 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class VoterLogic : MonoBehaviour, IPoolable
 {
+    // ── 靜態追蹤列表（用於即時票數統計）──────────────────────────────
+    private static readonly List<VoterLogic> allActiveVoters = new List<VoterLogic>();
+    
+    /// <summary>取得當前場景中所有活躍的選民（用於即時統計票數）</summary>
+    public static IReadOnlyList<VoterLogic> GetAllActiveVoters() => allActiveVoters;
+    
+    // ──────────────────────────────────────────────────────────────
+    
     public StateMachine StateMachine { get; private set; }
     
     public VoterData Data { get; private set; }
@@ -61,6 +70,12 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void OnEnable()
     {
+        // 加入活躍選民列表
+        if (!allActiveVoters.Contains(this))
+        {
+            allActiveVoters.Add(this);
+        }
+        
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd += OnGameEnd;
@@ -74,6 +89,9 @@ public class VoterLogic : MonoBehaviour, IPoolable
 
     private void OnDisable()
     {
+        // 從活躍選民列表移除
+        allActiveVoters.Remove(this);
+        
         if (LevelTimer.Instance != null)
         {
             LevelTimer.Instance.OnTimerEnd -= OnGameEnd;

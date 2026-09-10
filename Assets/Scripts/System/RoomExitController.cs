@@ -36,13 +36,14 @@ public class RoomExitController : MonoBehaviour
 
     private void OnEnable()
     {
-        BattleEventManager.OnRewardCollected += HandleRewardCollected;
+        // 移除 OnRewardCollected 訂閱，避免與 StageClearState 重複處理
+        // BattleEventManager.OnRewardCollected += HandleRewardCollected;
         BattleEventManager.OnSurvivalTimeUp += HandleSurvivalTimeUp;
     }
 
     private void OnDisable()
     {
-        BattleEventManager.OnRewardCollected -= HandleRewardCollected;
+        // BattleEventManager.OnRewardCollected -= HandleRewardCollected;
         BattleEventManager.OnSurvivalTimeUp -= HandleSurvivalTimeUp;
     }
 
@@ -76,7 +77,7 @@ public class RoomExitController : MonoBehaviour
     }
 
     /// <summary>
-    /// 啟用對應的門。
+    /// 啟用對應的門（由 StageClearState 調用）。
     /// needsRouteChoice = true → 啟用雙門（選路）
     /// needsRouteChoice = false → 啟用單門（下一關）
     /// </summary>
@@ -107,27 +108,6 @@ public class RoomExitController : MonoBehaviour
     }
 
     // ── 事件處理 ──────────────────────────────────────────────────────
-
-    private void HandleRewardCollected()
-    {
-        CampaignData campaign = GameDB.Instance?.Campaign;
-        if (campaign == null) return;
-
-        // 判斷是否需要選路
-        if (!campaign.TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete))
-        {
-            Debug.LogError("[RoomExitController] 無法準備下一步。");
-            return;
-        }
-
-        if (isRunComplete)
-        {
-            Debug.Log("[RoomExitController] 戰役完成，不顯示出口門。");
-            return;
-        }
-
-        ShowExitDoors(needsRouteChoice);
-    }
 
     /// <summary>
     /// Survive 任務時間到，解鎖出口。

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81bc9e5987b2f44b2bfb5663e397098e, type: 3}
+  m_Name: M_Boss
+  m_EditorClassIdentifier: Assembly-CSharp::RoomMissionData
+  sceneName: Boss_Arena
+  objectiveType: 1
+  targetValue: 70
+  icon: {fileID: 21300000, guid: 79c04b0f82c7f43e8909f2a0d81ceda1, type: 3}
+  briefingStep: {fileID: 11400000, guid: 527894f5c481f4d7e8fe6c98a149498d, type: 2}
+  hudLayout: 0
+  spawnConfig: {fileID: 11400000, guid: eb1f54904539b4ab69ece1c91e654138, type: 2}
+  minCampaignNode: 8
+  maxCampaignNode: 8

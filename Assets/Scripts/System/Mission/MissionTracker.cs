@@ -58,12 +58,33 @@ public class MissionTracker : MonoBehaviour
         }
 
         Debug.Log($"[MissionTracker] 載入任務：{_mission.objectiveType}，目標值：{_mission.targetValue}");
+        
+        // [FIX] 延遲訂閱，等待 EnemySpawner 完成初始化
+        StartCoroutine(DelayedSubscribe());
+    }
+    
+    private System.Collections.IEnumerator DelayedSubscribe()
+    {
+        // 等待 2 幀，確保 EnemySpawner 已生成敵人
+        yield return null;
+        yield return null;
+        
+        Debug.Log($"[MissionTracker] 延遲訂閱完成，當前敵人數量: {EnemySpawnTracker.AliveCount}");
         Subscribe();
     }
 
     private void OnDisable()
     {
         Unsubscribe();
+    }
+    
+    private void Update()
+    {
+        // 搶票任務需要定時檢查即時票數
+        if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVotePercent && !_resolved)
+        {
+            CheckReachVotePercent();
+        }
     }
 
     // ── 事件訂閱 ─────────────────────────────────────────────────────
@@ -83,7 +104,7 @@ public class MissionTracker : MonoBehaviour
             case MissionObjectiveType.EliminateAll:
                 BattleEventManager.OnAllEnemiesDefeated += HandleEliminateAll;
                 
-                // 立即檢查是否已經全滅（處理訂閱延遲的邊界情況）
+                // [FIX] 延遲檢查已經在 DelayedSubscribe 中處理，這裡只做最後的驗證
                 if (EnemySpawnTracker.AliveCount == 0)
                 {
                     // 雙重確認：確保場上真的沒有敵人
@@ -94,14 +115,20 @@ public class MissionTracker : MonoBehaviour
                         Debug.LogWarning("[MissionTracker] 訂閱時敵人已全滅，立即觸發完成判定。");
                         HandleEliminateAll();
                     }
+                    else
+                    {
+                        Debug.Log($"[MissionTracker] AliveCount=0 但場上有 {remaining.Length} 個敵人，等待追蹤系統更新");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"[MissionTracker] 任務開始，當前存活敵人: {EnemySpawnTracker.AliveCount}");
                 }
                 break;
 
             case MissionObjectiveType.ReachVotePercent:
-                RunData run = GameDB.Instance?.Run;
-                if (run != null) run.OnVotesChanged += HandleVotesChanged;
+                // 改為在 Update 中定時檢查即時票數，不再訂閱 OnVotesChanged
                 BattleEventManager.OnTimerExpired += HandleTimerExpired;
-                HandleVotesChanged(0, 0);
                 break;
 
             case MissionObjectiveType.Survive:
@@ -114,8 +141,6 @@ public class MissionTracker : MonoBehaviour
     {
         BattleEventManager.OnFinalBossDefeated -= HandleFinalBossDefeated;
         BattleEventManager.OnAllEnemiesDefeated -= HandleEliminateAll;
-        if (GameDB.Instance != null)
-            GameDB.Instance.Run.OnVotesChanged -= HandleVotesChanged;
         BattleEventManager.OnTimerExpired       -= HandleTimerExpired;
         BattleEventManager.OnSurvivalTimeUp     -= HandleSurvivalTimeUp;
     }
@@ -133,18 +158,44 @@ public class MissionTracker : MonoBehaviour
         NotifyResult(true);
     }
 
-    private void HandleVotesChanged(int _, int __)
+    /// <summary>檢查即時票數是否達標（搶票任務專用）</summary>
+    private void CheckReachVotePercent()
     {
         if (_mission == null || GameDB.Instance == null) return;
-        float percent = GameDB.Instance.Run.PlayerVotePercentage * 100f;
+        
+        // 使用即時統計的場上選民票數
+        float percent = GameDB.Instance.Run.GetCurrentVotePercentage() * 100f;
+        
         if (percent >= _mission.targetValue)
+        {
+            // [FIX] 立即停止計時器，避免時間到觸發失敗判定
+            if (LevelTimer.Instance != null && LevelTimer.Instance.IsActive)
+            {
+                LevelTimer.Instance.PauseTimer();
+            }
+            
+            // [FIX] 取消訂閱計時器事件，防止重複觸發
+            BattleEventManager.OnTimerExpired -= HandleTimerExpired;
+            
             NotifyResult(true);
+        }
+    }
+
+    private void HandleVotesChanged(int _, int __)
+    {
+        // 此方法已廢棄，改用 Update 中的 CheckReachVotePercent
+        // 保留此方法避免編譯錯誤，但不再使用
     }
 
     private void HandleTimerExpired()
     {
-        if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVotePercent)
+        // [FIX] 票數任務：時間到時檢查是否已結算，避免重複觸發
+        if (_mission != null && 
+            _mission.objectiveType == MissionObjectiveType.ReachVotePercent &&
+            !_resolved)
+        {
             NotifyResult(false);
+        }
     }
 
     private void HandleSurvivalTimeUp()

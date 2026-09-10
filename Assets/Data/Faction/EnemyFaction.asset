@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50e3d058b480c4bf0ad1fd2334d15c52, type: 3}
+  m_Name: EnemyFaction
+  m_EditorClassIdentifier: Assembly-CSharp::FactionData
+  factionName: "\u5C0D\u624B"
+  description: 
+  starterSkill: {fileID: 0}
+  factionColor: {r: 0.6348217, g: 0.32079923, b: 0.764151, a: 1}

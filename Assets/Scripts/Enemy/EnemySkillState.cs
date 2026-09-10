@@ -32,33 +32,42 @@ public class EnemySkillState : IState
         _timer = 0f;
         _hasExecuted = false;
 
-        // 3. 顯示範圍提示預覽
-        // 注意：不可呼叫 Show() 或 ShowIdle()，兩者內部都會用 IAttackSource 的值
-        // 覆蓋掉我們剛設好的 blastRadius/blastAngle。
-        // 直接 SetShape 後手動啟用 MeshRenderer，繞過覆蓋問題。
-        if (_ctx.attackRangeMesh != null && _ctx.equippedSkill != null)
+        // 3. 取得當前要執行的技能
+        EnemySkillData currentSkill = _ctx.GetCurrentSkill();
+        if (currentSkill == null)
         {
-            _ctx.attackRangeMesh.SetShape(_ctx.equippedSkill.blastRadius, _ctx.equippedSkill.blastAngle);
-            MeshRenderer mr = _ctx.attackRangeMesh.GetComponent<MeshRenderer>();
-            if (mr != null) mr.enabled = true;
-            Debug.Log($"[SkillState] 範圍圈已顯示。blastRadius={_ctx.equippedSkill.blastRadius}, angle={_ctx.equippedSkill.blastAngle}");
+            Debug.LogWarning("[EnemySkillState] 當前技能為空，切換回Idle");
+            _sm.ChangeState(_ctx.IdleState);
+            return;
         }
 
-        // 4. 觸發技能動畫
-        if (_ctx.equippedSkill != null && !string.IsNullOrEmpty(_ctx.equippedSkill.animationTriggerName))
+        // 4. 顯示範圍提示預覽
+        if (_ctx.attackRangeMesh != null)
+        {
+            _ctx.attackRangeMesh.SetShape(currentSkill.blastRadius, currentSkill.blastAngle);
+            MeshRenderer mr = _ctx.attackRangeMesh.GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = true;
+            Debug.Log($"[SkillState] 範圍圈已顯示。blastRadius={currentSkill.blastRadius}, angle={currentSkill.blastAngle}");
+        }
+
+        // 5. 觸發技能動畫
+        if (!string.IsNullOrEmpty(currentSkill.animationTriggerName))
         {
             Animator animator = _ctx.GetComponent<Animator>();
             if (animator != null)
             {
-                animator.SetTrigger(_ctx.equippedSkill.animationTriggerName);
+                animator.SetTrigger(currentSkill.animationTriggerName);
             }
         }
     }
 
     public void Update()
     {
+        // 取得當前技能
+        EnemySkillData currentSkill = _ctx.GetCurrentSkill();
+        
         // 防呆保護：若技能資料為空，直接切換回閒置狀態
-        if (_ctx.equippedSkill == null)
+        if (currentSkill == null)
         {
             _sm.ChangeState(_ctx.IdleState);
             return;
@@ -71,14 +80,14 @@ public class EnemySkillState : IState
         _ctx.UpdateFacingDirection();
 
         // 3. 檢查是否達到前搖時間且尚未發動技能
-        if (_timer >= _ctx.equippedSkill.skillWindupTime && !_hasExecuted)
+        if (_timer >= currentSkill.skillWindupTime && !_hasExecuted)
         {
             _hasExecuted = true;
             _ctx.PerformSkillHit();
         }
 
         // 4. 檢查技能總時間是否結束
-        if (_timer >= _ctx.equippedSkill.duration)
+        if (_timer >= currentSkill.duration)
         {
             _sm.ChangeState(_ctx.IdleState);
         }

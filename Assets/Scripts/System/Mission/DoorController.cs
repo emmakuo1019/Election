@@ -67,6 +67,17 @@ public class DoorController : MonoBehaviour
         {
             _isUnlocked = true;
         }
+        else
+        {
+            // 檢查是否在獎勵選完後才生成，若是則直接解鎖
+            BattleEventManager.EncounterPhase phase = BattleEventManager.CurrentEncounterPhase;
+            if (phase == BattleEventManager.EncounterPhase.RouteSelection || 
+                phase == BattleEventManager.EncounterPhase.Transitioning)
+            {
+                Debug.Log("[DoorController] 門在獎勵階段後生成，直接解鎖");
+                _isUnlocked = true;
+            }
+        }
 
         UpdateVisual();
     }
@@ -138,12 +149,14 @@ public class DoorController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"[DoorController] OnTriggerEnter: {other.name}, Tag: {other.tag}, IsUnlocked: {_isUnlocked}, HasSelected: {_hasSelected}");
         if (!other.CompareTag("Player")) return;
         TrySelect();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log($"[DoorController] OnTriggerEnter2D: {other.name}, Tag: {other.tag}, IsUnlocked: {_isUnlocked}, HasSelected: {_hasSelected}");
         if (!other.CompareTag("Player")) return;
         TrySelect();
     }
@@ -152,18 +165,25 @@ public class DoorController : MonoBehaviour
 
     private void TrySelect()
     {
+        Debug.Log($"[DoorController] TrySelect 被調用 - IsUnlocked: {_isUnlocked}, HasSelected: {_hasSelected}, IsRouteDoor: {_isRouteDoor}");
+        
         if (!_isUnlocked || _hasSelected) return;
         _hasSelected = true;
 
         UIManager.Instance?.HideTutorialTips();
+        
         if (_isRouteDoor)
         {
+            // 選路門：觸發路線選擇
+            Debug.Log($"[DoorController] 觸發路線選擇 - OptionIndex: {optionIndex}");
             BattleEventManager.TriggerRouteSelected(optionIndex);
-            return;
         }
-
-        // 只保留教學/舊場景相容；正式戰役不用此路徑推進。
-        BattleEventManager.TriggerExitReached();
+        else
+        {
+            // 單門：觸發出口抵達
+            Debug.Log("[DoorController] 觸發出口抵達");
+            BattleEventManager.TriggerExitReached();
+        }
     }
 
     private RoomMissionData GetMission()

@@ -19,9 +19,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public NavMeshAgent Agent { get; private set; }
     
     private Camera mainCamera;
-
-    private float _skillCooldownTimer = 0f;
-    private EnemySkillState _skillState;          // 預先實例化（GC 優化）
     private PlayerController _cachedPlayer;       // 快取玩家參考
 
     [Header("Visuals")]
@@ -85,6 +82,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public int maxHP = 3;
     [Tooltip("只標記第 8 節點的主要對手。其生命歸零才會結束最終戰；護衛與召喚物不可勾選。")]
     [SerializeField] private bool isFinalBossOpponent;
+    
+    [Header("Boss設定")]
+    [Tooltip("Boss無敵模式：可被暈眩但不會死亡（用於Elite和FinalBoss關卡）")]
+    [SerializeField] private bool isInvincible = false;
+    
     private int _currentHP;
 
     [Header("UI")]
@@ -117,8 +119,15 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Header("暈眩特效")]
     public GameObject stunVfxPrefab;         // 暈眩時生成的 VFX Prefab
     public Vector3 stunVfxOffset = new Vector3(0f, 2f, 0f); // VFX 相對角色的偏移（預設頭頂）
-    public EnemySkillData equippedSkill;          // 裝備的技能 ScriptableObject
-    // 冷卻時間統一由 equippedSkill.cooldown 控制，不在此重複設定
+    
+    [Header("技能系統")]
+    [Tooltip("裝備的技能陣列。普通敵人裝1個，Boss可裝2-3個技能並輪流釋放")]
+    public EnemySkillData[] equippedSkills = new EnemySkillData[0];
+    
+    // 多技能系統私有變數
+    private float[] _skillCooldownTimers;
+    private EnemySkillState[] _skillStates;
+    private int _currentSkillIndex = 0;
 
     /// <summary>
     /// 供技能系統動態改變攻擊形狀 (半徑與角度)，並通知 AttackRangeMesh 重新生成網格。
@@ -137,12 +146,24 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// <summary>
     /// 敵人受到傷害或控制技能時呼叫。
     /// 扣除血量並強制切換至硬直狀態，中斷當前行為。
+    /// Boss無敵模式：只受暈眩，不扣血。
     /// </summary>
     public void TakeDamage(int damage, float stunTime = 0.5f)
     {
+        // Boss無敵模式：只受暈眩，不扣血
+        if (isInvincible)
+        {
+            if (stunTime > 0f)
+            {
+                StunState.SetStunDuration(stunTime);
+                StateMachine.ChangeState(StunState);
+            }
+            return; // 不扣血，直接返回
+        }
+        
+        // 普通敵人邏輯
         _currentHP -= damage;
-        hpBarUI?.Refresh(_currentHP, maxHP);
-        Debug.Log($"Enemy: 受到 {damage} 點傷害，剩餘 HP {_currentHP}/{maxHP}");
+        hpBarUI?.Refresh(_currentHP, maxHP, isInvincible);
 
         if (_currentHP <= 0)
         {
@@ -163,6 +184,45 @@ public class EnemyController : MonoBehaviour, IAttackSource
         if (isFinalBossOpponent)
             BattleEventManager.TriggerFinalBossDefeated();
         Destroy(gameObject);
+    }
+
+    // ==========================================
+    // 多技能系統
+    // ==========================================
+
+    /// <summary>
+    /// 初始化多技能系統
+    /// 支援向後兼容：如果只有 equippedSkill，自動轉換為陣列
+    /// </summary>
+    private void InitializeMultiSkillSystem()
+    {
+        // 初始化多技能系統
+        if (equippedSkills != null && equippedSkills.Length > 0)
+        {
+            _skillCooldownTimers = new float[equippedSkills.Length];
+            _skillStates = new EnemySkillState[equippedSkills.Length];
+
+            for (int i = 0; i < equippedSkills.Length; i++)
+            {
+                _skillCooldownTimers[i] = 0f;
+                _skillStates[i] = new EnemySkillState(this, StateMachine);
+            }
+        }
+        else
+        {
+            // 無技能配置
+        }
+    }
+
+    /// <summary>
+    /// 取得當前要執行的技能
+    /// 供 EnemySkillState 查詢使用
+    /// </summary>
+    public EnemySkillData GetCurrentSkill()
+    {
+        if (equippedSkills == null || _currentSkillIndex >= equippedSkills.Length)
+            return null;
+        return equippedSkills[_currentSkillIndex];
     }
 
     // ==========================================
@@ -193,11 +253,10 @@ public class EnemyController : MonoBehaviour, IAttackSource
             cap.radius = agentRadius;
             cap.center = new Vector3(0f, agentHeight * 0.5f, 0f);
             cap.isTrigger = false;
-            Debug.Log($"[EnemyController] {name} 自動加入 CapsuleCollider (h={cap.height}, r={cap.radius}, layer={gameObject.layer})");
         }
         else
         {
-            Debug.Log($"[EnemyController] {name} 已有 Collider，略過自動補建。(layer={gameObject.layer})");
+            // Collider 已存在
         }
         
         // 防呆：避免之前編譯錯誤時 Inspector 把數值存成了 0，導致狀態機死循環
@@ -222,11 +281,13 @@ public class EnemyController : MonoBehaviour, IAttackSource
         StunState = new EnemyStunState(this, StateMachine);
         WanderState = new EnemyWanderState(this, StateMachine);
 
-        _skillState = new EnemySkillState(this, StateMachine);
         _cachedPlayer = FindObjectOfType<PlayerController>();
         
+        // ── 多技能系統初始化 ──────────────────────────────────────────
+        InitializeMultiSkillSystem();
+        
         _currentHP = maxHP;
-        hpBarUI?.Refresh(_currentHP, maxHP);
+        hpBarUI?.Refresh(_currentHP, maxHP, isInvincible);
     }
 
     private void Start()
@@ -328,13 +389,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
     private void ResetState()
     {
         _currentHP = maxHP;
-        _skillCooldownTimer = 0f;
         target = null;
 
         // 重新查找場景中的 PlayerController（跨場景後舊參考已失效）
         _cachedPlayer = FindObjectOfType<PlayerController>();
 
-        hpBarUI?.Refresh(_currentHP, maxHP);
+        hpBarUI?.Refresh(_currentHP, maxHP, isInvincible);
 
         // 重置狀態機回 Idle（避免從死亡/暈眩等中途狀態繼續執行）
         if (StateMachine != null && IdleState != null)
@@ -342,21 +402,26 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         if (attackRangeMesh != null)
             attackRangeMesh.ShowIdle();
-
-        Debug.Log($"[EnemyController] {name} ResetState — HP 與狀態機已重置。");
     }    private void Update()
     {
         StateMachine.CurrentState?.Update();
 
-        // 技能冷卻計時（僅在非技能狀態時累加）
-        if (equippedSkill != null && 
+        // ── 多技能系統：檢查所有技能冷卻 ────────────────────────────
+        if (equippedSkills != null && equippedSkills.Length > 0 && 
             StateMachine.CurrentState is not EnemySkillState)
         {
-            _skillCooldownTimer += Time.deltaTime;
-            if (_skillCooldownTimer >= equippedSkill.cooldown)
+            for (int i = 0; i < equippedSkills.Length; i++)
             {
-                _skillCooldownTimer = 0f;
-                StateMachine.ChangeState(_skillState);
+                if (equippedSkills[i] == null) continue;
+
+                _skillCooldownTimers[i] += Time.deltaTime;
+                if (_skillCooldownTimers[i] >= equippedSkills[i].cooldown)
+                {
+                    _skillCooldownTimers[i] = 0f;
+                    _currentSkillIndex = i;
+                    StateMachine.ChangeState(_skillStates[i]);
+                    break;
+                }
             }
         }
     }
@@ -482,7 +547,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
                 if (angleToTarget > AttackAngle / 2f) continue;
             }
 
-            Debug.Log($"敵人對選民 {voter.name} 發動了拉票！");
             voter.OnInfluence(attackInfluence, false, transform.position);
         }
 
@@ -505,7 +569,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
                     if (angleToPlayer > AttackAngle / 2f) continue;
                 }
 
-                Debug.Log($"敵人對玩家 {pc.name} 發動了攻擊，造成誠信傷害！");
                 PlayerHealthSystem.Instance?.TakeDamage(1f);
             }
         }
@@ -516,8 +579,13 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// </summary>
     public void PerformSkillHit()
     {
-        if (equippedSkill == null) return;
-        equippedSkill.ExecuteSkill(gameObject);
+        EnemySkillData currentSkill = GetCurrentSkill();
+        if (currentSkill == null)
+        {
+            Debug.LogWarning("[EnemyController] PerformSkillHit: 當前技能為空");
+            return;
+        }
+        currentSkill.ExecuteSkill(gameObject);
     }
 
     /// <summary>

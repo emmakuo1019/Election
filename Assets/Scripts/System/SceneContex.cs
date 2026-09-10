@@ -24,17 +24,30 @@ public class SceneContext : MonoBehaviour
         // MonoBehaviour 保留在場景中供向後相容，但邏輯已移至靜態方法
     }
 
-    public static SceneType GetSceneType(string sceneName) => sceneName switch
+    public static SceneType GetSceneType(string sceneName)
     {
-        "S0"           => SceneType.Menu,
-        "S1"           => SceneType.Intro,
-        "TestMVP"      => SceneType.Level,
-        "TestSpecial"  => SceneType.Level,
-        "TestSmallBoss"=> SceneType.Level,
-        "headquarters" => SceneType.Headquarters,
-        "TeachScenes"  => SceneType.Tutorial,
-        _              => SceneType.Menu
-    };
+        // 特定場景映射
+        switch (sceneName)
+        {
+            case "S0": return SceneType.Menu;
+            case "S1": return SceneType.Intro;
+            case "headquarters": return SceneType.Headquarters;
+            case "TeachScenes": return SceneType.Tutorial;
+        }
+        
+        // [FIX] 所有以 Test 開頭的場景都視為關卡場景
+        if (sceneName.StartsWith("Test") || 
+            sceneName.StartsWith("Combat") || 
+            sceneName.StartsWith("Vote") ||
+            sceneName.StartsWith("Elite") ||
+            sceneName.StartsWith("Boss"))
+        {
+            return SceneType.Level;
+        }
+        
+        // 預設為主選單
+        return SceneType.Menu;
+    }
 
     public static bool IsLevelScene() => CurrentScene == SceneType.Level || CurrentScene == SceneType.Tutorial;
 }

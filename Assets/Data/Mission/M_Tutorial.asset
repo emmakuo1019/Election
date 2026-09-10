@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81bc9e5987b2f44b2bfb5663e397098e, type: 3}
+  m_Name: M_Tutorial
+  m_EditorClassIdentifier: Assembly-CSharp::RoomMissionData
+  sceneName: TeachScenes
+  objectiveType: 1
+  targetValue: 60
+  icon: {fileID: 21300000, guid: be8b95e0e806f4965904c8237e0f9a29, type: 3}
+  briefingStep: {fileID: 11400000, guid: b4b7f89b028994649929ebaaa1aed02c, type: 2}
+  hudLayout: 0
+  spawnConfig: {fileID: 0}
+  minCampaignNode: 0
+  maxCampaignNode: 0

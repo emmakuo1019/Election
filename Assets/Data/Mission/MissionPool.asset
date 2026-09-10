@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: MissionPool
   m_EditorClassIdentifier: Assembly-CSharp::MissionPool
   entries:
+  - mission: {fileID: 11400000, guid: c773b877427864f559c3a17fd2eb93a8, type: 2}
+    weight: 1
+  - mission: {fileID: 11400000, guid: accbb766378af4db5ada118214c442e2, type: 2}
+    weight: 1
+  - mission: {fileID: 11400000, guid: 034be159755b94e9eb1f573b861da73b, type: 2}
+    weight: 5
+  - mission: {fileID: 11400000, guid: c3c92d9e9815242c7904c235ff88dd98, type: 2}
+    weight: 7
   - mission: {fileID: 11400000, guid: 7b6bc2fa55f964f9981d4370a97589a6, type: 2}
-    weight: 5
-  - mission: {fileID: 11400000, guid: 91c8b081874c34ad29e53e5ffbbf8c39, type: 2}
-    weight: 5
-  - mission: {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000022, type: 2}
-    weight: 5
-  - mission: {fileID: 11400000, guid: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p1, type: 2}
-    weight: 5
-  - mission: {fileID: 11400000, guid: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p2, type: 2}
-    weight: 5
-  - mission: {fileID: 11400000, guid: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p3, type: 2}
-    weight: 5
+    weight: 3
+  - mission: {fileID: 11400000, guid: 82b961bbdd6134737872a7765e8f5cb4, type: 2}
+    weight: 1

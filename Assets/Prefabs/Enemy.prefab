@@ -144,6 +144,8 @@ MonoBehaviour:
   detectionRange: 30
   escapeRange: 40
   maxHP: 3
+  isFinalBossOpponent: 0
+  isInvincible: 0
   hpBarUI: {fileID: 1356372295820075687}
   attackHitRadius: 1
   attackHitOffset: {x: 0, y: 0, z: 0}
@@ -152,6 +154,8 @@ MonoBehaviour:
   attackAngle: 90
   stunVfxPrefab: {fileID: 1171678833857807218, guid: 2b25135aae7404d37a47543c9919b0eb, type: 3}
   stunVfxOffset: {x: 0, y: 2, z: 0}
+  equippedSkills:
+  - {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
   equippedSkill: {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
 --- !u!1 &566546161834736190
 GameObject:

@@ -1,6 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NewSkillData", menuName = "Election/SkillData", order = 1)]
+// [CreateAssetMenu(fileName = "NewSkillData", menuName = "Election/SkillData", order = 1)]
+// 已停用：請使用更具體的技能類型創建選項（Skills/Enemy/... 或 Skills/Party/...）
 public class SkillData : ScriptableObject, ISkillData
 {
     [Header("基礎設定")]

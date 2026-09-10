@@ -43,7 +43,25 @@ public class PoolManager : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(gameObject);
+        // 改為場景級別單例，不跨場景保留
+        // DontDestroyOnLoad(gameObject); // 已移除
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            instance = null;
+            
+            // 清理所有對象池
+            foreach (var pool in pools.Values)
+            {
+                pool.Clear();
+            }
+            pools.Clear();
+            instanceToPrefab.Clear();
+            instanceToPoolables.Clear();
+        }
     }
 
     public GameObject Get(GameObject prefab, Vector3 position, Quaternion rotation)
@@ -113,8 +131,8 @@ public class PoolManager : MonoBehaviour
 
     private GameObject CreateInstance(GameObject prefab)
     {
-        // 將生成的物件設為 PoolManager 的子物件，確保它們跟著 PoolManager 一起 DontDestroyOnLoad
-        GameObject createdInstance = Instantiate(prefab, transform);
+        // 不設父物件，讓對象池物件與場景綁定，場景卸載時自動清理
+        GameObject createdInstance = Instantiate(prefab);
         createdInstance.name = prefab.name;
         instanceToPrefab[createdInstance] = prefab;
 

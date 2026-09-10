@@ -16,6 +16,7 @@ public class StageClearState : IState
 
         BattleEventManager.OnRewardCollected += HandleRewardCollected;
         BattleEventManager.OnRouteSelected += HandleRouteSelected;
+        BattleEventManager.OnExitReached += HandleExitReached;
 
         CampaignData campaign = GameDB.Instance?.Campaign;
         CampaignNodeDefinition node = campaign?.GetCurrentNode();
@@ -61,17 +62,36 @@ public class StageClearState : IState
 
         if (isRunComplete) { TransitionToEnd(); return; }
         
-        // RoomExitController 會自動顯示對應的門
-        // 選路模式下，等待 HandleRouteSelected 被觸發
-        // 非選路模式下，直接推進下一關
+        // 顯示出口門
+        RoomExitController exitController = Object.FindFirstObjectByType<RoomExitController>();
+        if (exitController != null)
+        {
+            exitController.ShowExitDoors(needsRouteChoice);
+        }
+        
+        // 設定對應的階段，等待玩家走到門
         if (needsRouteChoice)
         {
+            // 選路模式：等待玩家選擇門（HandleRouteSelected）
             BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.RouteSelection);
-            return;
         }
+        else
+        {
+            // 單門模式：等待玩家走到門（HandleExitReached）
+            BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.RouteSelection);
+        }
+    }
 
+    private void HandleExitReached()
+    {
+        Debug.Log("[StageClearState] HandleExitReached 被調用");
+        if (_transitioned) return;
+        CampaignData campaign = GameDB.Instance?.Campaign;
+        if (campaign == null) return;
+        
         _transitioned = true;
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
+        Debug.Log($"[StageClearState] 準備切換到節點 {campaign.CurrentNodeNumber}");
         GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
     }
 
@@ -97,6 +117,7 @@ public class StageClearState : IState
     {
         BattleEventManager.OnRewardCollected -= HandleRewardCollected;
         BattleEventManager.OnRouteSelected -= HandleRouteSelected;
+        BattleEventManager.OnExitReached -= HandleExitReached;
         // 不再需要手動清理門，RoomExitController 會在下一關場景載入時自動銷毀
     }
 

@@ -130,6 +130,21 @@ public class PlayerSkillManager : MonoBehaviour
         if (skillData == null) return;
         skillLastUseTime[skillData] = Time.time;
     }
+
+    /// <summary>
+    /// 被Boss干擾時，重置技能冷卻（回到剛使用狀態）
+    /// 由 EnemySkill_DisruptPlayer 調用
+    /// </summary>
+    public void ResetSkillCooldown(SkillData skillData)
+    {
+        if (skillData == null) return;
+
+        // 設定為當前時間，等同於剛使用過技能
+        skillLastUseTime[skillData] = Time.time;
+
+        // 可選：UI通知（如果 UIManager 有 ShowNotification 方法）
+        // UIManager.Instance?.ShowNotification($"技能 {skillData.skillName} 被干擾！");
+    }
     #endregion
 
     #region 裝備管理區 (Equipment Management)

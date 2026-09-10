@@ -133,11 +133,12 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
     /// </summary>
     public bool CanAttack()
     {
-        if (!SceneContext.IsLevelScene())
-        {
-            Debug.LogWarning($"⚠️ 只能在關卡中進行攻擊！(SceneContext.CurrentScene={SceneContext.CurrentScene}, IsLevelScene()=false)");
-            return false;
-        }
+        // [TEMP FIX] 暫時停用場景檢查，允許所有場景攻擊
+        // if (!SceneContext.IsLevelScene())
+        // {
+        //     Debug.LogWarning($"⚠️ 只能在關卡中進行攻擊！(SceneContext.CurrentScene={SceneContext.CurrentScene}, IsLevelScene()=false)");
+        //     return false;
+        // }
         
         if (GameDB.Instance == null)
         {

@@ -124,6 +124,10 @@ public class PlayerController : MonoBehaviour
         // 初始化狀態機，給予起始狀態
         StateMachine.Initialize(new IdleState(this));
         
+        // [DEBUG] 診斷輸入系統配置
+        Debug.Log($"[PlayerController] Start - attackAction={(attackAction != null ? "已綁定" : "NULL")}");
+        Debug.Log($"[PlayerController] Start - 當前 EncounterPhase={BattleEventManager.CurrentEncounterPhase}");
+        
         // 場景換載後仍顯式啟用 action；是否接收輸入完全由 EncounterPhase 決定。
         EnableInputAction(moveAction);
         EnableInputAction(attackAction);
@@ -131,7 +135,10 @@ public class PlayerController : MonoBehaviour
         EnableInputAction(skillJAction);
         EnableInputAction(skillKAction);
         EnableInputAction(skillLAction);
+        
         ApplyEncounterPhase(BattleEventManager.CurrentEncounterPhase);
+        
+        Debug.Log($"[PlayerController] Start - _combatInputEnabled={_combatInputEnabled}, _movementInputEnabled={_movementInputEnabled}");
     }
 
     private void Update()
@@ -144,6 +151,27 @@ public class PlayerController : MonoBehaviour
         SkillJInputThisFrame = _combatInputEnabled && skillJAction != null && skillJAction.action.WasPerformedThisFrame();
         SkillKInputThisFrame = _combatInputEnabled && skillKAction != null && skillKAction.action.WasPerformedThisFrame();
         SkillLInputThisFrame = _combatInputEnabled && skillLAction != null && skillLAction.action.WasPerformedThisFrame();
+
+        // [DEBUG] 診斷攻擊輸入問題
+        if (Input.GetKeyDown(KeyCode.J)) // 備用檢測：直接偵測 J 鍵
+        {
+            Debug.Log($"[PlayerController] 偵測到 J 鍵按下！_combatInputEnabled={_combatInputEnabled}, attackAction={(attackAction != null ? "已綁定" : "NULL")}, AttackInputThisFrame={AttackInputThisFrame}");
+            
+            // 如果 InputAction 系統失效，強制觸發攻擊
+            if (attackAction == null || !AttackInputThisFrame)
+            {
+                Debug.LogWarning("[PlayerController] InputAction 系統異常，使用備用攻擊觸發");
+                if (_combatInputEnabled && StateMachine?.CurrentState != null)
+                {
+                    StateMachine.CurrentState.HandleInput();
+                    // 強制切換到攻擊狀態
+                    if (StateMachine.CurrentState is IdleState || StateMachine.CurrentState is MoveState)
+                    {
+                        StateMachine.ChangeState(AttackState);
+                    }
+                }
+            }
+        }
 
         // 將輸入交由狀態機目前的狀態處理
         StateMachine.CurrentState?.HandleInput();
@@ -172,10 +200,15 @@ public class PlayerController : MonoBehaviour
 
     private void ApplyEncounterPhase(BattleEventManager.EncounterPhase phase)
     {
+        // 允許移動的階段：所有非 None/Loading/Briefing/Transitioning 的階段
         bool movementAllowed = phase == BattleEventManager.EncounterPhase.Active ||
+                               phase == BattleEventManager.EncounterPhase.ObjectiveResolved ||
                                phase == BattleEventManager.EncounterPhase.RewardSelection ||
                                phase == BattleEventManager.EncounterPhase.RouteSelection;
-        bool combatAllowed = phase == BattleEventManager.EncounterPhase.Active;
+        
+        // 允許戰鬥的階段：移除限制，所有允許移動的階段都允許戰鬥
+        bool combatAllowed = movementAllowed;
+        
         SetInputAvailability(movementAllowed, combatAllowed);
     }
 
@@ -183,7 +216,22 @@ public class PlayerController : MonoBehaviour
     {
         _movementInputEnabled = movementAllowed;
         _combatInputEnabled = combatAllowed;
-        if (!combatAllowed) StateMachine?.ChangeState(new IdleState(this));
+        
+        // [FIX] 當戰鬥輸入被啟用時，確保所有 Input Actions 也被啟用
+        if (combatAllowed)
+        {
+            EnableInputAction(moveAction);
+            EnableInputAction(attackAction);
+            EnableInputAction(dashAction);
+            EnableInputAction(skillJAction);
+            EnableInputAction(skillKAction);
+            EnableInputAction(skillLAction);
+            
+            Debug.Log("[PlayerController] 戰鬥輸入已啟用，重新啟用所有 Input Actions");
+        }
+        
+        // 移除自動切換到 Idle 的邏輯，讓玩家可以在任務結算後繼續行動
+        // if (!combatAllowed) StateMachine?.ChangeState(new IdleState(this));
     }
 
     private static void EnableInputAction(InputActionReference actionReference)
@@ -191,10 +239,13 @@ public class PlayerController : MonoBehaviour
         if (actionReference?.action != null) actionReference.action.Enable();
     }
 
-    // 相容舊呼叫；計時器不再直接呼叫此方法。
+    // ⚠️ 已廢棄：移除戰鬥結束後禁用玩家功能
+    // 玩家現在可以在任務結算後繼續移動和戰鬥
+    [System.Obsolete("此方法已廢棄，玩家輸入現在由 EncounterPhase 控制", false)]
     public void OnGameEnd()
     {
-        SetInputAvailability(false, false);
+        // 保留空方法以避免編譯錯誤，但不再執行任何操作
+        // SetInputAvailability(false, false);
     }
 
     // 房間結算後恢復玩家輸入

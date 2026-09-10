@@ -3,7 +3,8 @@
 
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "EnemySkillData", menuName = "Skills/Enemy Skill Data")]
+// [CreateAssetMenu(fileName = "EnemySkillData", menuName = "Skills/Enemy Skill Data")]
+// 已停用：這是基類，請使用具體的敵人技能類型（Skills/Enemy/Summon Minions 等）
 public class EnemySkillData : SkillData
 {
     [Header("技能設定 (Enemy Skill)")]

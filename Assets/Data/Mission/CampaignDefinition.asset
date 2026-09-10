@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: CampaignDefinition
   m_EditorClassIdentifier: Assembly-CSharp::CampaignDefinition
   defaultSeed: 20260905
-  tutorialMission: {fileID: 11400000, guid: 942f6cffd2c364e3bbf8297bca580bb9, type: 2}
+  tutorialMission: {fileID: 11400000, guid: 82b961bbdd6134737872a7765e8f5cb4, type: 2}
   routeDoorPrefab: {fileID: 5594269665286831399, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
   nodes:
   - nodeNumber: 1
     role: 0
-    fixedMission: {fileID: 11400000, guid: 91c8b081874c34ad29e53e5ffbbf8c39, type: 2}
-    sceneName: 
+    fixedMission: {fileID: 11400000, guid: c3c92d9e9815242c7904c235ff88dd98, type: 2}
+    sceneName: ReachVotePercent_1
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
@@ -45,8 +45,8 @@ MonoBehaviour:
     finalEndingBeat: {fileID: 0}
   - nodeNumber: 4
     role: 2
-    fixedMission: {fileID: 11400000, guid: c11aa4e1f0c94168a0a0000000000021, type: 2}
-    sceneName: TestMVP
+    fixedMission: {fileID: 11400000, guid: accbb766378af4db5ada118214c442e2, type: 2}
+    sceneName: Elite_Arena
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
@@ -81,8 +81,8 @@ MonoBehaviour:
     finalEndingBeat: {fileID: 0}
   - nodeNumber: 8
     role: 3
-    fixedMission: {fileID: 0}
-    sceneName: TestSmallBoss
+    fixedMission: {fileID: 11400000, guid: c773b877427864f559c3a17fd2eb93a8, type: 2}
+    sceneName: Boss_Arena
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
