@@ -70,15 +70,97 @@ public class TutorialState : IState
 
     private void HandleTutorialComplete()
     {
-        Debug.Log("[TutorialState] 教學完成，前往第一關");
+        Debug.Log("[TutorialState] HandleTutorialComplete 被調用！");
+        Debug.Log("[TutorialState] 教學完成，準備顯示節點 1 的二選一選路");
 
         var campaign = GameDB.Instance?.Campaign;
-        if (campaign == null || !campaign.TryPrepareNextStep(out _, out _))
+        if (campaign == null)
+        {
+            Debug.LogError("[TutorialState] GameDB.Campaign 為 null！");
+            return;
+        }
+        Debug.Log("[TutorialState] ✓ Campaign 存在");
+
+        // 啟動正式戰役（會生成節點 1 的 PendingOptions）
+        Debug.Log("[TutorialState] 正在呼叫 StartFormalCampaign()...");
+        if (!campaign.StartFormalCampaign())
         {
             Debug.LogError("[TutorialState] 無法啟動正式戰役第一節點。");
             return;
         }
+        Debug.Log("[TutorialState] ✓ StartFormalCampaign() 成功");
 
+        // 檢查節點 1 是否為 MissionChoice（需要選路）
+        Debug.Log($"[TutorialState] 檢查 PendingOptions - 是否為 null: {campaign.PendingOptions == null}, 長度: {campaign.PendingOptions?.Length ?? -1}");
+        if (campaign.PendingOptions == null || campaign.PendingOptions.Length != 2)
+        {
+            // 節點 1 是固定關（不太可能，但保險處理）
+            Debug.LogWarning($"[TutorialState] 節點 1 不是二選一（PendingOptions 長度={campaign.PendingOptions?.Length ?? 0}），直接進入固定關。");
+            GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+            return;
+        }
+        Debug.Log("[TutorialState] ✓ PendingOptions 有 2 個選項");
+
+        // 節點 1 是二選一，在教學場景內顯示雙門讓玩家選擇
+        Debug.Log($"[TutorialState] 節點 1 任務選項：[0] {campaign.PendingOptions[0].mission?.name}, [1] {campaign.PendingOptions[1].mission?.name}");
+
+        // 設定階段為「路線選擇」
+        Debug.Log("[TutorialState] 設定階段為 RouteSelection");
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.RouteSelection);
+
+        // 使用場景中的 RoomExitController 顯示雙門
+        Debug.Log("[TutorialState] 正在尋找 RoomExitController...");
+        RoomExitController exitController = Object.FindFirstObjectByType<RoomExitController>();
+        if (exitController != null)
+        {
+            Debug.Log($"[TutorialState] ✓ 找到 RoomExitController: {exitController.gameObject.name}");
+            Debug.Log("[TutorialState] 正在呼叫 ShowExitDoors(needsRouteChoice: true)...");
+            
+            // 顯示雙門並自動解鎖（教學已完成，不需要等待敵人全滅）
+            exitController.ShowExitDoors(needsRouteChoice: true);
+            
+            Debug.Log("[TutorialState] ✓ ShowExitDoors() 已執行");
+            Debug.Log("[TutorialState] 已在教學場景內顯示節點 1 的雙門選路");
+        }
+        else
+        {
+            Debug.LogError("[TutorialState] ✗ 教學場景中找不到 RoomExitController！無法顯示選路門。");
+            Debug.LogError("[TutorialState] 請確認教學場景（TeachScenes）已放置 RoomExitController 和雙門 Prefab。");
+        }
+
+        // 訂閱路線選擇事件（玩家走進哪扇門）
+        Debug.Log("[TutorialState] 訂閱 OnRouteSelected 事件");
+        BattleEventManager.OnRouteSelected += HandleFirstNodeRouteSelected;
+        Debug.Log("[TutorialState] ✓ HandleTutorialComplete 執行完畢");
+    }
+
+    /// <summary>
+    /// 玩家在教學場景內選擇了節點 1 的其中一個任務（走進哪扇門）。
+    /// </summary>
+    private void HandleFirstNodeRouteSelected(int optionIndex)
+    {
+        Debug.Log($"[TutorialState] 玩家選擇了節點 1 的任務選項 {optionIndex}");
+
+        // 取消訂閱，避免二次觸發
+        BattleEventManager.OnRouteSelected -= HandleFirstNodeRouteSelected;
+
+        var campaign = GameDB.Instance?.Campaign;
+        if (campaign == null)
+        {
+            Debug.LogError("[TutorialState] Campaign 為 null！");
+            return;
+        }
+
+        // 將選擇寫入 CampaignData
+        if (!campaign.TrySelectRoute(optionIndex))
+        {
+            Debug.LogError($"[TutorialState] 無法選擇路線 {optionIndex}！");
+            return;
+        }
+
+        // 切換到 GameplayState，載入節點 1 選中的任務場景
+        Debug.Log($"[TutorialState] 進入節點 {campaign.CurrentNodeNumber}，場景：{campaign.GetCurrentRoomSceneName()}");
+        BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
         GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
     }
 
@@ -97,18 +179,12 @@ public class TutorialState : IState
 
         BattleEventManager.OnRoomCleared -= HandleTutorialComplete;
         BattleEventManager.OnPlayerDied  -= HandlePlayerDied;
+        BattleEventManager.OnRouteSelected -= HandleFirstNodeRouteSelected;  // 清理選路訂閱
     }
 
     public void Update()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // 按 T 跳過教學，直接進第一關
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            Debug.Log("[TutorialState] 按下 T，跳過教學");
-            BattleEventManager.TriggerRoomCleared();
-        }
-#endif
+        // 移除：開發模式跳過教學功能已移除，確保所有玩家統一走完整教學流程
     }
 
     public void PhysicsUpdate() { }

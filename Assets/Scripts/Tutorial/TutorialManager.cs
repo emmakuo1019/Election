@@ -233,5 +233,12 @@ public class TutorialManager : MonoBehaviour
 
     private void HandleDarkVoterConverted() => OnActionCompleted();
 
-    private void HandleReachExit() => OnActionCompleted();
+    private void HandleReachExit()
+    {
+        OnActionCompleted();
+        
+        // 教學最後一步完成，觸發房間過關事件（讓 TutorialState 接手顯示選路門）
+        Debug.Log("[TutorialManager] 教學最後一步完成，觸發 TriggerRoomCleared");
+        BattleEventManager.TriggerRoomCleared();
+    }
 }

@@ -91,7 +91,8 @@ public class GameplayState : IState
     public void Update()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Input.GetKeyDown(KeyCode.Y))
+        // T 鍵：快速完成當前關卡（開發測試用）
+        if (Input.GetKeyDown(KeyCode.T))
             BattleEventManager.TriggerObjectiveResolved(EncounterOutcome.Success);
 #endif
     }

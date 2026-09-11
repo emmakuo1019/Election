@@ -94,9 +94,11 @@ public class DoorController : MonoBehaviour
     /// <summary>由 RouteDoorSpawner 注入；門只回報索引，絕不直接改寫 CampaignData。</summary>
     public void ConfigureRoute(int routeIndex)
     {
+        Debug.Log($"[DoorController] ConfigureRoute 被調用 - GameObject: {gameObject.name}, RouteIndex: {routeIndex}");
         optionIndex = routeIndex;
         _isRouteDoor = true;
         _isUnlocked = true;
+        Debug.Log($"[DoorController] 配置完成 - _isRouteDoor: {_isRouteDoor}, _isUnlocked: {_isUnlocked}");
         UpdateVisual();
     }
 

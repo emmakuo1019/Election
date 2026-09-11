@@ -33,7 +33,7 @@ public class CampaignNodeDefinition
 [CreateAssetMenu(fileName = "CampaignDefinition", menuName = "Mission/Campaign Definition")]
 public class CampaignDefinition : ScriptableObject
 {
-    public const int FormalNodeCount = 8;
+    public const int FormalNodeCount = 12;
 
     [Header("Run")]
     [SerializeField] private int defaultSeed = 20260905;
@@ -70,9 +70,9 @@ public class CampaignDefinition : ScriptableObject
 
             EncounterNodeRole expectedRole = nodeNumber switch
             {
-                1 => EncounterNodeRole.Opening,
-                2 or 3 or 5 or 6 or 7 => EncounterNodeRole.MissionChoice,
-                4 => EncounterNodeRole.Elite,
+                >= 1 and <= 5 => EncounterNodeRole.MissionChoice,
+                6 => EncounterNodeRole.Elite,
+                >= 7 and <= 11 => EncounterNodeRole.MissionChoice,
                 FormalNodeCount => EncounterNodeRole.FinalBoss,
                 _ => EncounterNodeRole.MissionChoice,
             };
@@ -88,7 +88,7 @@ public class CampaignDefinition : ScriptableObject
                 return false;
             }
 
-            if ((node.role == EncounterNodeRole.Opening || node.role == EncounterNodeRole.Elite) && node.fixedMission == null)
+            if ((node.role == EncounterNodeRole.Elite) && node.fixedMission == null)
             {
                 error = $"固定節點 {nodeNumber} 必須設定任務。";
                 return false;
@@ -96,7 +96,7 @@ public class CampaignDefinition : ScriptableObject
 
             if (node.role == EncounterNodeRole.FinalBoss && string.IsNullOrWhiteSpace(node.sceneName))
             {
-                error = "第 8 節點 FinalBoss 必須設定專用場景。";
+                error = "第 12 節點 FinalBoss 必須設定專用場景。";
                 return false;
             }
         }

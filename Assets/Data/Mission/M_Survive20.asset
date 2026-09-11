@@ -19,5 +19,5 @@ MonoBehaviour:
   briefingStep: {fileID: 11400000, guid: 30885f93bbff84af59d6c092232cd597, type: 2}
   hudLayout: 3
   spawnConfig: {fileID: 11400000, guid: 2229432fd8da743bdb159a07dc217114, type: 2}
-  minCampaignNode: 2
-  maxCampaignNode: 7
+  minCampaignNode: 1
+  maxCampaignNode: 11

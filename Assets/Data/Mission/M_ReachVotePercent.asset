@@ -20,4 +20,4 @@ MonoBehaviour:
   hudLayout: 3
   spawnConfig: {fileID: 0}
   minCampaignNode: 0
-  maxCampaignNode: 7
+  maxCampaignNode: 11

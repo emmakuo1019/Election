@@ -43,6 +43,13 @@ public class MissionTracker : MonoBehaviour
 
     private void Start()
     {
+        // 教學場景不使用 MissionTracker（由 TutorialManager 管理）
+        if (GameDB.Instance?.Campaign.IsTutorialActive == true)
+        {
+            Debug.Log("[MissionTracker] 教學場景中，不啟動任務追蹤系統");
+            return;
+        }
+
         // _mission 在 Awake() 已讀取，此時只需檢查和訂閱
         if (IsFinalBossEncounter())
         {

@@ -137,6 +137,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7249639539393358112}
   - component: {fileID: 998358957010087563}
+  - component: {fileID: 1855918688063332888}
   - component: {fileID: 3849494056143927830}
   m_Layer: 3
   m_Name: CinemachineCamera
@@ -153,8 +154,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 249711924873670320}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.2164396, y: 0, z: 0, w: 0.97629607}
-  m_LocalPosition: {x: 0, y: 4.1, z: -7.52}
+  m_LocalRotation: {x: 0.3560619, y: -0, z: -0, w: 0.93446237}
+  m_LocalPosition: {x: 0, y: 6.6545286, z: -7.4643974}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -203,6 +204,37 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
+--- !u!114 &1855918688063332888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 249711924873670320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 886251e9a18ece04ea8e61686c173e1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachinePositionComposer
+  CameraDistance: 10
+  DeadZoneDepth: 3
+  Composition:
+    ScreenPosition: {x: 0, y: 0}
+    DeadZone:
+      Enabled: 0
+      Size: {x: 0.2, y: 0.2}
+    HardLimits:
+      Enabled: 0
+      Size: {x: 0.8, y: 0.8}
+      Offset: {x: 0, y: 0}
+  CenterOnActivate: 1
+  TargetOffset: {x: 0, y: 0, z: 0}
+  Damping: {x: 1, y: 1, z: 1}
+  Lookahead:
+    Enabled: 1
+    Time: 0
+    Smoothing: 6.5
+    IgnoreY: 0
 --- !u!114 &3849494056143927830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -495,7 +527,6 @@ MonoBehaviour:
   attackInfluence: 5
   attackCooldown: 0.4
   convertChance: 1
-  darkVoterConvertChance: 0.5
   attackRangeMesh: {fileID: 4360986305226485520}
   voterLayer:
     serializedVersion: 2
@@ -547,8 +578,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9152536651902869562}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.2164396, y: -0, z: -0, w: 0.97629607}
-  m_LocalPosition: {x: 0, y: 4.1, z: -7.52}
+  m_LocalRotation: {x: 0.3560619, y: 0, z: 0, w: 0.93446237}
+  m_LocalPosition: {x: 0, y: 6.6545286, z: -7.4643974}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

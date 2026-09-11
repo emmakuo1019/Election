@@ -17,9 +17,9 @@ MonoBehaviour:
   routeDoorPrefab: {fileID: 5594269665286831399, guid: 6c5e4e91cf53e45a29823254f2290ea5, type: 3}
   nodes:
   - nodeNumber: 1
-    role: 0
-    fixedMission: {fileID: 11400000, guid: c3c92d9e9815242c7904c235ff88dd98, type: 2}
-    sceneName: ReachVotePercent_1
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
@@ -44,9 +44,9 @@ MonoBehaviour:
     afterEliteBeat: {fileID: 0}
     finalEndingBeat: {fileID: 0}
   - nodeNumber: 4
-    role: 2
-    fixedMission: {fileID: 11400000, guid: accbb766378af4db5ada118214c442e2, type: 2}
-    sceneName: Elite_Arena
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
@@ -62,9 +62,9 @@ MonoBehaviour:
     afterEliteBeat: {fileID: 0}
     finalEndingBeat: {fileID: 0}
   - nodeNumber: 6
-    role: 1
-    fixedMission: {fileID: 0}
-    sceneName: 
+    role: 2
+    fixedMission: {fileID: 11400000, guid: accbb766378af4db5ada118214c442e2, type: 2}
+    sceneName: Elite_Arena
     onEnterBeat: {fileID: 0}
     onSuccessBeat: {fileID: 0}
     onFailureBeat: {fileID: 0}
@@ -80,6 +80,42 @@ MonoBehaviour:
     afterEliteBeat: {fileID: 0}
     finalEndingBeat: {fileID: 0}
   - nodeNumber: 8
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 9
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 10
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 11
+    role: 1
+    fixedMission: {fileID: 0}
+    sceneName: 
+    onEnterBeat: {fileID: 0}
+    onSuccessBeat: {fileID: 0}
+    onFailureBeat: {fileID: 0}
+    afterEliteBeat: {fileID: 0}
+    finalEndingBeat: {fileID: 0}
+  - nodeNumber: 12
     role: 3
     fixedMission: {fileID: 11400000, guid: c773b877427864f559c3a17fd2eb93a8, type: 2}
     sceneName: Boss_Arena

@@ -148,22 +148,12 @@ public class HQSceneController : MonoBehaviour
         // 寫入 GameDB（同時自動裝備起始技能）
         GameDB.Instance?.Player.SelectFaction(chosen);
 
-        Debug.Log($"[HQSceneController] 確認派系：{chosen.factionName}，出發！");
+        Debug.Log($"[HQSceneController] 確認派系：{chosen.factionName}，進入教學！");
 
         UIManager.Instance?.FadeOut(1.0f, () =>
         {
-            // 🔧 暫時跳過教學，直接進入第一關
-            // GameFlowManager.Instance?.ChangeState(new TutorialState());
-            
-            if (GameDB.Instance?.Campaign.StartFormalCampaign() == true)
-            {
-                Debug.Log("[HQSceneController] 跳過教學，直接開始第一關戰役");
-                GameFlowManager.Instance?.ChangeState(new GameplayState(GameDB.Instance.Campaign.CurrentNodeNumber));
-            }
-            else
-            {
-                Debug.LogError("[HQSceneController] 無法啟動戰役，請檢查 CampaignDefinition 和 MissionPool 配置");
-            }
+            // 一律進入教學關卡，教學結束後會顯示節點 1 的二選一選路
+            GameFlowManager.Instance?.ChangeState(new TutorialState());
         });
     }
 

@@ -514,10 +514,33 @@ public class CampaignData
         }
 
         Results.Clear();
-        PendingOptions = System.Array.Empty<RoomOption>();
         IsTutorialActive = false;
         _resolvedNodeNumber = -1;
-        return ActivateFixedNode(1);
+        
+        // 檢查節點 1 的角色
+        CampaignNodeDefinition firstNode = _definition.GetNode(1);
+        if (firstNode == null)
+        {
+            Debug.LogError("[CampaignData] 缺少第 1 節點定義。");
+            return false;
+        }
+
+        if (firstNode.role == EncounterNodeRole.MissionChoice)
+        {
+            // 節點 1 是二選一，生成選項供 HQ 或 Tutorial 顯示選路介面
+            CurrentNodeNumber = 0;
+            CurrentRole = EncounterNodeRole.MissionChoice;
+            _resolvedNodeNumber = 0;  // 標記為「可以推進」（沒有上一關需要結算）
+            PendingOptions = BuildOffers(1);
+            NotifyProgressChanged();
+            return PendingOptions.Length == 2;
+        }
+        else
+        {
+            // 固定節點（Opening, Elite, FinalBoss）
+            PendingOptions = System.Array.Empty<RoomOption>();
+            return ActivateFixedNode(1);
+        }
     }
 
     public void ResolveCurrentEncounter(EncounterOutcome outcome)

@@ -2,23 +2,31 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// S1 劇情介紹場景管理器。
+/// 劇情播放完畢後自動進入總部（HQState）。
+/// </summary>
 public class S1Manager : MonoBehaviour
 {
-    public Button skipBtn;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    // 移除：跳過按鈕已移除，劇情必須完整播放
+    // public Button skipBtn;
+
     void Start()
     {
-        skipBtn.onClick.AddListener(OnSkipButtonClick);
+        // 移除：跳過按鈕已移除
+        // skipBtn.onClick.AddListener(OnSkipButtonClick);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        // 未來可在此處監聽劇情播放完畢事件，自動切換到 HQState
     }
 
+    // 移除：跳過功能已移除
+    /*
     private void OnSkipButtonClick()
     {
         GameFlowManager.Instance.ChangeState(new HQState());
     }
+    */
 }

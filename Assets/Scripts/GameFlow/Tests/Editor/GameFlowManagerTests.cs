@@ -13,50 +13,89 @@ public class GameFlowManagerTests
     private readonly List<Object> _createdAssets = new List<Object>();
 
     [Test]
-    public void Campaign_EliteIsNodeFour_AndFinalBossIsTheOnlyRunEnd()
+    public void Campaign_EliteIsNodeSix_AndFinalBossIsTheOnlyRunEnd()
     {
         CampaignDefinition definition = CreateDefinition();
         MissionPool pool = CreatePool();
         var campaign = new CampaignData(definition, pool);
 
         Assert.That(campaign.StartFormalCampaign(), Is.True);
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(0));  // 準備進入節點 1
+        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.MissionChoice));
+        Assert.That(campaign.PendingOptions, Has.Length.EqualTo(2));  // 已生成選項
+
+        // 選擇路線 0，進入節點 1
+        Assert.That(campaign.TrySelectRoute(0), Is.True);
         Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(1));
-        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.Opening));
 
         ResolveAndChoose(campaign); // 1 -> choose 2
         ResolveAndChoose(campaign); // 2 -> choose 3
+        ResolveAndChoose(campaign); // 3 -> choose 4
+        ResolveAndChoose(campaign); // 4 -> choose 5
 
         campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
         Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAtElite, out bool endedAtElite), Is.True);
         Assert.That(hasChoiceAtElite, Is.False);
         Assert.That(endedAtElite, Is.False);
-        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(4));
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(6));
         Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.Elite));
 
-        // Elite 的結算依然生成第 5 節點的雙選項，不能結束這一局。
+        // Elite 的結算依然生成第 7 節點的雙選項，不能結束這一局。
         campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
         Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAfterElite, out bool endedAfterElite), Is.True);
         Assert.That(hasChoiceAfterElite, Is.True);
         Assert.That(endedAfterElite, Is.False);
         Assert.That(campaign.PendingOptions, Has.Length.EqualTo(2));
-        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(4));
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(6));
 
-        Assert.That(campaign.TrySelectRoute(0), Is.True); // 5
-        ResolveAndChoose(campaign); // 5 -> choose 6
-        ResolveAndChoose(campaign); // 6 -> choose 7
+        Assert.That(campaign.TrySelectRoute(0), Is.True); // 7
+        ResolveAndChoose(campaign); // 7 -> choose 8
+        ResolveAndChoose(campaign); // 8 -> choose 9
+        ResolveAndChoose(campaign); // 9 -> choose 10
+        ResolveAndChoose(campaign); // 10 -> choose 11
 
         campaign.ResolveCurrentEncounter(EncounterOutcome.Failed);
         Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceBeforeFinal, out bool endedBeforeFinal), Is.True);
         Assert.That(hasChoiceBeforeFinal, Is.False);
         Assert.That(endedBeforeFinal, Is.False);
-        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(8));
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(12));
         Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.FinalBoss));
 
         campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
         Assert.That(campaign.TryPrepareNextStep(out bool hasChoiceAfterFinal, out bool endedAfterFinal), Is.True);
         Assert.That(hasChoiceAfterFinal, Is.False);
         Assert.That(endedAfterFinal, Is.True);
-        Assert.That(campaign.Results, Has.Count.EqualTo(8));
+        Assert.That(campaign.Results, Has.Count.EqualTo(12));
+    }
+
+    [Test]
+    public void Campaign_NodeOneIsAlsoMissionChoice_AndReturnsValidPendingOptions()
+    {
+        CampaignDefinition definition = CreateDefinition();
+        MissionPool pool = CreatePool();
+        var campaign = new CampaignData(definition, pool);
+
+        // 啟動戰役時，節點 1 是 MissionChoice
+        Assert.That(campaign.StartFormalCampaign(), Is.True);
+        
+        // 應該生成 2 個任務選項
+        Assert.That(campaign.PendingOptions, Has.Length.EqualTo(2));
+        Assert.That(campaign.PendingOptions[0].mission, Is.Not.Null);
+        Assert.That(campaign.PendingOptions[1].mission, Is.Not.Null);
+        
+        // CurrentNodeNumber 應為 0（準備進入節點 1）
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(0));
+        Assert.That(campaign.CurrentRole, Is.EqualTo(EncounterNodeRole.MissionChoice));
+        
+        // 記錄選擇前的任務引用
+        RoomMissionData selectedMission = campaign.PendingOptions[0].mission;
+        
+        // 玩家選擇其中一個路線
+        Assert.That(campaign.TrySelectRoute(0), Is.True);
+        
+        // 選擇後 CurrentNodeNumber 應為 1
+        Assert.That(campaign.CurrentNodeNumber, Is.EqualTo(1));
+        Assert.That(campaign.ActiveRoom.mission, Is.SameAs(selectedMission));
     }
 
     [Test]
@@ -124,21 +163,24 @@ public class GameFlowManagerTests
 
     private CampaignDefinition CreateDefinition()
     {
-        RoomMissionData opening = CreateMission("Opening", 1, 1);
-        RoomMissionData elite = CreateMission("Elite", 4, 4);
+        RoomMissionData elite = CreateMission("Elite", 6, 6);
         CampaignDefinition definition = Track(ScriptableObject.CreateInstance<CampaignDefinition>());
         SetPrivateField(definition, "defaultSeed", 424242);
         SetPrivateField(definition, "routeDoorPrefab", Track(new GameObject("RouteDoorPrefab")));
         SetPrivateField(definition, "nodes", new List<CampaignNodeDefinition>
         {
-            new CampaignNodeDefinition { nodeNumber = 1, role = EncounterNodeRole.Opening, fixedMission = opening },
+            new CampaignNodeDefinition { nodeNumber = 1, role = EncounterNodeRole.MissionChoice },
             new CampaignNodeDefinition { nodeNumber = 2, role = EncounterNodeRole.MissionChoice },
             new CampaignNodeDefinition { nodeNumber = 3, role = EncounterNodeRole.MissionChoice },
-            new CampaignNodeDefinition { nodeNumber = 4, role = EncounterNodeRole.Elite, fixedMission = elite },
+            new CampaignNodeDefinition { nodeNumber = 4, role = EncounterNodeRole.MissionChoice },
             new CampaignNodeDefinition { nodeNumber = 5, role = EncounterNodeRole.MissionChoice },
-            new CampaignNodeDefinition { nodeNumber = 6, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 6, role = EncounterNodeRole.Elite, fixedMission = elite },
             new CampaignNodeDefinition { nodeNumber = 7, role = EncounterNodeRole.MissionChoice },
-            new CampaignNodeDefinition { nodeNumber = 8, role = EncounterNodeRole.FinalBoss, sceneName = "TestSmallBoss" },
+            new CampaignNodeDefinition { nodeNumber = 8, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 9, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 10, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 11, role = EncounterNodeRole.MissionChoice },
+            new CampaignNodeDefinition { nodeNumber = 12, role = EncounterNodeRole.FinalBoss, sceneName = "TestSmallBoss" },
         });
         return definition;
     }
@@ -148,9 +190,9 @@ public class GameFlowManagerTests
         MissionPool pool = Track(ScriptableObject.CreateInstance<MissionPool>());
         pool.entries = new List<MissionPool.Entry>
         {
-            new MissionPool.Entry { mission = CreateMission("Eliminate", 2, 7), weight = 5 },
-            new MissionPool.Entry { mission = CreateMission("Survive", 2, 7), weight = 5 },
-            new MissionPool.Entry { mission = CreateMission("Vote", 2, 7), weight = 5 },
+            new MissionPool.Entry { mission = CreateMission("Eliminate", 1, 11), weight = 5 },
+            new MissionPool.Entry { mission = CreateMission("Survive", 1, 11), weight = 5 },
+            new MissionPool.Entry { mission = CreateMission("Vote", 1, 11), weight = 5 },
         };
         return pool;
     }
