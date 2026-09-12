@@ -133,23 +133,16 @@ public class RoomExitController : MonoBehaviour
         }
 
         singleDoor.gameObject.SetActive(true);
-        
-        // 直接解鎖單門（不需要等待敵人全滅/獎勵收集，因為已經走完流程才會到這裡）
         singleDoor.ForceUnlock();
-        
-        Debug.Log("[RoomExitController] 啟用單門模式並解鎖");
     }
 
     private void ShowRouteDoors()
     {
-        Debug.Log("[RoomExitController] ShowRouteDoors 被調用");
-        
         if (routeDoorLeft == null || routeDoorRight == null)
         {
             Debug.LogError($"[RoomExitController] 選路門未設定！Left={routeDoorLeft}, Right={routeDoorRight}");
             return;
         }
-        Debug.Log($"[RoomExitController] ✓ 雙門引用存在 - Left: {routeDoorLeft.gameObject.name}, Right: {routeDoorRight.gameObject.name}");
 
         var options = GameDB.Instance?.Campaign.PendingOptions;
         if (options == null || options.Length != 2)
@@ -157,24 +150,14 @@ public class RoomExitController : MonoBehaviour
             Debug.LogError($"[RoomExitController] PendingOptions 數量不正確！長度={options?.Length ?? 0}");
             return;
         }
-        Debug.Log("[RoomExitController] ✓ PendingOptions 有 2 個選項");
 
-        // 啟用雙門並配置選路索引
-        Debug.Log("[RoomExitController] 設定左門為 Active...");
         routeDoorLeft.gameObject.SetActive(true);
-        Debug.Log($"[RoomExitController] 左門 Active 狀態: {routeDoorLeft.gameObject.activeInHierarchy}");
-        
-        Debug.Log("[RoomExitController] 設定右門為 Active...");
         routeDoorRight.gameObject.SetActive(true);
-        Debug.Log($"[RoomExitController] 右門 Active 狀態: {routeDoorRight.gameObject.activeInHierarchy}");
 
-        Debug.Log("[RoomExitController] 配置左門路線索引 0...");
-        routeDoorLeft.ConfigureRoute(0);   // 左門對應 PendingOptions[0]
-        
-        Debug.Log("[RoomExitController] 配置右門路線索引 1...");
-        routeDoorRight.ConfigureRoute(1);  // 右門對應 PendingOptions[1]
+        routeDoorLeft.ConfigureRoute(0);
+        routeDoorRight.ConfigureRoute(1);
 
-        Debug.Log($"[RoomExitController] ✓ 雙門配置完成 - 左：{options[0].mission.objectiveType}，右：{options[1].mission.objectiveType}");
+        Debug.Log($"[RoomExitController] 雙門配置完成 - 左：{options[0].mission.objectiveType}，右：{options[1].mission.objectiveType}");
     }
 
     private void HideAllDoors()

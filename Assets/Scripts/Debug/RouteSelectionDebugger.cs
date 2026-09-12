@@ -1,8 +1,10 @@
+#if UNITY_EDITOR
 using UnityEngine;
 
 /// <summary>
 /// 教學場景選路診斷工具。
 /// 放在教學場景中，按數字鍵顯示各種診斷資訊。
+/// 僅在 Editor 模式下編譯，正式版 Build 時自動排除。
 /// </summary>
 public class RouteSelectionDebugger : MonoBehaviour
 {
@@ -240,3 +242,5 @@ public class RouteSelectionDebugger : MonoBehaviour
         GUILayout.EndArea();
     }
 }
+
+#endif

@@ -20,6 +20,7 @@ public class MissionTracker : MonoBehaviour
 
     private RoomMissionData _mission;
     private bool _resolved;
+    private bool _subscribed = false;  // 訂閱完成標記
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -78,6 +79,7 @@ public class MissionTracker : MonoBehaviour
         
         Debug.Log($"[MissionTracker] 延遲訂閱完成，當前敵人數量: {EnemySpawnTracker.AliveCount}");
         Subscribe();
+        _subscribed = true;  // 訂閱完成，允許 Update() 開始檢查
     }
 
     private void OnDisable()
@@ -88,7 +90,12 @@ public class MissionTracker : MonoBehaviour
     private void Update()
     {
         // 搶票任務需要定時檢查即時票數
-        if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVotePercent && !_resolved)
+        // 只在 Active 階段且訂閱完成後檢查，避免場景載入時誤判
+        if (_mission != null && 
+            _mission.objectiveType == MissionObjectiveType.ReachVotePercent && 
+            !_resolved &&
+            _subscribed &&
+            BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active)
         {
             CheckReachVotePercent();
         }
@@ -101,6 +108,7 @@ public class MissionTracker : MonoBehaviour
         if (IsFinalBossEncounter())
         {
             BattleEventManager.OnFinalBossDefeated += HandleFinalBossDefeated;
+            _subscribed = true;  // 最終戰不需延遲訂閱
             return;
         }
 
@@ -111,8 +119,10 @@ public class MissionTracker : MonoBehaviour
             case MissionObjectiveType.EliminateAll:
                 BattleEventManager.OnAllEnemiesDefeated += HandleEliminateAll;
                 
-                // [FIX] 延遲檢查已經在 DelayedSubscribe 中處理，這裡只做最後的驗證
-                if (EnemySpawnTracker.AliveCount == 0)
+                // [FIX] 只在 Active 階段才檢查「敵人已全滅」的邊界情況
+                // 場景剛載入時（Loading/Briefing 階段）敵人可能還沒生成，此時不應觸發完成
+                if (EnemySpawnTracker.AliveCount == 0 && 
+                    BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active)
                 {
                     // 雙重確認：確保場上真的沒有敵人
                     var remaining = Object.FindObjectsByType<EnemyController>(
@@ -129,7 +139,7 @@ public class MissionTracker : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log($"[MissionTracker] 任務開始，當前存活敵人: {EnemySpawnTracker.AliveCount}");
+                    Debug.Log($"[MissionTracker] 任務開始，當前存活敵人: {EnemySpawnTracker.AliveCount}，階段: {BattleEventManager.CurrentEncounterPhase}");
                 }
                 break;
 

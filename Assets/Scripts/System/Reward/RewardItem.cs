@@ -26,6 +26,7 @@ public class RewardItem : MonoBehaviour
     private PolicyCardData _card;
     private bool _playerInRange = false;
     private bool _selected      = false;
+    private float _spawnTime    = 0f;  // 生成時間（用於防止立即觸發）
 
     /// <summary>玩家選擇此物件後觸發，傳回選擇的卡牌。</summary>
     public event System.Action<RewardItem, PolicyCardData> OnItemSelected;
@@ -36,6 +37,7 @@ public class RewardItem : MonoBehaviour
     public void Setup(PolicyCardData card)
     {
         _card = card;
+        _spawnTime = Time.time;  // 記錄生成時間
 
         // 顯示卡牌圖示
         if (cardSpriteRenderer != null && card != null)
@@ -68,6 +70,9 @@ public class RewardItem : MonoBehaviour
     {
         if (!_playerInRange || _selected) return;
 
+        // 防止生成後立即被選擇（給玩家 0.5 秒反應時間）
+        if (Time.time - _spawnTime < 0.5f) return;
+
         bool interactPressed = interactAction != null
             ? interactAction.action.WasPerformedThisFrame()
             : Input.GetKeyDown(KeyCode.E);  // fallback：無 Action 時用 E 鍵
@@ -82,6 +87,7 @@ public class RewardItem : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         _playerInRange = true;
+        Debug.Log($"[RewardItem] 玩家進入獎勵觸發範圍 - 卡牌: {_card?.cardName}, 生成後經過: {Time.time - _spawnTime:F2}秒");
         UIManager.Instance?.ShowRewardDescription(_card);
     }
 
@@ -89,6 +95,7 @@ public class RewardItem : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         _playerInRange = false;
+        Debug.Log($"[RewardItem] 玩家離開獎勵觸發範圍 - 卡牌: {_card?.cardName}");
         UIManager.Instance?.HideRewardDescription();
     }
 
@@ -115,7 +122,7 @@ public class RewardItem : MonoBehaviour
 
         UIManager.Instance?.HideRewardDescription();
 
-        Debug.Log($"[RewardItem] 玩家選擇卡牌：{_card?.cardName}");
+        Debug.Log($"[RewardItem] 玩家選擇卡牌：{_card?.cardName}（生成後 {Time.time - _spawnTime:F2}秒）");
         OnItemSelected?.Invoke(this, _card);
     }
 }

@@ -2,10 +2,15 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>載入目前 CampaignData 節點；任務結果只會轉交給 StageClearState。</summary>
+/// <summary>
+/// 載入目前 CampaignData 節點；任務結果只會轉交給 StageClearState。
+/// </summary>
 public class GameplayState : IState
 {
-    public GameplayState(int ignoredRoomNumber = 0) { }
+    /// <summary>
+    /// 建構 GameplayState，場景由 CampaignData.GetCurrentRoomSceneName() 決定。
+    /// </summary>
+    public GameplayState() { }
 
     public void Enter()
     {
@@ -92,8 +97,18 @@ public class GameplayState : IState
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // T 鍵：快速完成當前關卡（開發測試用）
+        // 只在 Active 階段允許，避免在獎勵選擇時誤觸
         if (Input.GetKeyDown(KeyCode.T))
-            BattleEventManager.TriggerObjectiveResolved(EncounterOutcome.Success);
+        {
+            if (BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active)
+            {
+                BattleEventManager.TriggerObjectiveResolved(EncounterOutcome.Success);
+            }
+            else
+            {
+                Debug.LogWarning($"[GameplayState] T 鍵在 {BattleEventManager.CurrentEncounterPhase} 階段被忽略（只在 Active 階段有效）");
+            }
+        }
 #endif
     }
 

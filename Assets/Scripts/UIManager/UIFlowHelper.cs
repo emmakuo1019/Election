@@ -2,7 +2,12 @@ using UnityEngine;
 
 /// <summary>
 /// 協助將 UI Button 點擊事件轉發給 GameFlowManager 進行狀態切換。
-/// 掛載在按鈕或 UI Root 上，並在 Button 的 OnClick 中呼叫對應的方法。
+/// 
+/// 2026-09-11 盤點結論：
+/// - GoToHQ() 確認被 S0.unity（主選單場景）的按鈕 OnClick 使用
+/// - StartGameplay()、GoToStageClear()、GoToGameEnd()、GoToMainMenu() 目前無場景綁定
+/// - 全專案掃描（所有 .unity 和 .prefab）確認無其他 UnityEvent 綁定
+/// - 保留所有方法不刪除，避免場景引用丟失
 /// </summary>
 public class UIFlowHelper : MonoBehaviour
 {
@@ -21,7 +26,7 @@ public class UIFlowHelper : MonoBehaviour
     /// </summary>
     public void StartGameplay(int roomNumber = 1)
     {
-        GameFlowManager.Instance.ChangeState(new GameplayState(roomNumber));
+        GameFlowManager.Instance.ChangeState(new TutorialState());
     }
 
     /// <summary>

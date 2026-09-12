@@ -500,6 +500,13 @@ public class CampaignData
 
     public bool StartFormalCampaign()
     {
+        // 🔒 防止戰役進行中被重複呼叫
+        if (CurrentNodeNumber > 0 && !IsTutorialActive)
+        {
+            Debug.LogWarning($"[CampaignData] StartFormalCampaign 被呼叫，但戰役已在進行中（節點 {CurrentNodeNumber}），忽略此呼叫");
+            return false;
+        }
+
         string error = _definition == null ? "缺少 CampaignDefinition。" : string.Empty;
         if (_definition == null || !_definition.IsValid(out error))
         {
@@ -513,6 +520,7 @@ public class CampaignData
             return false;
         }
 
+        Debug.Log("[CampaignData] 🚀 開始新的戰役，清空進度");
         Results.Clear();
         IsTutorialActive = false;
         _resolvedNodeNumber = -1;

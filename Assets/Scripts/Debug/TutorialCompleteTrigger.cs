@@ -1,8 +1,10 @@
+#if UNITY_EDITOR
 using UnityEngine;
 
 /// <summary>
 /// 教學完成觸發器 - 暫時用來測試選路門顯示
 /// 玩家走進這個 Trigger 會強制觸發教學完成流程
+/// 僅在 Editor 模式下編譯，正式版 Build 時自動排除。
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class TutorialCompleteTrigger : MonoBehaviour
@@ -113,3 +115,5 @@ public class TutorialCompleteTrigger : MonoBehaviour
         GUILayout.EndArea();
     }
 }
+
+#endif

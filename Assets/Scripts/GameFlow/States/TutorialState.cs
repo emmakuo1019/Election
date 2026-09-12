@@ -96,7 +96,7 @@ public class TutorialState : IState
         {
             // 節點 1 是固定關（不太可能，但保險處理）
             Debug.LogWarning($"[TutorialState] 節點 1 不是二選一（PendingOptions 長度={campaign.PendingOptions?.Length ?? 0}），直接進入固定關。");
-            GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+            GameFlowManager.Instance?.ChangeState(new GameplayState());
             return;
         }
         Debug.Log("[TutorialState] ✓ PendingOptions 有 2 個選項");
@@ -161,7 +161,7 @@ public class TutorialState : IState
         // 切換到 GameplayState，載入節點 1 選中的任務場景
         Debug.Log($"[TutorialState] 進入節點 {campaign.CurrentNodeNumber}，場景：{campaign.GetCurrentRoomSceneName()}");
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
-        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+        GameFlowManager.Instance?.ChangeState(new GameplayState());
     }
 
     private void HandlePlayerDied()

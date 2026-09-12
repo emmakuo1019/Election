@@ -51,7 +51,7 @@ public class StartGame : MonoBehaviour
 
             // 只有在 HQ 或遊戲開始時才允許開始新戰役
             if (campaign?.StartFormalCampaign() == true)
-                GameFlowManager.Instance.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+                GameFlowManager.Instance.ChangeState(new TutorialState());
         }
     }
     private void OnTriggerExit(Collider other)
@@ -81,7 +81,7 @@ public class StartGame : MonoBehaviour
         }
 
         if (campaign?.StartFormalCampaign() == true)
-            GameFlowManager.Instance.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+            GameFlowManager.Instance.ChangeState(new TutorialState());
     }
     
 }

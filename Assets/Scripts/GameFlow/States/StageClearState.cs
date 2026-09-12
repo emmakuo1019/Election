@@ -92,7 +92,7 @@ public class StageClearState : IState
         _transitioned = true;
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
         Debug.Log($"[StageClearState] 準備切換到節點 {campaign.CurrentNodeNumber}");
-        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+        GameFlowManager.Instance?.ChangeState(new GameplayState());
     }
 
     private void HandleRouteSelected(int optionIndex)
@@ -102,7 +102,7 @@ public class StageClearState : IState
         if (campaign == null || !campaign.TrySelectRoute(optionIndex)) return;
         _transitioned = true;
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
-        GameFlowManager.Instance?.ChangeState(new GameplayState(campaign.CurrentNodeNumber));
+        GameFlowManager.Instance?.ChangeState(new GameplayState());
     }
 
     private void TransitionToEnd()
