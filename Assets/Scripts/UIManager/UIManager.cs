@@ -290,6 +290,10 @@ public class UIManager : MonoBehaviour
     [Tooltip("教學常駐小提示框 UI 腳本（掛在教學場景的 Canvas 下）")]
     [SerializeField] private TutorialTipsUI tutorialTipsUI;
 
+    [Header("Exit Direction UI")]
+    [Tooltip("出口方向指示器 - 持續顯示箭頭指向出口位置")]
+    [SerializeField] private ExitDirectionIndicator exitDirectionIndicator;
+
     [Header("Reward UI")]
     [Tooltip("場景內獎勵物件的說明面板（置中排版）")]
     [SerializeField] private RewardDescriptionUI rewardDescriptionUI;
@@ -369,12 +373,15 @@ public class UIManager : MonoBehaviour
     {
         tutorialDialogueUI  = FindFirstObjectByType<TutorialDialogueUI>(FindObjectsInactive.Include);
         tutorialTipsUI      = FindFirstObjectByType<TutorialTipsUI>(FindObjectsInactive.Include);
+        exitDirectionIndicator = FindFirstObjectByType<ExitDirectionIndicator>(FindObjectsInactive.Include);
         rewardDescriptionUI = FindFirstObjectByType<RewardDescriptionUI>(FindObjectsInactive.Include);
 
         if (tutorialDialogueUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialDialogueUI。");
         if (tutorialTipsUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialTipsUI。");
+        if (exitDirectionIndicator == null)
+            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 ExitDirectionIndicator。");
         if (rewardDescriptionUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 RewardDescriptionUI。");
     }
@@ -401,4 +408,34 @@ public class UIManager : MonoBehaviour
     {
         rewardDescriptionUI?.Hide();
     }
+
+    // ── Exit Direction Indicator ──────────────────────────────────────
+
+    /// <summary>
+    /// 顯示出口方向指示器，指向指定的出口門。
+    /// 在 RoomExitController.ShowExitDoors 後調用。
+    /// </summary>
+    public void ShowExitDirectionIndicator(Transform exitTarget)
+    {
+        if (exitDirectionIndicator == null)
+        {
+            Debug.LogWarning("[UIManager] exitDirectionIndicator 未設定。");
+            return;
+        }
+        exitDirectionIndicator.SetTarget(exitTarget);
+    }
+
+    /// <summary>
+    /// 隱藏出口方向指示器。
+    /// 在玩家進入門時調用。
+    /// </summary>
+    public void HideExitDirectionIndicator()
+    {
+        exitDirectionIndicator?.Hide();
+    }
+
+    /// <summary>
+    /// 取得 ExitDirectionIndicator 實例。
+    /// </summary>
+    public ExitDirectionIndicator GetExitDirectionIndicator() => exitDirectionIndicator;
 }

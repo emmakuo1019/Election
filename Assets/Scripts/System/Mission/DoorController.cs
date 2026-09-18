@@ -80,6 +80,14 @@ public class DoorController : MonoBehaviour
         }
 
         UpdateVisual();
+        
+        // 確保門的 Collider 正確設定為 Trigger
+        Collider col = GetComponent<Collider>();
+        if (col != null && !col.isTrigger)
+        {
+            Debug.LogWarning($"[DoorController] {gameObject.name} 的 Collider 未設為 Trigger，自動修正。");
+            col.isTrigger = true;
+        }
     }
 
     // ── 公開 API ──────────────────────────────────────────────────────
@@ -105,6 +113,9 @@ public class DoorController : MonoBehaviour
     {
         RoomMissionData mission = GetMission();
         string label = mission != null ? BuildLabel(mission) : "前往下一區域";
+        
+        Debug.Log($"[DoorController] ShowTip 被調用 - 門:{gameObject.name}, 任務:{mission?.objectiveType}, 圖示:{(mission?.icon != null ? "有" : "無")}");
+        
         UIManager.Instance?.ShowTutorialTipsText(label, mission?.icon);
     }
 
@@ -167,6 +178,7 @@ public class DoorController : MonoBehaviour
         _hasSelected = true;
 
         UIManager.Instance?.HideTutorialTips();
+        UIManager.Instance?.HideExitDirectionIndicator();
         
         if (_isRouteDoor)
         {

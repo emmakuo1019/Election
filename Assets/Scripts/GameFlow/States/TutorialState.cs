@@ -66,6 +66,22 @@ public class TutorialState : IState
 
         // 教學場景不開倒數計時；它也遵守同一個輸入階段，而不計入正式節點。
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Active);
+        
+        // 延遲一段時間後自動顯示出口門（讓玩家可以直接選擇下一關）
+        if (GameFlowManager.Instance != null)
+            GameFlowManager.Instance.StartCoroutine(AutoShowExitDoorsAfterDelay());
+    }
+    
+    /// <summary>
+    /// 教學場景載入後，延遲顯示出口門，讓玩家可以直接選擇下一關。
+    /// </summary>
+    private IEnumerator AutoShowExitDoorsAfterDelay()
+    {
+        // 等待 3 秒，讓教學對話有時間顯示
+        yield return new WaitForSeconds(3f);
+        
+        Debug.Log("[TutorialState] 自動觸發教學完成流程");
+        BattleEventManager.TriggerRoomCleared();
     }
 
     private void HandleTutorialComplete()

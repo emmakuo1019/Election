@@ -12,9 +12,19 @@ public class AttackRangeMesh : MonoBehaviour
     [Header("形狀")]
     public int segments = 30;
     public float heightOffset = 0.05f;
+    
+    [Header("近距離圓形範圍")]
+    [Tooltip("是否啟用玩家腳下的圓形攻擊範圍")]
+    public bool enableCloseRangeCircle = true;
+    [Tooltip("圓形範圍半徑（通常設為扇形最窄處的補償值）")]
+    public float closeRangeRadius = 1.5f;
 
     private Mesh mesh;
     private MeshRenderer meshRenderer;
+    
+    // 用於圓形範圍的獨立物件
+    private GameObject circleRangeObject;
+    private MeshRenderer circleRenderer;
 
     void Awake()
     {
@@ -23,6 +33,15 @@ public class AttackRangeMesh : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
 
         BindSource();
+        CreateCloseRangeCircle();
+    }
+    
+    void OnDestroy()
+    {
+        if (circleRangeObject != null)
+        {
+            Destroy(circleRangeObject);
+        }
     }
 
     void OnEnable()
@@ -131,11 +150,21 @@ public class AttackRangeMesh : MonoBehaviour
             SetShape(attackSource.AttackRange, attackSource.AttackAngle);
         SyncToSourcePosition();
         meshRenderer.enabled = true;
+        
+        if (enableCloseRangeCircle && circleRenderer != null)
+        {
+            circleRenderer.enabled = true;
+        }
     }
 
     public void Hide()
     {
         meshRenderer.enabled = false;
+        
+        if (circleRenderer != null)
+        {
+            circleRenderer.enabled = false;
+        }
     }
 
     public void ShowIdle()
@@ -144,6 +173,11 @@ public class AttackRangeMesh : MonoBehaviour
             SetShape(attackSource.AttackRange, attackSource.AttackAngle);
         SyncToSourcePosition();
         meshRenderer.enabled = true;
+        
+        if (enableCloseRangeCircle && circleRenderer != null)
+        {
+            circleRenderer.enabled = true;
+        }
     }
 
     private void SyncToSourcePosition()
@@ -158,5 +192,91 @@ public class AttackRangeMesh : MonoBehaviour
         {
             transform.rotation = Quaternion.LookRotation(attackSource.AttackDirection);
         }
+        
+        // 同步圓形範圍位置（圓形不旋轉）
+        if (circleRangeObject != null && attackSourceComponent != null)
+        {
+            circleRangeObject.transform.position = attackSourceComponent.transform.position + positionOffset;
+        }
+    }
+    
+    /// <summary>
+    /// 建立腳下的圓形攻擊範圍 Mesh
+    /// </summary>
+    private void CreateCloseRangeCircle()
+    {
+        if (!enableCloseRangeCircle)
+            return;
+        
+        // 建立獨立的 GameObject
+        circleRangeObject = new GameObject("CloseRangeCircle");
+        circleRangeObject.transform.SetParent(transform.parent);
+        circleRangeObject.transform.localPosition = positionOffset;
+        circleRangeObject.transform.localRotation = Quaternion.identity;
+        
+        // 新增 MeshFilter 和 MeshRenderer
+        MeshFilter circleMeshFilter = circleRangeObject.AddComponent<MeshFilter>();
+        circleRenderer = circleRangeObject.AddComponent<MeshRenderer>();
+        
+        // 使用與扇形相同的材質
+        circleRenderer.sharedMaterial = meshRenderer.sharedMaterial;
+        circleRenderer.enabled = false;
+        
+        // 生成圓形 Mesh
+        Mesh circleMesh = GenerateCircleMesh(closeRangeRadius, 32);
+        circleMeshFilter.mesh = circleMesh;
+    }
+    
+    /// <summary>
+    /// 生成圓形 Mesh
+    /// </summary>
+    private Mesh GenerateCircleMesh(float radius, int segments)
+    {
+        Mesh circleMesh = new Mesh();
+        int vertexCount = segments + 2; // 中心點 + 外圈點 + 閉合點
+        
+        Vector3[] vertices = new Vector3[vertexCount];
+        int[] triangles = new int[segments * 3];
+        
+        // 抵消父物件的縮放
+        float lossyScaleXZ = Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.z));
+        float displayRadius = lossyScaleXZ > 0.0001f ? radius / lossyScaleXZ : radius;
+        
+        // 中心點
+        vertices[0] = new Vector3(0, heightOffset, 0);
+        
+        // 外圈頂點
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = ((float)i / segments) * 2f * Mathf.PI;
+            vertices[i + 1] = new Vector3(
+                Mathf.Cos(angle) * displayRadius,
+                heightOffset,
+                Mathf.Sin(angle) * displayRadius
+            );
+        }
+        
+        // 三角形索引
+        for (int i = 0; i < segments; i++)
+        {
+            triangles[i * 3] = 0;
+            triangles[i * 3 + 1] = i + 1;
+            triangles[i * 3 + 2] = i + 2;
+        }
+        
+        circleMesh.vertices = vertices;
+        circleMesh.triangles = triangles;
+        circleMesh.RecalculateNormals();
+        circleMesh.RecalculateBounds();
+        
+        return circleMesh;
+    }
+    
+    /// <summary>
+    /// 取得圓形範圍半徑（供攻擊判定使用）
+    /// </summary>
+    public float GetCloseRangeRadius()
+    {
+        return enableCloseRangeCircle ? closeRangeRadius : 0f;
     }
 }

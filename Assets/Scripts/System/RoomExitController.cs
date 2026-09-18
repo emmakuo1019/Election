@@ -93,6 +93,9 @@ public class RoomExitController : MonoBehaviour
         {
             ShowSingleDoor();
         }
+
+        // 啟用出口方向指示器
+        UpdateExitDirectionIndicator();
     }
 
     /// <summary>
@@ -165,5 +168,57 @@ public class RoomExitController : MonoBehaviour
         if (singleDoor != null) singleDoor.gameObject.SetActive(false);
         if (routeDoorLeft != null) routeDoorLeft.gameObject.SetActive(false);
         if (routeDoorRight != null) routeDoorRight.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 更新出口方向指示器，指向最近的啟用門。
+    /// </summary>
+    private void UpdateExitDirectionIndicator()
+    {
+        Transform targetDoor = null;
+
+        // 找出當前啟用的門
+        if (singleDoor != null && singleDoor.gameObject.activeInHierarchy)
+        {
+            targetDoor = singleDoor.transform;
+        }
+        else if (routeDoorLeft != null && routeDoorLeft.gameObject.activeInHierarchy)
+        {
+            // 如果雙門都啟用，選擇離玩家最近的一個
+            if (routeDoorRight != null && routeDoorRight.gameObject.activeInHierarchy)
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    float distLeft = Vector3.Distance(player.transform.position, routeDoorLeft.transform.position);
+                    float distRight = Vector3.Distance(player.transform.position, routeDoorRight.transform.position);
+                    targetDoor = distLeft < distRight ? routeDoorLeft.transform : routeDoorRight.transform;
+                }
+                else
+                {
+                    // 玩家找不到時預設選左門
+                    targetDoor = routeDoorLeft.transform;
+                }
+            }
+            else
+            {
+                targetDoor = routeDoorLeft.transform;
+            }
+        }
+        else if (routeDoorRight != null && routeDoorRight.gameObject.activeInHierarchy)
+        {
+            targetDoor = routeDoorRight.transform;
+        }
+
+        // 設定指示器目標
+        if (targetDoor != null)
+        {
+            UIManager.Instance?.ShowExitDirectionIndicator(targetDoor);
+            Debug.Log($"[RoomExitController] 出口方向指示器指向：{targetDoor.name}");
+        }
+        else
+        {
+            Debug.LogWarning("[RoomExitController] 沒有啟用的門可以顯示方向指示器。");
+        }
     }
 }

@@ -230,14 +230,32 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             }
 
             Vector3 dirToTarget = toTarget.normalized;
-
-            // 判斷是否在攻擊扇形範圍內
-            float angle = Vector3.Angle(attackDir, dirToTarget);
-            Debug.Log($"[PlayerAttack]      攻擊方向角度={angle}°, 扇形半角={attackAngle / 2f}°");
+            float distanceToTarget = toTarget.magnitude;
             
-            if (angle < attackAngle / 2f)
+            // 組合式判定：圓形範圍（近距離） OR 扇形範圍（遠距離）
+            bool inCloseRange = false;
+            bool inSectorRange = false;
+            
+            // 1. 檢查是否在腳下圓形範圍內
+            if (attackRangeMesh != null && attackRangeMesh.enableCloseRangeCircle)
             {
-                Debug.Log($"[PlayerAttack]      ✓ 在攻擊範圍內！");
+                float closeRadius = attackRangeMesh.GetCloseRangeRadius();
+                inCloseRange = distanceToTarget <= closeRadius;
+                Debug.Log($"[PlayerAttack]      近距離圓形判定: 距離={distanceToTarget:F2}, 半徑={closeRadius:F2}, 結果={inCloseRange}");
+            }
+            
+            // 2. 檢查是否在扇形範圍內
+            float angle = Vector3.Angle(attackDir, dirToTarget);
+            inSectorRange = angle < attackAngle / 2f;
+            Debug.Log($"[PlayerAttack]      扇形判定: 角度={angle:F1}°, 半角={attackAngle / 2f:F1}°, 結果={inSectorRange}");
+            
+            // 最終判定：任一範圍命中即可
+            bool isInRange = inCloseRange || inSectorRange;
+
+            if (isInRange)
+            {
+                string hitType = inCloseRange ? "近距離圓形" : "遠距離扇形";
+                Debug.Log($"[PlayerAttack]      ✓ 在攻擊範圍內！({hitType})");
                 
                 // 如果是敵人，直接打斷並造成硬直
                 if (enemy != null)
