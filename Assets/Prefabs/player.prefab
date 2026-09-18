@@ -365,6 +365,8 @@ MonoBehaviour:
   attackSourceBehaviour: {fileID: 4360986305226485520}
   segments: 30
   heightOffset: 0.05
+  enableCloseRangeCircle: 1
+  closeRangeRadius: 1.5
 --- !u!1 &5403555500550337343
 GameObject:
   m_ObjectHideFlags: 0
@@ -565,7 +567,7 @@ GameObject:
   - component: {fileID: 8643603949296448256}
   m_Layer: 3
   m_Name: MainCamera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

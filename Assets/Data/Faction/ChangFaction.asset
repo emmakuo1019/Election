@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FactionData
   factionName: "\u9673\u6D3E"
   description: "\u5F37\u8ABF\u653F\u7B56\u7684\u63A8\u5EE3\uFF0C\u7372\u5F97\u5EE3\u5927\u7406\u6027\u9078\u6C11\u7684\u89AA\u775E"
-  starterSkill: {fileID: 11400000, guid: 609079fdae5bf4b50845829fe9c78a03, type: 2}
+  starterSkill: {fileID: 0}
   factionColor: {r: 0.9049808, g: 1, b: 0.4470588, a: 1}

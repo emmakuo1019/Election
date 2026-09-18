@@ -171,54 +171,85 @@ public class RoomExitController : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新出口方向指示器，指向最近的啟用門。
+    /// 更新出口方向指示器，支援單門或雙門場景。
     /// </summary>
     private void UpdateExitDirectionIndicator()
     {
-        Transform targetDoor = null;
+        System.Collections.Generic.List<Transform> activeDoors = new System.Collections.Generic.List<Transform>();
 
-        // 找出當前啟用的門
+        // 收集所有啟用的門
         if (singleDoor != null && singleDoor.gameObject.activeInHierarchy)
         {
-            targetDoor = singleDoor.transform;
+            activeDoors.Add(singleDoor.transform);
         }
-        else if (routeDoorLeft != null && routeDoorLeft.gameObject.activeInHierarchy)
+        
+        if (routeDoorLeft != null && routeDoorLeft.gameObject.activeInHierarchy)
         {
-            // 如果雙門都啟用，選擇離玩家最近的一個
-            if (routeDoorRight != null && routeDoorRight.gameObject.activeInHierarchy)
-            {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    float distLeft = Vector3.Distance(player.transform.position, routeDoorLeft.transform.position);
-                    float distRight = Vector3.Distance(player.transform.position, routeDoorRight.transform.position);
-                    targetDoor = distLeft < distRight ? routeDoorLeft.transform : routeDoorRight.transform;
-                }
-                else
-                {
-                    // 玩家找不到時預設選左門
-                    targetDoor = routeDoorLeft.transform;
-                }
-            }
-            else
-            {
-                targetDoor = routeDoorLeft.transform;
-            }
+            activeDoors.Add(routeDoorLeft.transform);
         }
-        else if (routeDoorRight != null && routeDoorRight.gameObject.activeInHierarchy)
+        
+        if (routeDoorRight != null && routeDoorRight.gameObject.activeInHierarchy)
         {
-            targetDoor = routeDoorRight.transform;
+            activeDoors.Add(routeDoorRight.transform);
         }
 
-        // 設定指示器目標
-        if (targetDoor != null)
+        // 根據門的數量選擇顯示方式
+        if (activeDoors.Count == 0)
         {
-            UIManager.Instance?.ShowExitDirectionIndicator(targetDoor);
-            Debug.Log($"[RoomExitController] 出口方向指示器指向：{targetDoor.name}");
+            Debug.LogWarning("[RoomExitController] 沒有啟用的門可以顯示方向指示器。");
+            return;
+        }
+
+        if (activeDoors.Count == 1)
+        {
+            // 單門：使用原本的單一指示器
+            UIManager.Instance?.ShowExitDirectionIndicator(activeDoors[0]);
+            Debug.Log($"[RoomExitController] 單一出口指示器指向：{activeDoors[0].name}");
         }
         else
         {
-            Debug.LogWarning("[RoomExitController] 沒有啟用的門可以顯示方向指示器。");
+            // 多門：使用多指示器管理器
+            MultiExitIndicatorManager multiIndicator = UIManager.Instance?.GetComponent<MultiExitIndicatorManager>();
+            if (multiIndicator != null)
+            {
+                multiIndicator.ShowMultipleExits(activeDoors);
+                Debug.Log($"[RoomExitController] 多出口指示器顯示 {activeDoors.Count} 個門：{string.Join(", ", activeDoors.ConvertAll(d => d.name))}");
+            }
+            else
+            {
+                // 回退方案：只顯示最近的門（向後相容）
+                Transform targetDoor = GetNearestDoor(activeDoors);
+                UIManager.Instance?.ShowExitDirectionIndicator(targetDoor);
+                Debug.LogWarning($"[RoomExitController] MultiExitIndicatorManager 未找到，使用回退方案（最近的門）：{targetDoor.name}");
+            }
         }
+    }
+
+    /// <summary>
+    /// 從門列表中找出離玩家最近的門。
+    /// </summary>
+    private Transform GetNearestDoor(System.Collections.Generic.List<Transform> doors)
+    {
+        if (doors == null || doors.Count == 0)
+            return null;
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+            return doors[0]; // 找不到玩家時返回第一個門
+
+        Transform nearest = doors[0];
+        float minDistance = Vector3.Distance(player.transform.position, nearest.position);
+
+        for (int i = 1; i < doors.Count; i++)
+        {
+            float distance = Vector3.Distance(player.transform.position, doors[i].position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearest = doors[i];
+            }
+        }
+
+        return nearest;
     }
 }

@@ -156,7 +156,6 @@ MonoBehaviour:
   stunVfxOffset: {x: 0, y: 2, z: 0}
   equippedSkills:
   - {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
-  equippedSkill: {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
 --- !u!1 &566546161834736190
 GameObject:
   m_ObjectHideFlags: 0
@@ -413,6 +412,8 @@ MonoBehaviour:
   attackSourceBehaviour: {fileID: 2538185110753480166}
   segments: 30
   heightOffset: 0.05
+  enableCloseRangeCircle: 1
+  closeRangeRadius: 1.5
 --- !u!1 &1672962025934922354
 GameObject:
   m_ObjectHideFlags: 0
@@ -571,7 +572,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 47a91359f80864e9facba0ac584a02fc, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.95025575, g: 0.6839622, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

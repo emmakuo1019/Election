@@ -16,7 +16,7 @@ MonoBehaviour:
   objectiveType: 0
   targetValue: 60
   icon: {fileID: 21300000, guid: 7ce32b620528d44718a6fc0e4f986a96, type: 3}
-  briefingStep: {fileID: 11400000, guid: 68cf172a8a71c4c48af3e115a27a7506, type: 2}
+  briefingStep: {fileID: 11400000, guid: d24cf049a0e42428fad7b11b81d90dff, type: 2}
   hudLayout: 3
   spawnConfig: {fileID: 11400000, guid: c9127c66315b446f0bea076835d576f8, type: 2}
   minCampaignNode: 1

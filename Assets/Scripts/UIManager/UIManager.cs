@@ -368,22 +368,29 @@ public class UIManager : MonoBehaviour
     /// UIManager 是 DontDestroyOnLoad，但 TutorialDialogueUI / TutorialTipsUI / RewardDescriptionUI
     /// 都放在戰鬥場景的 Canvas 下，場景切換後舊引用會失效（MissingReference）。
     /// GameplayState.LoadBattleSceneRoutine 在場景載入完成後立即呼叫此方法。
+    /// 
+    /// 注意：exitDirectionIndicator 不需要重新綁定，因為它跟隨 UIManager DontDestroyOnLoad。
     /// </summary>
     public void RebindTutorialUI()
     {
         tutorialDialogueUI  = FindFirstObjectByType<TutorialDialogueUI>(FindObjectsInactive.Include);
         tutorialTipsUI      = FindFirstObjectByType<TutorialTipsUI>(FindObjectsInactive.Include);
-        exitDirectionIndicator = FindFirstObjectByType<ExitDirectionIndicator>(FindObjectsInactive.Include);
         rewardDescriptionUI = FindFirstObjectByType<RewardDescriptionUI>(FindObjectsInactive.Include);
+
+        // ===== exitDirectionIndicator 保留原本的引用，不重新綁定 =====
+        // 原因：它是 UIManager 的子物件，會跟著 DontDestroyOnLoad 保留
+        // 如果重新綁定會在教學場景找不到而被清空
 
         if (tutorialDialogueUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialDialogueUI。");
         if (tutorialTipsUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialTipsUI。");
-        if (exitDirectionIndicator == null)
-            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 ExitDirectionIndicator。");
         if (rewardDescriptionUI == null)
             Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 RewardDescriptionUI。");
+        
+        // 檢查 exitDirectionIndicator 是否仍然有效（應該一直有效）
+        if (exitDirectionIndicator == null)
+            Debug.LogError("[UIManager] RebindTutorialUI：exitDirectionIndicator 為 null！請檢查 S0.unity 中的設定。");
     }
 
     /// <summary>

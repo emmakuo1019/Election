@@ -16,8 +16,8 @@ MonoBehaviour:
   cooldown: 5
   duration: 0.5
   mpCost: 10
-  hpCost: 10
-  socialClimateDelta: 0
+  hpCost: 1
+  socialClimateDelta: 1
   faction: {fileID: 11400000, guid: 2854ea893709e462fa5388c955e7c79c, type: 2}
   Rarity: 0
   animationTriggerName: Begging
