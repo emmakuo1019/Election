@@ -80,10 +80,17 @@ public class MissionDialogueTrigger : MonoBehaviour
 
         Debug.Log($"[MissionDialogueTrigger] AllEnemiesDefeated 觸發，顯示對話：{onAllEnemiesDefeatedDialogue.name}");
 
-        // 顯示對話
+        // 顯示對話，並在對話關閉後觸發獎勵選擇
         if (TutorialManager.Instance != null)
         {
-            TutorialManager.Instance.ShowDialogue(onAllEnemiesDefeatedDialogue);
+            TutorialManager.Instance.ShowDialogue(
+                onAllEnemiesDefeatedDialogue,
+                () =>
+                {
+                    Debug.Log("[MissionDialogueTrigger] 對話關閉，觸發獎勵選擇");
+                    BattleEventManager.TriggerRewardSelectionRequested(false);
+                }
+            );
         }
         else
         {

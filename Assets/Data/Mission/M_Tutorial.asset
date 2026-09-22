@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: M_Tutorial
   m_EditorClassIdentifier: Assembly-CSharp::RoomMissionData
   sceneName: TeachScenes
-  objectiveType: 1
-  targetValue: 60
+  objectiveType: 2
+  targetValue: 2
   icon: {fileID: 21300000, guid: be8b95e0e806f4965904c8237e0f9a29, type: 3}
   briefingStep: {fileID: 11400000, guid: b4b7f89b028994649929ebaaa1aed02c, type: 2}
-  hudLayout: 0
+  hudLayout: 1
   spawnConfig: {fileID: 0}
   minCampaignNode: 1
   maxCampaignNode: 1

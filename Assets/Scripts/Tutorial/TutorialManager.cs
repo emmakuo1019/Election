@@ -35,6 +35,9 @@ public class TutorialManager : MonoBehaviour
 
     // 動作完成後要顯示的 Tips 文字（在等待期間暫存，因為 currentStep 會被清空）
     private string _pendingCompletedText;
+    
+    // 對話關閉時的 callback（可選）
+    private System.Action _onDialogueComplete;
 
     // ── UI 存取捷徑（一律走 UIManager，確保拿到場景 instance）────────
 
@@ -104,7 +107,9 @@ public class TutorialManager : MonoBehaviour
     /// <summary>
     /// 由 TutorialTrigger 或 GameplayState 呼叫，顯示指定步驟的對話框。
     /// </summary>
-    public void ShowDialogue(TutorialStepData step)
+    /// <param name="step">要顯示的教學步驟資料</param>
+    /// <param name="onComplete">對話關閉後的回調（可選）</param>
+    public void ShowDialogue(TutorialStepData step, System.Action onComplete = null)
     {
         if (step == null) return;
 
@@ -112,6 +117,7 @@ public class TutorialManager : MonoBehaviour
         StopWaitingForAction();
 
         currentStep = step;
+        _onDialogueComplete = onComplete;
         isDialogueOpen = true;
 
         if (pauseWhileDialogue)
@@ -158,6 +164,11 @@ public class TutorialManager : MonoBehaviour
         }
 
         currentStep = null;
+        
+        // 執行對話關閉後的回調（若有設定）
+        var callback = _onDialogueComplete;
+        _onDialogueComplete = null;
+        callback?.Invoke();
     }
 
     // ── 內部：動作監聽 ────────────────────────────────────────────────
