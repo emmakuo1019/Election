@@ -17,6 +17,10 @@ public class GameplayState : IState
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Loading);
         BattleEventManager.OnObjectiveResolved += HandleObjectiveResolved;
         BattleEventManager.OnPlayerDied += HandlePlayerDied;
+        
+        // 播放關卡任務背景音樂
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayBGM_Mission();
+        
         GameFlowManager.Instance?.StartCoroutine(LoadBattleSceneRoutine());
     }
 

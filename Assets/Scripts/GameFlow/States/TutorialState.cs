@@ -22,6 +22,9 @@ public class TutorialState : IState
             Debug.LogError("[TutorialState] 教學任務尚未設定。");
             return;
         }
+        
+        // 播放關卡任務背景音樂（教學關使用與其他關卡相同的音樂）
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayBGM_Mission();
 
         if (GameFlowManager.Instance != null)
             GameFlowManager.Instance.StartCoroutine(LoadTutorialSceneRoutine());

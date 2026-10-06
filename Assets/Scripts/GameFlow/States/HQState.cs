@@ -18,6 +18,9 @@ public class HQState : IState
         // 回到總部代表上一局已結束；下一次出發必須建立新的 Run/Campaign。
         GameDB.Instance?.ResetRunData();
         GameDB.Instance?.ResetCampaignData();
+        
+        // 播放總部背景音樂（與主選單使用同一首）
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayBGM_MenuAndHQ();
 
         if (GameFlowManager.Instance != null)
         {
