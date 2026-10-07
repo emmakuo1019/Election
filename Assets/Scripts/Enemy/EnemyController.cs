@@ -246,7 +246,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
             for (int i = 0; i < equippedSkills.Length; i++)
             {
-                _skillCooldownTimers[i] = 0f;
+                // 以負值實作首次施放延遲：計時器需先從 -initialDelay 爬升到 cooldown 才觸發
+                EnemySkillData skill = equippedSkills[i] as EnemySkillData;
+                _skillCooldownTimers[i] = skill != null ? -skill.initialDelay : 0f;
                 _skillStates[i] = new EnemySkillState(this, StateMachine);
             }
         }
@@ -449,8 +451,13 @@ public class EnemyController : MonoBehaviour, IAttackSource
         StateMachine.CurrentState?.Update();
 
         // ── 多技能系統：檢查所有技能冷卻 ────────────────────────────
-        if (equippedSkills != null && equippedSkills.Length > 0 && 
-            StateMachine.CurrentState is not EnemySkillState)
+        // 只在可行動狀態（非暈眩、非施法、非普攻）時推進冷卻並觸發技能
+        // ponytail: 以 is 型別判斷做最小分流；若未來有更多不可行動狀態，統一改為 CanAct() 旗標
+        bool isActing = StateMachine.CurrentState is EnemySkillState
+                     || StateMachine.CurrentState is EnemyStunState
+                     || StateMachine.CurrentState is EnemyAttackState;
+
+        if (!isActing && equippedSkills != null && equippedSkills.Length > 0)
         {
             for (int i = 0; i < equippedSkills.Length; i++)
             {

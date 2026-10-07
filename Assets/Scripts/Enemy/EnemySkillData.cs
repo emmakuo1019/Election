@@ -15,6 +15,15 @@ public class EnemySkillData : SkillData
     public float playerStunDuration = 1.5f;  // 玩家被暈眩持續時間（0 = 不暈眩）
     public LayerMask playerLayerMask;        // 玩家所在 Layer
     public float skillWindupTime = 0.8f;     // 前搖時間（供 EnemySkillState 使用）
+    [Tooltip("遊戲開始後首次出招延遲（秒），避免一上場就立刻發技能）")]
+    public float initialDelay = 2f;          // 首次施放延遲
+
+    private void OnValidate()
+    {
+        // duration 不得短於 skillWindupTime，否則技能永遠不會執行
+        if (duration < skillWindupTime)
+            duration = skillWindupTime + 0.1f;
+    }
 
     public override void ExecuteSkill(GameObject caster)
     {
