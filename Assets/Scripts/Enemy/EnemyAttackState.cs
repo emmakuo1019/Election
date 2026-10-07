@@ -73,5 +73,12 @@ public class EnemyAttackState : IState
     }
 
     public void PhysicsUpdate() { }
-    public void Exit() { }
+
+    public void Exit()
+    {
+        // 攻擊被中斷（例如進入暈眩）時，確保 Agent 恢復可行動
+        if (ctx.Agent != null && ctx.Agent.isOnNavMesh)
+            ctx.Agent.isStopped = false;
+        ctx.attackRangeMesh?.Hide();
+    }
 }
