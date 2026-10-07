@@ -5,6 +5,17 @@ using UnityEngine.AI;
 // and call it from EnemySkillData after ApplyStun(). Pending UI/SFX integration.
 
 /// <summary>
+/// 敵人角色分類，供受擊規則、退場行為與任務計數分流使用。
+/// 不引入繼承樹；以此欄位做最小分流。
+/// </summary>
+public enum EnemyRole
+{
+    Volunteer,  // 志工：耐久歸零暈眩循環，不計入死亡清場
+    Reporter,   // 記者：普攻／指定技能可扣血；HP 歸零退場計入記者清場
+    EliteBoss   // 精英／Boss：無敵，可被暈眩；搶票任務勝負
+}
+
+/// <summary>
 /// 敵人的基礎控制器，負責持有組件參考、共用資料，並將生命週期委派給狀態機。
 /// (已加入 GC 優化：預先實例化所有狀態)
 /// </summary>
@@ -78,8 +89,14 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public float escapeRange = 15f;
 
     [Header("HP")]
-    [Tooltip("最大血量")]
+    [Tooltip("最大血量（志工語意：最大耐久）")]
     public int maxHP = 3;
+    [Tooltip("耐久歸零後的長暈眩時間（秒）；志工破防後進入此暫時失能")]
+    [SerializeField] private float neutralizeDuration = 5f;
+    [Tooltip("一般命中的短硬直時間（秒）；設為 0 可關閉短硬直")]
+    [SerializeField] private float hitStunDuration = 0.5f;
+    [Tooltip("此敵人的角色類型，決定受擊規則與退場行為")]
+    [SerializeField] public EnemyRole enemyRole = EnemyRole.Volunteer;
     [Tooltip("只標記第 8 節點的主要對手。其生命歸零才會結束最終戰；護衛與召喚物不可勾選。")]
     [SerializeField] private bool isFinalBossOpponent;
     
@@ -147,15 +164,23 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// 敵人受到傷害或控制技能時呼叫。
     /// 扣除血量並強制切換至硬直狀態，中斷當前行為。
     /// Boss無敵模式：只受暈眩，不扣血。
+    /// 志工語意：HP 即耐久；歸零進入長暈眩循環，不計死亡。
     /// </summary>
-    public void TakeDamage(int damage, float stunTime = 0.5f)
+    public void TakeDamage(int damage, float stunTime = -1f)
     {
+        // 暈眩中保護：志工暈眩期間不接受新的耐久傷害，也不延長暈眩
+        if (enemyRole == EnemyRole.Volunteer && StateMachine.CurrentState is EnemyStunState)
+            return;
+
+        // 短硬直時間：優先用 Inspector 欄位，外部傳入值為相容保留
+        float effectiveStunTime = (stunTime >= 0f) ? stunTime : hitStunDuration;
+
         // Boss無敵模式：只受暈眩，不扣血
         if (isInvincible)
         {
-            if (stunTime > 0f)
+            if (effectiveStunTime > 0f)
             {
-                StunState.SetStunDuration(stunTime);
+                StunState.SetStunDuration(effectiveStunTime);
                 StateMachine.ChangeState(StunState);
             }
             return; // 不扣血，直接返回
@@ -167,23 +192,40 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         if (_currentHP <= 0)
         {
-            Die();
+            // HP 歸零時：志工進入長暈眩循環（不呼叫 Die，不計清場）；其他角色留給後續任務擴充
+            StunState.SetStunDuration(neutralizeDuration);
+            StateMachine.ChangeState(StunState);
             return;
         }
 
-        if (stunTime > 0f)
+        if (effectiveStunTime > 0f)
         {
-            StunState.SetStunDuration(stunTime);
+            StunState.SetStunDuration(effectiveStunTime);
             StateMachine.ChangeState(StunState);
         }
     }
 
-    private void Die()
+    // 恢復滿血並刷新 UI，供中立化後使用
+    public void RestoreFullHP()
     {
+        _currentHP = maxHP;
+        hpBarUI?.Refresh(_currentHP, maxHP, isInvincible);
+    }
+
+    // --- Die method re-added for permanent death cases ---
+    /// <summary>
+    /// Handles permanent death of the enemy.
+    /// Plays death animation, notifies the spawn tracker, and destroys the game object.
+    /// Note: Normal enemies never call this; used only for invincible bosses or debug.
+    /// </summary>
+    public void Die()
+    {
+        // Play death animation (fallback to Idle if no specific death animation)
+        Animator?.CrossFade("Die", 0.1f);
+        // Notify tracker
         EnemySpawnTracker.NotifyEnemyDied();
-        if (isFinalBossOpponent)
-            BattleEventManager.TriggerFinalBossDefeated();
-        Destroy(gameObject);
+        // Destroy after short delay to allow animation to play
+        Destroy(gameObject, 0.5f);
     }
 
     // ==========================================
