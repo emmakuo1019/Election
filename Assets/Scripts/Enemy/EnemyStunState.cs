@@ -74,7 +74,9 @@ public class EnemyStunState : IState
 
     public void Exit()
     {
-        // 離開暈眩狀態時銷毀 VFX
+        // 離開暈眩狀態時，先恢復滿血（防止再次立刻進入 Stun），再銷毀 VFX
+        ctx.RestoreFullHP();
+
         if (_stunVfxInstance != null)
         {
             Object.Destroy(_stunVfxInstance);
