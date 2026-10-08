@@ -229,3 +229,27 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 > 請閱讀 docs/plans/enemy-behavior-implementation-plan.md 與適用的 AGENTS.md。這次只執行任務 01。先確認工作分支與未提交變更，再只讀必要檔案與相關呼叫者。完成最小修改、必要檢查及進度紀錄後停止；不要執行 02。未執行 Unity 的項目標成待驗收，列出我需要操作的 Inspector 與 Play Mode 步驟。不要提交與本步無關的使用者變更。
 
 後續將編號替換成指定步驟即可。每步一個可回溯 commit 是預設；若程式完成但等待手動驗收，標示「待驗收」而不是完成。不要自動合併 PR 或推進下一階段。
+
+### Active Delivery Target
+
+本計畫 Task 01–09 全部屬於同一個實作工作。
+
+- Active PR: #3
+- PR Head Branch: `docs/enemy-behavior-plan-20261006`
+- Base Branch: `6000.3.17f1_全新的生命`
+
+所有本計畫後續 commit 必須 push 到
+`docs/enemy-behavior-plan-20261006`
+並持續更新既有 PR #3。
+
+禁止自行：
+- 建立新的 implementation branch
+- 建立新的 Pull Request
+- 關閉或取代 PR #3
+- 將任務拆成其他 PR
+
+除非使用者明確要求。
+
+若目前 local branch 不是上述 PR head branch：
+停止實作，先切換／同步正確 branch；
+不得以建立新 PR 作為替代方案。
