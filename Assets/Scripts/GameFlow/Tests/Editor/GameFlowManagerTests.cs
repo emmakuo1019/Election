@@ -127,7 +127,7 @@ public class GameFlowManagerTests
     }
 
     [Test]
-    public void FinalBossOpponent_OnlyReportsVictoryWhenItsHealthReachesZero()
+    public void FinalBossOpponent_DoesNotReportVictoryOnHealthZero_AsVictoryIsTicketBased()
     {
         GameObject bossObject = Track(new GameObject("FinalBossOpponent"));
         bossObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
@@ -139,11 +139,8 @@ public class GameFlowManagerTests
         BattleEventManager.OnFinalBossDefeated += handler;
         try
         {
-            boss.TakeDamage(boss.maxHP - 1);
+            boss.TakeDamage(boss.maxHP);
             Assert.That(defeatedCount, Is.Zero);
-
-            boss.TakeDamage(1);
-            Assert.That(defeatedCount, Is.EqualTo(1));
         }
         finally
         {

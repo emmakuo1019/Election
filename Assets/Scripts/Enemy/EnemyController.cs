@@ -192,12 +192,13 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         if (_currentHP <= 0)
         {
-            if (isFinalBossOpponent)
+            if (enemyRole == EnemyRole.Reporter)
             {
-                BattleEventManager.TriggerFinalBossDefeated();
+                Die();
+                return;
             }
 
-            // HP 歸零時：志工進入長暈眩循環（不呼叫 Die，不計清場）；其他角色留給後續任務擴充
+            // 志工（以及預設耐久角色）：進入長暈眩循環（不呼叫 Die，不計清場）
             StunState?.SetStunDuration(neutralizeDuration, restoreFullHPOnExit: true);
             StateMachine?.ChangeState(StunState);
             return;
