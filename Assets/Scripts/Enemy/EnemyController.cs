@@ -104,7 +104,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("Boss無敵模式：可被暈眩但不會死亡（用於Elite和FinalBoss關卡）")]
     [SerializeField] private bool isInvincible = false;
     
-    private int _currentHP;
+    private int _currentHP = 3;
 
     [Header("UI")]
     [SerializeField] private EnemyHPBarUI hpBarUI;
@@ -169,7 +169,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public void TakeDamage(int damage, float stunTime = -1f)
     {
         // 暈眩中保護：志工暈眩期間不接受新的耐久傷害，也不延長暈眩
-        if (enemyRole == EnemyRole.Volunteer && StateMachine.CurrentState is EnemyStunState)
+        if (enemyRole == EnemyRole.Volunteer && StateMachine?.CurrentState is EnemyStunState)
             return;
 
         // 短硬直時間：優先用 Inspector 欄位，外部傳入值為相容保留
@@ -180,8 +180,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
         {
             if (effectiveStunTime > 0f)
             {
-                StunState.SetStunDuration(effectiveStunTime);
-                StateMachine.ChangeState(StunState);
+                StunState?.SetStunDuration(effectiveStunTime, restoreFullHPOnExit: false);
+                StateMachine?.ChangeState(StunState);
             }
             return; // 不扣血，直接返回
         }
@@ -192,16 +192,21 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         if (_currentHP <= 0)
         {
+            if (isFinalBossOpponent)
+            {
+                BattleEventManager.TriggerFinalBossDefeated();
+            }
+
             // HP 歸零時：志工進入長暈眩循環（不呼叫 Die，不計清場）；其他角色留給後續任務擴充
-            StunState.SetStunDuration(neutralizeDuration);
-            StateMachine.ChangeState(StunState);
+            StunState?.SetStunDuration(neutralizeDuration, restoreFullHPOnExit: true);
+            StateMachine?.ChangeState(StunState);
             return;
         }
 
         if (effectiveStunTime > 0f)
         {
-            StunState.SetStunDuration(effectiveStunTime);
-            StateMachine.ChangeState(StunState);
+            StunState?.SetStunDuration(effectiveStunTime, restoreFullHPOnExit: false);
+            StateMachine?.ChangeState(StunState);
         }
     }
 

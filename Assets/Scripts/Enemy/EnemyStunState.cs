@@ -11,6 +11,7 @@ public class EnemyStunState : IState
     
     private float stunDuration;
     private float stunTimer;
+    private bool restoreFullHPOnExit;
     private GameObject _stunVfxInstance; // 暈眩 VFX 實例，Exit 時銷毀
 
     public EnemyStunState(EnemyController controller, StateMachine stateMachine)
@@ -20,11 +21,12 @@ public class EnemyStunState : IState
     }
 
     /// <summary>
-    /// 設定此狀態的硬直時間
+    /// 設定此狀態的硬直時間與離開時是否恢復滿血/耐久
     /// </summary>
-    public void SetStunDuration(float duration)
+    public void SetStunDuration(float duration, bool restoreFullHPOnExit = false)
     {
         stunDuration = duration;
+        this.restoreFullHPOnExit = restoreFullHPOnExit;
     }
 
     public void Enter()
@@ -74,8 +76,12 @@ public class EnemyStunState : IState
 
     public void Exit()
     {
-        // 離開暈眩狀態時，先恢復滿血（防止再次立刻進入 Stun），再銷毀 VFX
-        ctx.RestoreFullHP();
+        // 離開暈眩狀態時，只有在中立化長暈眩結束後才恢復滿血/耐久
+        if (restoreFullHPOnExit)
+        {
+            ctx.RestoreFullHP();
+        }
+        restoreFullHPOnExit = false;
 
         if (_stunVfxInstance != null)
         {
