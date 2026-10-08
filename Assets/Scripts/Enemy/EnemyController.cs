@@ -168,16 +168,19 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// </summary>
     public void TakeDamage(int damage, float stunTime = -1f)
     {
-        // 暈眩中保護：志工暈眩期間不接受新的耐久傷害，也不延長暈眩
-        if (enemyRole == EnemyRole.Volunteer && StateMachine?.CurrentState is EnemyStunState)
-            return;
-
         // 短硬直時間：優先用 Inspector 欄位，外部傳入值為相容保留
         float effectiveStunTime = (stunTime >= 0f) ? stunTime : hitStunDuration;
 
-        // Boss無敵模式：只受暈眩，不扣血
-        if (isInvincible)
+        // Boss / 精英 或 無敵模式：只受暈眩，不扣血
+        bool isBossOrInvincible = isInvincible || enemyRole == EnemyRole.EliteBoss || isFinalBossOpponent;
+        if (isBossOrInvincible)
         {
+            // 防呆：若收到控制技能/攻擊（stunTime 或 hitStunDuration），確保硬直時間至少為 0.5 秒（除非顯式傳入 0 秒）
+            if (effectiveStunTime <= 0f && stunTime < 0f)
+            {
+                effectiveStunTime = 0.5f;
+            }
+
             if (effectiveStunTime > 0f)
             {
                 StunState?.SetStunDuration(effectiveStunTime, restoreFullHPOnExit: false);
@@ -185,6 +188,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
             }
             return; // 不扣血，直接返回
         }
+        
+        // 普通敵人的暈眩中保護：暈眩期間不接受新的重置，避免重複過度延長暈眩
+        // ponytail: Boss 不受此限制，允許技能打斷/延長暈眩
+        if (StateMachine?.CurrentState is EnemyStunState)
+            return;
         
         // 普通敵人邏輯
         _currentHP -= damage;
