@@ -38,6 +38,27 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 
 (Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)
 
+## Git / Pull Request Continuity
+
+### Existing PR Rule
+
+If an active task already has an existing Pull Request:
+
+- Continue all task-related work on that PR's existing head branch.
+- Commit and push subsequent changes to the same branch so they appear in the same PR.
+- Do NOT create a new branch or a new Pull Request unless the user explicitly requests one.
+- Do NOT close, replace, merge, or recreate the existing PR without explicit user approval.
+
+Before making changes, verify:
+
+1. the current Git branch,
+2. the active PR number,
+3. the PR head branch.
+
+If the current branch does not match the specified active PR head branch, stop and switch to the correct branch. Do not solve the mismatch by opening another PR.
+
+When an active task provides an explicit PR number or branch, that target overrides any default "create PR" workflow.
+
 
 ---
 
