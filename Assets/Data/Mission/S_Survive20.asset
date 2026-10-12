@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SurviveSpawnConfig
   enemyPrefabs:
   - {fileID: 447725353262188044, guid: 674e01088c8b74177a963af098f37808, type: 3}
+  - {fileID: 447725353262188044, guid: e4084ff46b3e5406a8ff0bbdf5819fe8, type: 3}
   initialDelay: 1
   waveInterval: 5
   enemiesPerWave: 4

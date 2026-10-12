@@ -203,7 +203,7 @@ GameObject:
   - component: {fileID: 8463041596456679352}
   - component: {fileID: 464701843643320912}
   - component: {fileID: 4602146136631144883}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: 'Boss_ '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -335,7 +335,10 @@ MonoBehaviour:
   detectionRange: 30
   escapeRange: 40
   maxHP: 3
-  isFinalBossOpponent: 0
+  neutralizeDuration: 5
+  hitStunDuration: 0.5
+  enemyRole: 2
+  isFinalBossOpponent: 1
   isInvincible: 1
   hpBarUI: {fileID: 5176253442315318097}
   attackHitRadius: 1
@@ -545,6 +548,8 @@ MonoBehaviour:
   attackSourceBehaviour: {fileID: 0}
   segments: 30
   heightOffset: 0.05
+  enableCloseRangeCircle: 1
+  closeRangeRadius: 1.5
 --- !u!1 &7225824840311692527
 GameObject:
   m_ObjectHideFlags: 0

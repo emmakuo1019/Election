@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5636245655671424398}
   - component: {fileID: 8874614300515229391}
   m_Layer: 7
-  m_Name: Enemy
+  m_Name: Reporter
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -144,6 +144,9 @@ MonoBehaviour:
   detectionRange: 30
   escapeRange: 40
   maxHP: 3
+  neutralizeDuration: 5
+  hitStunDuration: 0.5
+  enemyRole: 1
   isFinalBossOpponent: 0
   isInvincible: 0
   hpBarUI: {fileID: 1356372295820075687}
@@ -289,7 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8776461, g: 0.504717, b: 1, a: 1}
+  m_Color: {r: 0.4292453, g: 1, b: 0.67801714, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -373,7 +376,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7c3bbc96de07e4329ae8008cfd0e06c1, type: 2}
+  - {fileID: 2100000, guid: 0de55c69036cf4e0a97e79593da716fd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -572,7 +575,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 47a91359f80864e9facba0ac584a02fc, type: 3}
-  m_Color: {r: 0.95025575, g: 0.6839622, b: 1, a: 1}
+  m_Color: {r: 0.6367924, g: 1, b: 0.66649926, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

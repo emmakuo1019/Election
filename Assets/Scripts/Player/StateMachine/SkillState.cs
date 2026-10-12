@@ -13,6 +13,7 @@ public class SkillState : IState
     // --- DogezaSkill 專屬狀態 (State-based Dash) ---
     private Vector3 _dashDirection;
     private HashSet<VoterLogic> _hitVoters;
+    private HashSet<EnemyController> _hitEliteBosses;
     private bool _hasHitVoter;
     private float _dashTimer;
 
@@ -34,6 +35,7 @@ public class SkillState : IState
         if (_skillData is DogezaSkill dogeza)
         {
             _hitVoters = new HashSet<VoterLogic>();
+            _hitEliteBosses = new HashSet<EnemyController>();
             _hasHitVoter = false;
             _dashTimer = 0f;
 
@@ -137,6 +139,18 @@ public class SkillState : IState
         {
             Collider hitCollider = hitColliders[i];
             if (hitCollider == null) continue;
+
+            // 精英／Boss 不扣血，但可由既有受擊入口進入暈眩。
+            // 以控制器去重，避免同一角色有多個 Collider 時重複套用。
+            EnemyController enemy = hitCollider.GetComponentInParent<EnemyController>();
+            if (enemy != null && enemy.enemyRole == EnemyRole.EliteBoss)
+            {
+                if (_hitEliteBosses.Add(enemy))
+                {
+                    enemy.TakeDamage(0, dogeza.StunTime);
+                }
+                continue;
+            }
 
             GameObject hitObject = hitCollider.attachedRigidbody != null
                 ? hitCollider.attachedRigidbody.gameObject

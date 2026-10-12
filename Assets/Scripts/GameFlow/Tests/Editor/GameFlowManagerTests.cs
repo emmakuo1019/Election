@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -148,6 +149,40 @@ public class GameFlowManagerTests
         }
     }
 
+    [TestCase("Assets/Prefabs/Elite_.prefab")]
+    [TestCase("Assets/Prefabs/Boss_ .prefab")]
+    public void EliteBossPrefabs_UseEnemyLayer_ForPlayerAttackDetection(string prefabPath)
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+
+        Assert.That(prefab, Is.Not.Null, $"找不到 Prefab：{prefabPath}");
+        Assert.That(prefab.layer, Is.EqualTo(LayerMask.NameToLayer("Enemy")));
+    }
+
+    [Test]
+    public void DogezaDash_StunsEliteBoss_WithoutReducingItsHealth()
+    {
+        GameObject playerObject = Track(new GameObject("Player"));
+        playerObject.AddComponent<CharacterController>();
+        PlayerController player = playerObject.AddComponent<PlayerController>();
+
+        GameObject eliteObject = Track(new GameObject("EliteBoss"));
+        eliteObject.transform.position = Vector3.forward;
+        eliteObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
+        EnemyController elite = eliteObject.AddComponent<EnemyController>();
+        elite.enemyRole = EnemyRole.EliteBoss;
+        int healthBeforeStun = GetPrivateField<int>(elite, "_currentHP");
+
+        DogezaSkill dogeza = Track(ScriptableObject.CreateInstance<DogezaSkill>());
+        SkillState skillState = new SkillState(player, dogeza);
+        skillState.Enter();
+        Physics.SyncTransforms();
+        skillState.PhysicsUpdate();
+
+        Assert.That(elite.StateMachine.CurrentState, Is.SameAs(elite.StunState));
+        Assert.That(GetPrivateField<int>(elite, "_currentHP"), Is.EqualTo(healthBeforeStun));
+    }
+
     private void ResolveAndChoose(CampaignData campaign)
     {
         campaign.ResolveCurrentEncounter(EncounterOutcome.Success);
@@ -215,6 +250,13 @@ public class GameFlowManagerTests
         FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null, $"找不到測試需要的欄位：{fieldName}");
         field.SetValue(target, value);
+    }
+
+    private static T GetPrivateField<T>(object target, string fieldName)
+    {
+        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null, $"找不到測試需要的欄位：{fieldName}");
+        return (T)field.GetValue(target);
     }
 
     [TearDown]

@@ -106,6 +106,8 @@ MonoBehaviour:
   attackSourceBehaviour: {fileID: 0}
   segments: 30
   heightOffset: 0.05
+  enableCloseRangeCircle: 1
+  closeRangeRadius: 1.5
 --- !u!1 &2193149529667467388
 GameObject:
   m_ObjectHideFlags: 0
@@ -735,7 +737,7 @@ GameObject:
   - component: {fileID: 8573855388045897189}
   - component: {fileID: 4405157454244293386}
   - component: {fileID: 7110178783382683675}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Elite_
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -867,6 +869,9 @@ MonoBehaviour:
   detectionRange: 30
   escapeRange: 40
   maxHP: 3
+  neutralizeDuration: 5
+  hitStunDuration: 0.5
+  enemyRole: 2
   isFinalBossOpponent: 0
   isInvincible: 1
   hpBarUI: {fileID: 8041737377043882103}
