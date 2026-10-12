@@ -208,8 +208,10 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 | 任務 | 狀態 | Commit | 程式檢查 | Unity 驗收 | 阻礙／下一步 |
 |---|---|---|---|---|---|
 | 01 志工耐久 | 待開始 | — | 未執行 | 未執行 | 從此開始 |
-| 02 行為優先權 | 待開始 | — | 未執行 | 未執行 | 依賴 01 |
-| 03 命中與數值 | 待開始 | — | 未執行 | 未執行 | 依賴 02 |
+| 02 行為優先權 | 程式完成，待驗收 | 44b78f6 + 本次修正 | 新增精英／Boss 的玩家技能暈眩與 layer 回歸測試（待 Unity 執行） | 待 Unity Play Mode／Test Runner 驗收 | Boss／精英技能 SO 缺少資產，留 Task 07 設定 |
+| 03A 停止距離對齊 | 程式完成，待驗收 | TBD | EnemyMoveState 停步條件改用 attackHitRadius+offset.z；AttackRangeMesh 顯示與判定幾何一致（radius=1,angle=90，offset.z=0）已靜態驗證 | 待 Unity Play Mode 驗收 | Prefab Inspector 需確認 attackHitOffset.z=0；attackRange 欄位保留但不再控制停步 |
+| 03B 同攻擊去重 | 待開始 | — | 未執行 | 未執行 | 依賴 03A |
+| 03C 硬寫數值序列化 | 待開始 | — | 未執行 | 未執行 | 依賴 03A |
 | 04 Boss 資產與結算 | 待開始 | — | 未執行 | 未執行 | 依賴 03 |
 | 05 記者與清場 | 待開始 | — | 未執行 | 未執行 | 依賴 04 |
 | 06 記者監視 | 待開始 | — | 未執行 | 未執行 | 依賴 05 |

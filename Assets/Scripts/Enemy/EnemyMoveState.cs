@@ -45,9 +45,14 @@ public class EnemyMoveState : IState
 
         float distance = Vector3.Distance(ctx.transform.position, ctx.target.position);
 
-        if (distance <= ctx.attackRange)
+        // 停步距離 = 命中球半徑 + 球心前方偏移 z，確保停下後 OverlapSphere 必能涵蓋目標。
+        // 不使用 attackRange 欄位，因為其語意已由 attackHitRadius + attackHitOffset.z 精確定義。
+        // ponytail: offset.z=0 時等同原 attackHitRadius；若日後加入前方偏移請同步更新 AttackRangeMesh 位置。
+        float effectiveStopRange = ctx.attackHitRadius + Mathf.Max(0f, ctx.attackHitOffset.z);
+
+        if (distance <= effectiveStopRange)
         {
-            // 當距離小於等於攻擊距離時，切換到攻擊狀態發動拉票
+            // 當距離小於等於有效攻擊距離時，切換到攻擊狀態發動拉票
             stateMachine.ChangeState(ctx.AttackState);
         }
         else if (distance > ctx.escapeRange) // 【遲滯區間】使用獨立的脫戰距離
