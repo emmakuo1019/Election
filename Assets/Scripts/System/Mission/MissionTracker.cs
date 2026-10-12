@@ -47,25 +47,21 @@ public class MissionTracker : MonoBehaviour
         // 教學場景不使用 MissionTracker（由 TutorialManager 管理）
         if (GameDB.Instance?.Campaign.IsTutorialActive == true)
         {
-            Debug.Log("[MissionTracker] 教學場景中，不啟動任務追蹤系統");
             return;
         }
 
         // _mission 在 Awake() 已讀取，此時只需檢查和訂閱
         if (IsFinalBossEncounter())
         {
-            Debug.Log("[MissionTracker] 最終戰：等待對手生命歸零。");
             Subscribe();
             return;
         }
 
         if (_mission == null)
         {
-            Debug.LogWarning("[MissionTracker] 當前房間無指定任務，追蹤器閒置。");
             return;
         }
 
-        Debug.Log($"[MissionTracker] 載入任務：{_mission.objectiveType}，目標值：{_mission.targetValue}");
         
         // [FIX] 延遲訂閱，等待 EnemySpawner 完成初始化
         StartCoroutine(DelayedSubscribe());
@@ -77,7 +73,6 @@ public class MissionTracker : MonoBehaviour
         yield return null;
         yield return null;
         
-        Debug.Log($"[MissionTracker] 延遲訂閱完成，當前敵人數量: {EnemySpawnTracker.AliveCount}");
         Subscribe();
         _subscribed = true;  // 訂閱完成，允許 Update() 開始檢查
     }
@@ -89,15 +84,22 @@ public class MissionTracker : MonoBehaviour
     
     private void Update()
     {
-        // 搶票任務需要定時檢查即時票數
-        // 只在 Active 階段且訂閱完成後檢查，避免場景載入時誤判
-        if (_mission != null && 
-            _mission.objectiveType == MissionObjectiveType.ReachVotePercent && 
-            !_resolved &&
-            _subscribed &&
-            BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active)
+        if (_resolved) return;
+        if (BattleEventManager.CurrentEncounterPhase != BattleEventManager.EncounterPhase.Active) return;
+        if (!_subscribed) return;
+
+        // 搶票任務（普通關）：Update 輪詢即時票數
+        if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVotePercent)
         {
             CheckReachVotePercent();
+            return;
+        }
+
+        // FinalBoss：以 M_Boss.targetValue 作為票數門檻（%），Update 輪詢
+        // 時限到期走 HandleTimerExpired，玩家 HP 歸零由 GameplayState.HandlePlayerDied 負責
+        if (IsFinalBossEncounter())
+        {
+            CheckFinalBossVotePercent();
         }
     }
 
@@ -107,8 +109,11 @@ public class MissionTracker : MonoBehaviour
     {
         if (IsFinalBossEncounter())
         {
+            // FinalBoss：訂閱 OnFinalBossDefeated（票數達標由 CheckFinalBossVotePercent 呼叫）
+            // 並訂閱 OnTimerExpired（時限到未達標 → 敗選）
             BattleEventManager.OnFinalBossDefeated += HandleFinalBossDefeated;
-            _subscribed = true;  // 最終戰不需延遲訂閱
+            BattleEventManager.OnTimerExpired      += HandleTimerExpired;
+            _subscribed = true;
             return;
         }
 
@@ -129,17 +134,14 @@ public class MissionTracker : MonoBehaviour
                         FindObjectsInactive.Exclude, FindObjectsSortMode.None);
                     if (remaining.Length == 0)
                     {
-                        Debug.LogWarning("[MissionTracker] 訂閱時敵人已全滅，立即觸發完成判定。");
                         HandleEliminateAll();
                     }
                     else
                     {
-                        Debug.Log($"[MissionTracker] AliveCount=0 但場上有 {remaining.Length} 個敵人，等待追蹤系統更新");
                     }
                 }
                 else
                 {
-                    Debug.Log($"[MissionTracker] 任務開始，當前存活敵人: {EnemySpawnTracker.AliveCount}，階段: {BattleEventManager.CurrentEncounterPhase}");
                 }
                 break;
 
@@ -175,6 +177,28 @@ public class MissionTracker : MonoBehaviour
         NotifyResult(true);
     }
 
+    /// <summary>
+    /// FinalBoss 票數輪詢：以 _mission.targetValue 作為門檻（%），
+    /// 達標後暫停計時器並觸發 OnFinalBossDefeated，讓 HandleFinalBossDefeated 完成結算。
+    /// ponytail: Update 每幀輪詢，N 選民數通常 &lt; 50，可接受；有效能疑慮時改事件驅動。
+    /// </summary>
+    private void CheckFinalBossVotePercent()
+    {
+        if (GameDB.Instance == null) return;
+        float targetPct = _mission != null ? _mission.targetValue : 0f;
+        if (targetPct <= 0f) return;  // 防呆：未設定門檻不自動勝利
+
+        float percent = GameDB.Instance.Run.GetCurrentVotePercentage() * 100f;
+        if (percent >= targetPct)
+        {
+            // 停計時器防止同幀時限觸發失敗
+            if (LevelTimer.Instance != null && LevelTimer.Instance.IsActive)
+                LevelTimer.Instance.PauseTimer();
+            BattleEventManager.OnTimerExpired -= HandleTimerExpired;
+            BattleEventManager.TriggerFinalBossDefeated();
+        }
+    }
+
     /// <summary>檢查即時票數是否達標（搶票任務專用）</summary>
     private void CheckReachVotePercent()
     {
@@ -206,10 +230,17 @@ public class MissionTracker : MonoBehaviour
 
     private void HandleTimerExpired()
     {
-        // [FIX] 票數任務：時間到時檢查是否已結算，避免重複觸發
+        // 普通搶票任務：時間到未達標 → 失敗
         if (_mission != null && 
             _mission.objectiveType == MissionObjectiveType.ReachVotePercent &&
             !_resolved)
+        {
+            NotifyResult(false);
+            return;
+        }
+
+        // FinalBoss：時限到未達票數門檻 → 敗選
+        if (IsFinalBossEncounter() && !_resolved)
         {
             NotifyResult(false);
         }

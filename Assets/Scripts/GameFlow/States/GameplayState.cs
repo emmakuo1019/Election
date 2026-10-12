@@ -29,7 +29,6 @@ public class GameplayState : IState
         string sceneName = GameDB.Instance?.Campaign?.GetCurrentRoomSceneName();
         if (string.IsNullOrWhiteSpace(sceneName))
         {
-            Debug.LogError("[GameplayState] 尚未設定可載入的戰役節點。");
             yield break;
         }
 
@@ -39,7 +38,6 @@ public class GameplayState : IState
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
         if (operation == null)
         {
-            Debug.LogError($"[GameplayState] 找不到場景 {sceneName}。");
             yield break;
         }
 
@@ -52,13 +50,30 @@ public class GameplayState : IState
         RoomMissionData mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
         
         bool isTimedMission = mission != null &&
-            (mission.objectiveType == MissionObjectiveType.Survive || mission.objectiveType == MissionObjectiveType.ReachVotePercent);
+            (mission.objectiveType == MissionObjectiveType.Survive ||
+             mission.objectiveType == MissionObjectiveType.ReachVotePercent);
         
-        if (isTimedMission && LevelTimer.Instance != null)
+        // FinalBoss 場景也需要計時器（時限到未達票數門檻 → 敗選）
+        // 使用 LevelTimer.TotalDuration（Inspector 設定），不從 mission.targetValue 讀
+        // （targetValue 在 FinalBoss 場景語意是「票數門檻 %」，非計時秒數）
+        bool isFinalBoss = GameDB.Instance?.Campaign.CurrentRole == EncounterNodeRole.FinalBoss;
+        
+        if ((isTimedMission || isFinalBoss) && LevelTimer.Instance != null)
         {
-            float duration = mission != null && mission.targetValue > 0
-                ? mission.targetValue
-                : LevelTimer.Instance.TotalDuration;
+            float duration;
+            if (isFinalBoss)
+            {
+                // FinalBoss：用 LevelTimer Inspector 設定的 TotalDuration（場景設計者決定時限）
+                duration = LevelTimer.Instance.TotalDuration > 0f
+                    ? LevelTimer.Instance.TotalDuration
+                    : 120f; // ponytail: 無設定時保底 120 秒，避免無限等待
+            }
+            else
+            {
+                duration = mission != null && mission.targetValue > 0
+                    ? mission.targetValue
+                    : LevelTimer.Instance.TotalDuration;
+            }
             LevelTimer.Instance.StartTimer(duration);
         }
 
@@ -110,7 +125,6 @@ public class GameplayState : IState
             }
             else
             {
-                Debug.LogWarning($"[GameplayState] T 鍵在 {BattleEventManager.CurrentEncounterPhase} 階段被忽略（只在 Active 階段有效）");
             }
         }
 #endif

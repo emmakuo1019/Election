@@ -20,10 +20,15 @@ public class BattleFlowController : MonoBehaviour
     {
         levelTimer?.PauseTimer();
         RoomMissionData mission = GameDB.Instance?.Campaign.ActiveRoom.mission;
-        if (mission == null || mission.objectiveType == MissionObjectiveType.EliminateAll) return;
+        bool isFinalBoss = GameDB.Instance?.Campaign.CurrentRole == EncounterNodeRole.FinalBoss;
 
-        // Survive 與搶票任務一旦結算，就清掉未完成波次與現場敵人。
-        // 否則玩家在失勢選卡時仍可能被前一關的敵人打到歸零，形成錯誤的第二次失敗。
+        // EliminateAll 任務：敵人已死，不需主動清場；但 FinalBoss 是特例——
+        // Boss 無敵永遠不死，結算後仍在場上繼續攻擊，所以 FinalBoss 結算後強制清場。
+        if (!isFinalBoss && (mission == null || mission.objectiveType == MissionObjectiveType.EliminateAll))
+            return;
+
+        // Survive、搶票任務，以及 FinalBoss：結算後清掉未完成波次與現場敵人，
+        // 避免玩家在選卡或結局演出時仍被攻擊。
         FindFirstObjectByType<EnemySpawner>()?.ClearAllEnemies();
         EnemySpawnTracker.StopTracking();
         DespawnVoters();
