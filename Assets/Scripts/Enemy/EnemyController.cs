@@ -175,6 +175,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
         bool isBossOrInvincible = isInvincible || enemyRole == EnemyRole.EliteBoss || isFinalBossOpponent;
         if (isBossOrInvincible)
         {
+            // 定案規則：重複暈眩不相加、不重設正在進行的暈眩；本輪不做韌性條。
+            // 若已在暈眩中，忽略此次受擊，讓原暈眩按第一次的時間正常結束。
+            if (StateMachine?.CurrentState is EnemyStunState)
+                return;
+
             // 防呆：若收到控制技能/攻擊（stunTime 或 hitStunDuration），確保硬直時間至少為 0.5 秒（除非顯式傳入 0 秒）
             if (effectiveStunTime <= 0f && stunTime < 0f)
             {
@@ -189,8 +194,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
             return; // 不扣血，直接返回
         }
         
-        // 普通敵人的暈眩中保護：暈眩期間不接受新的重置，避免重複過度延長暈眩
-        // ponytail: Boss 不受此限制，允許技能打斷/延長暈眩
+        // 普通敵人（志工、Reporter）的暈眩中保護：暈眩期間不接受新的重置，避免重複延長暈眩。
+        // ponytail: Boss/Elite 的同等保護在上方 isBossOrInvincible 分支內處理。
         if (StateMachine?.CurrentState is EnemyStunState)
             return;
         
