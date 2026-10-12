@@ -97,6 +97,11 @@ public class GameplayState : IState
 
     private void HandleObjectiveResolved(EncounterOutcome outcome)
     {
+        // 終局仲裁：玩家 HP 歸零時 PlayerDied 有最高優先權。
+        // 若本幀玩家誠信已歸零，忽略此次 ObjectiveResolved，讓 HandlePlayerDied 獨立執行退選。
+        // ponytail: 讀 GameDB.Run 即時值，同幀其他事件已呼叫 ModifyIntegrityHp，數值此刻已是 0。
+        if (GameDB.Instance?.Run?.IntegrityHp <= 0f) return;
+
         GameFlowManager.Instance?.ChangeState(new StageClearState(outcome));
     }
 

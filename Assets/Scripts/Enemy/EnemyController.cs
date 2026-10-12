@@ -369,13 +369,22 @@ public class EnemyController : MonoBehaviour, IAttackSource
         {
             // 嘗試將 Agent 放到最近的 NavMesh 表面
             if (UnityEngine.AI.NavMesh.SamplePosition(
-                transform.position, out UnityEngine.AI.NavMeshHit hit, 
+                transform.position, out UnityEngine.AI.NavMeshHit hit,
                 5f, UnityEngine.AI.NavMesh.AllAreas))
             {
-                Agent.Warp(hit.position);
+                bool warped = Agent.Warp(hit.position);
+                if (!warped || !Agent.isOnNavMesh)
+                {
+                    Debug.LogWarning($"[EnemyController] {name} @ {transform.position}：" +
+                        $"SamplePosition 找到 {hit.position} 但 Warp 失敗（warped={warped}, isOnNavMesh={Agent.isOnNavMesh}）。" +
+                        "敵人可能無法移動。");
+                }
             }
             else
             {
+                Debug.LogError($"[EnemyController] {name} @ {transform.position}：" +
+                    "附近 5 公尺內找不到有效 NavMesh！敵人將無法移動。" +
+                    "請確認場景已烘焙 NavMesh 且生成點位於 NavMesh 上。");
             }
         }
         

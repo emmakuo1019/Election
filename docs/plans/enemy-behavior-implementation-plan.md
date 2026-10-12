@@ -213,7 +213,7 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 | 03B 同攻擊去重 | 完成（使用者 Unity Play Mode 實測通過） | ecca322b5e671b5e6c0866fe5468a03011f3db0d | PlayerAttack.PerformAttack 與 EnemyController.PerformAttackHit 各加 HashSet 去重；DogezaSkill 已有去重；靜態確認邏輯正確 | 使用者已確認多 Collider 不造成同次攻擊重複結算 | — |
 | 03B 補：Boss/Elite 暈眩不重設 | 完成（使用者 Unity Play Mode 實測通過） | e4d77ba | TakeDamage isBossOrInvincible 分支加入 is EnemyStunState 保護；修正錯誤 ponytail 註解 | 使用者已確認首次暈眩正常、重複攻擊不重設、暈眩結束可再暈眩 | — |
 | 03C 硬寫數值序列化 | 完成（使用者 Unity Play Mode 實測通過） | c210189cc468d5e83387f092100ec46db08f75c9 | PlayerAttack 新增 enemyHitDamage=10、enemyHitStunDuration=1f；EnemyController 新增 playerHitDamage=1f；Inspector Tooltip 區分選民影響與角色傷害 | 使用者已確認 enemyHitDamage/enemyHitStunDuration/playerHitDamage 改值後行為跟著變動 | — |
-| 04 Boss 資產與結算 | 程式完成，待 Unity 驗收 | 本次 commit | MissionTracker FinalBoss 路徑加票數輪詢＋時限敗選；GameplayState FinalBoss 場景啟動 LevelTimer；BattleFlowController FinalBoss 結算後清場；靜態確認引用鏈 S_Elite→Elite_.prefab、S_Boss→Boss_.prefab 正確 | 待使用者 Unity Play Mode 驗收 | Boss_Arena 場景需有 LevelTimer 並設定 TotalDuration（時限秒數）；M_Boss.targetValue=70 即票數門檻 |
+| 04 Boss 資產與結算 | 程式完成，待 Unity 驗收 | 8bf4037（主）+ e9d35de（cooldown fix）+ 本次 commit（收尾） | MissionTracker FinalBoss 票數輪詢＋時限敗選；GameplayState FinalBoss LevelTimer；BattleFlowController FinalBoss 清場；NavMesh Warp 回傳值檢查＋失敗 Warning/Error；HandleObjectiveResolved 加玩家 HP 仲裁（IntegrityHp<=0 時忽略 Objective，優先退選） | 待使用者 Unity Play Mode 驗收 | Boss_Arena 場景需有 LevelTimer 並設定 TotalDuration；M_Boss.targetValue=70 為票數門檻 |
 | 05 記者與清場 | 待開始 | — | 未執行 | 未執行 | 依賴 04 |
 | 06 記者監視 | 待開始 | — | 未執行 | 未執行 | 依賴 05 |
 | 07 精英／Boss 技能 | 待開始 | — | 未執行 | 未執行 | 依賴 06 |
