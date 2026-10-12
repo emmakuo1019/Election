@@ -216,6 +216,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
             // 志工（以及預設耐久角色）：進入長暈眩循環（不呼叫 Die，不計清場）
             StunState?.SetStunDuration(neutralizeDuration, restoreFullHPOnExit: true);
             StateMachine?.ChangeState(StunState);
+            
+            // 播放志工中立化音效（HP 歸零後進入長暈眩循環的確立點，每次中立化一次）
+            // 只對 Volunteer 播放，Reporter 走 Die() 分支不會到達這裡
+            if (enemyRole == EnemyRole.Volunteer)
+                AudioManager.Instance?.PlaySFX_EnemyVolunteerDeath();
+            
             return;
         }
 
@@ -367,11 +373,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
                 5f, UnityEngine.AI.NavMesh.AllAreas))
             {
                 Agent.Warp(hit.position);
-                Debug.LogWarning($"[EnemyController] {name} 初始不在 NavMesh 上，已自動修正至 {hit.position}");
             }
             else
             {
-                Debug.LogError($"[EnemyController] {name} 附近 5 公尺內找不到 NavMesh！敵人可能無法正常移動。");
             }
         }
         
@@ -404,9 +408,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
             {
                 colliderWorldCenter += sphere.center;
             }
-            
-            Debug.Log($"[EnemyController] {name} Collider 狀態: enabled={col.enabled}, isTrigger={col.isTrigger}, layer={gameObject.layer}");
-            Debug.Log($"[EnemyController] {name} 位置: GameObject={transform.position}, Collider中心={colliderWorldCenter}");
         }
         
         // 防呆：確保脫戰距離大於偵測距離，形成正確的遲滯區間 (Hysteresis)
@@ -483,6 +484,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
             for (int i = 0; i < equippedSkills.Length; i++)
             {
                 if (equippedSkills[i] == null) continue;
+                // cooldown <= 0 視為「未設定」，跳過，避免每幀連續觸發技能
+                if (equippedSkills[i].cooldown <= 0f) continue;
 
                 _skillCooldownTimers[i] += Time.deltaTime;
                 if (_skillCooldownTimers[i] >= equippedSkills[i].cooldown)
