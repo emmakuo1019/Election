@@ -590,12 +590,18 @@ public class EnemyController : MonoBehaviour, IAttackSource
         // 假設 attackHitOffset.z 為前方距離，attackHitOffset.y 為高度
         Vector3 hitCenter = transform.position + attackDir * attackHitOffset.z + Vector3.up * attackHitOffset.y;
 
+        // 同次攻擊去重：以角色根物件元件為身分，避免多 Collider 重複結算同一角色。
+        // ponytail: HashSet 每次 PerformAttackHit 建立一次（攻擊頻率低，GC 可接受）。
+        var hitVoters  = new System.Collections.Generic.HashSet<VoterLogic>();
+        var hitPlayers = new System.Collections.Generic.HashSet<PlayerController>();
+
         // --- 對選民的判定 ---
         Collider[] voterHits = Physics.OverlapSphere(hitCenter, attackHitRadius, targetLayerMask);
         foreach (Collider hit in voterHits)
         {
             VoterLogic voter = hit.GetComponentInParent<VoterLogic>();
             if (voter == null) continue;
+            if (!hitVoters.Add(voter)) continue; // 同一選民已結算，跳過
 
             // 【陣營防呆】如果該選民已經是自己人，直接跳過
             if (voter.Data != null && voter.Data.ConvertedSide == factionSign) continue;
@@ -621,6 +627,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
             {
                 PlayerController pc = hit.GetComponentInParent<PlayerController>();
                 if (pc == null) continue;
+                if (!hitPlayers.Add(pc)) continue; // 同一玩家已結算，跳過
 
                 // 扇形角度過濾
                 Vector3 dirToPlayer = (pc.transform.position - transform.position);

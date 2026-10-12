@@ -209,8 +209,8 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 |---|---|---|---|---|---|
 | 01 志工耐久 | 待開始 | — | 未執行 | 未執行 | 從此開始 |
 | 02 行為優先權 | 程式完成，待驗收 | 44b78f6 + 本次修正 | 新增精英／Boss 的玩家技能暈眩與 layer 回歸測試（待 Unity 執行） | 待 Unity Play Mode／Test Runner 驗收 | Boss／精英技能 SO 缺少資產，留 Task 07 設定 |
-| 03A 停止距離對齊 | 完成（使用者 Unity 實測通過） | 6f3d57b（程式）+ 本次 Prefab commit | EnemyMoveState 停步改 attackHitRadius+offset.z；Volunteer/Elite_/Boss_ closeRangeRadius 由 1.5→1 對齊 attackHitRadius=1；player/Reporter 未動 | 使用者已在 Unity Play Mode 實測確認 | attackRange 欄位保留不再控制停步（ponytail 標記） |
-| 03B 同攻擊去重 | 待開始 | — | 未執行 | 未執行 | 依賴 03A |
+| 03A 停止距離對齊 | 完成（使用者 Unity 實測通過） | 6f3d57b（程式）+ d191d80（Prefab） | EnemyMoveState 停步改 attackHitRadius+offset.z；Volunteer/Elite_/Boss_ closeRangeRadius 由 1.5→1 對齊 attackHitRadius=1；player/Reporter 未動 | 使用者已在 Unity Play Mode 實測確認 | attackRange 欄位保留不再控制停步（ponytail 標記） |
+| 03B 同攻擊去重 | 程式完成，待 Unity 驗收 | TBD | PlayerAttack.PerformAttack 與 EnemyController.PerformAttackHit 各加 HashSet 去重；DogezaSkill（SkillState）已有去重不需修改；靜態確認 fully-qualified HashSet、兩個 Add 防呆邏輯及 enemy/voter 互不干擾 | 待 Unity Play Mode 驗收 | 無 Inspector 欄位需設定；需 Play Mode 確認多 Collider 場景 |
 | 03C 硬寫數值序列化 | 待開始 | — | 未執行 | 未執行 | 依賴 03A |
 | 04 Boss 資產與結算 | 待開始 | — | 未執行 | 未執行 | 依賴 03 |
 | 05 記者與清場 | 待開始 | — | 未執行 | 未執行 | 依賴 04 |

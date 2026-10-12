@@ -203,6 +203,11 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             Debug.Log($"[PlayerAttack]   - {e.name} at {e.transform.position}, 距離={dist:F2}");
         }
 
+        // 同次攻擊去重：以角色根物件上的元件為身分，避免多 Collider 重複結算同一角色。
+        // ponytail: HashSet 每次攻擊建立一次（攻擊頻率低，GC 可接受）。
+        var hitEnemies = new System.Collections.Generic.HashSet<EnemyController>();
+        var hitVoters  = new System.Collections.Generic.HashSet<VoterLogic>();
+
         for (int i = 0; i < hitCount; i++)
         {
             Collider hit = hitBuffer[i];
@@ -214,6 +219,10 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
             Debug.Log($"[PlayerAttack]  [{i}] 碰撞體={hit.name}, layer={hit.gameObject.layer}, tag={hit.gameObject.tag}");
             Debug.Log($"[PlayerAttack]      GetComponentInParent<VoterLogic>()={voter != null}");
             Debug.Log($"[PlayerAttack]      GetComponentInParent<EnemyController>()={enemy != null}");
+
+            // 同一角色已結算過，跳過（去重）
+            if (enemy != null && !hitEnemies.Add(enemy)) continue;
+            if (voter != null && enemy == null && !hitVoters.Add(voter)) continue;
 
             Transform targetTransform = null;
             if (voter != null) targetTransform = voter.transform;
