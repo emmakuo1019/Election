@@ -12,8 +12,16 @@ public class GameplayState : IState
     /// </summary>
     public GameplayState() { }
 
+    // ── 終局仲裁：延後一幀的 pending outcome ──────────────────────────
+    // null = 尚未收到任何 Objective；有值 = 等待下一幀確認。
+    // 防重複：只允許一個 pending，後續 ObjectiveResolved 事件直接忽略。
+    // HandlePlayerDied 清除 pending 並立即離開，coroutine 下一幀看到
+    // CurrentState != this 後自動放棄，不會再進 StageClearState。
+    private EncounterOutcome? _pendingOutcome;
+
     public void Enter()
     {
+        _pendingOutcome = null;
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Loading);
         BattleEventManager.OnObjectiveResolved += HandleObjectiveResolved;
         BattleEventManager.OnPlayerDied += HandlePlayerDied;
@@ -97,16 +105,40 @@ public class GameplayState : IState
 
     private void HandleObjectiveResolved(EncounterOutcome outcome)
     {
-        // 終局仲裁：玩家 HP 歸零時 PlayerDied 有最高優先權。
-        // 若本幀玩家誠信已歸零，忽略此次 ObjectiveResolved，讓 HandlePlayerDied 獨立執行退選。
-        // ponytail: 讀 GameDB.Run 即時值，同幀其他事件已呼叫 ModifyIntegrityHp，數值此刻已是 0。
-        if (GameDB.Instance?.Run?.IntegrityHp <= 0f) return;
+        // 只允許一個 pending objective；後續事件忽略（MissionTracker._resolved 也已防重複）。
+        if (_pendingOutcome.HasValue) return;
+        _pendingOutcome = outcome;
+        GameFlowManager.Instance?.StartCoroutine(CommitObjectiveNextFrame());
+    }
 
-        GameFlowManager.Instance?.ChangeState(new StageClearState(outcome));
+    /// <summary>
+    /// 延後一幀再提交結算，讓同幀的 PlayerDied 事件有機會搶先離開。
+    /// 醒來後的兩個 guard：
+    ///   1. CurrentState == this：PlayerDied 已呼叫 ChangeState(GameEndState)，
+    ///      GameplayState.Exit() 已取消訂閱，此時 CurrentState 已改變，直接放棄。
+    ///   2. IntegrityHp > 0：萬一 PlayerDied 事件還未在本幀觸發，
+    ///      仍透過 HP 值阻擋（與 c4459df 的邏輯一致）。
+    /// </summary>
+    private IEnumerator CommitObjectiveNextFrame()
+    {
+        yield return null;  // 等一幀
+
+        // guard 1：state 已離開（PlayerDied 已執行）
+        if (GameFlowManager.Instance?.CurrentState != this) yield break;
+
+        // guard 2：HP 已歸零（PlayerDied 同幀但晚於 ObjectiveResolved）
+        if (GameDB.Instance?.Run?.IntegrityHp <= 0f) yield break;
+
+        EncounterOutcome committed = _pendingOutcome.GetValueOrDefault();
+        _pendingOutcome = null;
+        GameFlowManager.Instance?.ChangeState(new StageClearState(committed));
     }
 
     private void HandlePlayerDied()
     {
+        // 清除 pending，確保 coroutine 即使還沒執行，下一幀 CurrentState != this
+        // 的 guard 也會讓它放棄（Exit() 在 ChangeState 裡同步呼叫）。
+        _pendingOutcome = null;
         GameFlowManager.Instance?.ChangeState(new GameEndState(false));
     }
 
