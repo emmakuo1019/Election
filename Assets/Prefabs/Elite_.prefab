@@ -107,7 +107,7 @@ MonoBehaviour:
   segments: 30
   heightOffset: 0.05
   enableCloseRangeCircle: 1
-  closeRangeRadius: 1.5
+  closeRangeRadius: 1
 --- !u!1 &2193149529667467388
 GameObject:
   m_ObjectHideFlags: 0
