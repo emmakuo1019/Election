@@ -6,12 +6,21 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour, IAttackSource
 {
-    [Header("攻擊設定")]
+    [Header("攻擊設定 - 對選民")]
+    [Tooltip("演說範圍半徑（公尺）")]
     public float attackRange = 3f;
+    [Tooltip("演說扇形角度（度）")]
     public float attackAngle = 60f;
+    [Tooltip("每次演說對選民的立場影響值（正值偏向玩家陣營）")]
     public int attackInfluence = 1;
     [SerializeField] private float attackCooldown = 0f;
     [SerializeField] private float convertChance = 0.3f;
+
+    [Header("攻擊設定 - 對敵方角色")]
+    [Tooltip("玩家普攻命中敵方角色時扣除的耐久／HP（志工語意：耐久；記者語意：HP）")]
+    [Min(0)] [SerializeField] private int enemyHitDamage = 10;
+    [Tooltip("玩家普攻命中敵方角色時造成的短暈眩秒數（設為 0 可關閉硬直）")]
+    [Min(0)] [SerializeField] private float enemyHitStunDuration = 1f;
 
     [Header("顯示")]
     public AttackRangeMesh attackRangeMesh;
@@ -270,7 +279,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                 if (enemy != null)
                 {
                     Debug.Log($"[PlayerAttack]      🎯 對敵人 {enemy.name} 造成傷害！");
-                    enemy.TakeDamage(10, 1.0f);
+                    enemy.TakeDamage(enemyHitDamage, enemyHitStunDuration);
                     hitAny = true;
                 }
                 // 如果是選民，則進行原本的拉票邏輯

@@ -81,8 +81,10 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public float moveSpeed = 4.5f;
     [Tooltip("攻擊距離 (決定何時停下腳步發動攻擊)")]
     public float attackRange = 2f;
-    [Tooltip("每次拉票(攻擊)的影響力數值，對手方為負值")]
+    [Tooltip("每次拉票(攻擊)的影響力數值，對選民立場的偏移量；對手方為負值")]
     public int attackInfluence = -1;
+    [Tooltip("普攻命中玩家時扣除的誠信 HP；不影響選民拉票量（attackInfluence）")]
+    [Min(0)] [SerializeField] private float playerHitDamage = 1f;
     [Tooltip("偵測(觸發追擊)範圍")]
     public float detectionRange = 10f;
     [Tooltip("脫戰距離(遲滯區間)，應大於 detectionRange")]
@@ -644,7 +646,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
                     if (angleToPlayer > AttackAngle / 2f) continue;
                 }
 
-                PlayerHealthSystem.Instance?.TakeDamage(1f);
+                PlayerHealthSystem.Instance?.TakeDamage(playerHitDamage);
             }
         }
     }

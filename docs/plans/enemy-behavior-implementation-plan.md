@@ -212,7 +212,7 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 | 03A 停止距離對齊 | 完成（使用者 Unity 實測通過） | 6f3d57b（程式）+ d191d80（Prefab） | EnemyMoveState 停步改 attackHitRadius+offset.z；Volunteer/Elite_/Boss_ closeRangeRadius 由 1.5→1 對齊 attackHitRadius=1；player/Reporter 未動 | 使用者已在 Unity Play Mode 實測確認 | attackRange 欄位保留不再控制停步（ponytail 標記） |
 | 03B 同攻擊去重 | 完成（使用者 Unity Play Mode 實測通過） | ecca322b5e671b5e6c0866fe5468a03011f3db0d | PlayerAttack.PerformAttack 與 EnemyController.PerformAttackHit 各加 HashSet 去重；DogezaSkill 已有去重；靜態確認邏輯正確 | 使用者已確認多 Collider 不造成同次攻擊重複結算 | — |
 | 03B 補：Boss/Elite 暈眩不重設 | 完成，待 Unity 驗收 | 本次 commit | TakeDamage isBossOrInvincible 分支加入 is EnemyStunState 保護；修正錯誤 ponytail 註解；靜態確認志工 / Reporter 路徑未受影響 | 待使用者 Unity Play Mode 驗收（首次暈眩、重複攻擊、暈眩結束再暈眩） | — |
-| 03C 硬寫數值序列化 | 待開始 | — | 未執行 | 未執行 | 依賴 03A |
+| 03C 硬寫數值序列化 | 程式完成，待 Unity 驗收 | 本次 commit | PlayerAttack 新增 enemyHitDamage=10、enemyHitStunDuration=1f；EnemyController 新增 playerHitDamage=1f；Inspector Tooltip 區分選民影響與角色傷害；Prefab 無需修改（field initializer 已等同舊硬寫值） | 待使用者 Unity Play Mode 驗收 | 無 Inspector 欄位需手動設定；需在 Play Mode 確認數值改動後行為跟著變動 |
 | 04 Boss 資產與結算 | 待開始 | — | 未執行 | 未執行 | 依賴 03 |
 | 05 記者與清場 | 待開始 | — | 未執行 | 未執行 | 依賴 04 |
 | 06 記者監視 | 待開始 | — | 未執行 | 未執行 | 依賴 05 |
