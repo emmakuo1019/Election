@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EliminateAllSpawnConfig
   enemyPrefabs:
   - {fileID: 447725353262188044, guid: 674e01088c8b74177a963af098f37808, type: 3}
-  totalEnemyCount: 10
+  totalEnemyCount: 3
