@@ -53,6 +53,8 @@ public class EnemySpawner : MonoBehaviour
         // 新場景敵人 OnEnable → NotifyEnemySpawned 會在 StartTracking() 前就累加 count，
         // 甚至可能讓 count 意外歸零並提前觸發全滅事件。
         EnemySpawnTracker.StopTracking();
+        // Reporter 任務的跨場景殘留狀態也一起清除
+        ReporterMissionTracker.Instance?.Reset();
 
         switch (config)
         {
@@ -98,25 +100,41 @@ public class EnemySpawner : MonoBehaviour
                 EnemyController ec = obj.GetComponent<EnemyController>();
                 if (ec != null && ec.enemyRole == EnemyRole.Reporter)
                 {
-                    ReporterMissionTracker.Instance?.Register(ec);
+                    if (ReporterMissionTracker.Instance == null)
+                    {
+                        Debug.LogError("[EnemySpawner] Reporter 清場任務：場景中找不到 ReporterMissionTracker！" +
+                            "請在場景的 MissionTracker 同層 GameObject 上掛載 ReporterMissionTracker。");
+                    }
+                    else
+                    {
+                        ReporterMissionTracker.Instance.Register(ec);
+                    }
+                }
+                else if (ec == null)
+                {
+                    Debug.LogWarning($"[EnemySpawner] 生成的物件 {obj.name} 缺少 EnemyController，已跳過登記。");
+                }
+                else
+                {
+                    // 生成的不是 Reporter（可能是混合 config 中的 Volunteer），不登記
                 }
             }
             
-            // 等待兩個 FixedUpdate 確保：
-            // 1. Collider 完全註冊到 PhysicsSystem
-            // 2. NavMeshAgent 完全初始化
             yield return new WaitForFixedUpdate();
             yield return new WaitForFixedUpdate();
         }
 
-        // Reporter 清場任務：通知 registration 完成，開始監聽退場
         if (isReporterMission)
         {
+            // Reporter 任務：通知 registration 完成，由 ReporterMissionTracker 負責判斷完成。
+            // 不啟動 EnemySpawnTracker：Reporter 排除後 count=0 會立即誤觸 AllEnemiesDefeated。
             ReporterMissionTracker.Instance?.FinishRegistration();
         }
-
-        // 所有敵人已放置完畢，開始追蹤存活數（EliminateAll 原有邏輯）
-        EnemySpawnTracker.StartTracking();
+        else
+        {
+            // 一般 EliminateAll：啟動全敵人計數追蹤器
+            EnemySpawnTracker.StartTracking();
+        }
     }
 
     /// <summary>Survive：週期性湧入，不追蹤全滅條件</summary>
@@ -140,10 +158,19 @@ public class EnemySpawner : MonoBehaviour
     /// <summary>Fallback：無 config 時的保底流程（EliminateAll 邏輯）</summary>
     private IEnumerator SpawnFallback()
     {
+        bool isReporterMission = GameDB.Instance?.Campaign.ActiveRoom.mission?.isReporterMission ?? false;
+        if (isReporterMission)
+        {
+            // Reporter 任務不得走 fallback：會繞過 Register/FinishRegistration 流程
+            Debug.LogError("[EnemySpawner] Reporter 清場任務走到 fallback！" +
+                "請確認 RoomMissionData 有掛載 EliminateAllSpawnConfig，且 isReporterMission=true 的任務不使用 fallback。" +
+                "任務將保持未完成。");
+            yield break;
+        }
+
         for (int i = 0; i < fallbackCount; i++)
         {
             SpawnEnemy(fallbackEnemyPrefab);
-            // 同樣等待 FixedUpdate 確保 Physics 同步
             yield return new WaitForFixedUpdate();
         }
         EnemySpawnTracker.StartTracking();

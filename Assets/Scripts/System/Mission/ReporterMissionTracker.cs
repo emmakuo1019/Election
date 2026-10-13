@@ -9,13 +9,14 @@ using UnityEngine;
 ///   1. EnemySpawner 生成每隻 Reporter 後呼叫 Register(reporter)。
 ///   2. 生成完畢後呼叫 FinishRegistration()，開始監聽。
 ///   3. Reporter.Die() 呼叫 NotifyReporterExited(reporter)。
-///   4. 所有已登記 Reporter 全部退場後觸發 OnAllReportersDefeated 事件，
+///   4. 所有已登記 Reporter 全部退場後觸發 OnAllReportersDefeated，
 ///      MissionTracker 收到後呼叫 NotifyResult(true)。
 ///
 /// 安全保護：
 ///   - registration 完成前不判斷勝利（避免空目標自動成功）。
 ///   - 目標數為 0 時回報設定錯誤，任務不自動成功。
 ///   - 重複通知同一 Reporter 被忽略（死亡 guard 由 EnemyController._isDead 保護）。
+///   - Destroy / OnDisable / 轉場清理不觸發退場計數（入口唯一：Die() → NotifyReporterExited）。
 /// </summary>
 public class ReporterMissionTracker : MonoBehaviour
 {
@@ -24,9 +25,22 @@ public class ReporterMissionTracker : MonoBehaviour
     /// <summary>所有指定 Reporter 全數退場時觸發。</summary>
     public static event System.Action OnAllReportersDefeated;
 
+    /// <summary>剩餘目標數變更時觸發，參數為最新剩餘數；供 EnemyCounterUI 訂閱。</summary>
+    public static event System.Action<int> OnRemainingCountChanged;
+
     private readonly HashSet<EnemyController> _targets = new HashSet<EnemyController>();
     private readonly HashSet<EnemyController> _exited  = new HashSet<EnemyController>();
     private bool _registrationDone = false;
+
+    // ── 唯讀屬性 ─────────────────────────────────────────────────────
+
+    /// <summary>本次任務登記的目標總數（FinishRegistration 後才穩定）。</summary>
+    public int TargetCount => _targets.Count;
+
+    /// <summary>目前仍存活的指定 Reporter 數量。</summary>
+    public int RemainingCount => _targets.Count - _exited.Count;
+
+    // ── Unity 生命週期 ────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -42,12 +56,28 @@ public class ReporterMissionTracker : MonoBehaviour
     // ── 公開 API ─────────────────────────────────────────────────────
 
     /// <summary>
+    /// 場景重新載入前由 EnemySpawner（Start()）呼叫，清除上一關殘留狀態。
+    /// </summary>
+    public void Reset()
+    {
+        _targets.Clear();
+        _exited.Clear();
+        _registrationDone = false;
+        OnRemainingCountChanged?.Invoke(0);
+    }
+
+    /// <summary>
     /// EnemySpawner 在每次生成 Reporter 後立即呼叫，將其登記為本次目標。
     /// FinishRegistration() 呼叫之前可以持續呼叫。
     /// </summary>
     public void Register(EnemyController reporter)
     {
         if (reporter == null) return;
+        if (_registrationDone)
+        {
+            Debug.LogWarning("[ReporterMissionTracker] registration 已完成後仍收到 Register 呼叫，已忽略。");
+            return;
+        }
         _targets.Add(reporter);
     }
 
@@ -58,11 +88,12 @@ public class ReporterMissionTracker : MonoBehaviour
     public void FinishRegistration()
     {
         _registrationDone = true;
+        OnRemainingCountChanged?.Invoke(RemainingCount);
 
         if (_targets.Count == 0)
         {
             Debug.LogError("[ReporterMissionTracker] Reporter 清場任務：目標數為 0！" +
-                "請確認 SpawnConfig 中有指定 Reporter Prefab，且 totalEnemyCount > 0。" +
+                "請確認 SpawnConfig 中有指定 Reporter Prefab（enemyRole=Reporter），且 totalEnemyCount > 0。" +
                 "任務將保持未完成。");
             return;
         }
@@ -73,6 +104,7 @@ public class ReporterMissionTracker : MonoBehaviour
 
     /// <summary>
     /// 由 EnemyController.Die()（Reporter 角色）呼叫，通知此 Reporter 已永久退場。
+    /// 唯一合法入口：Destroy、OnDisable、轉場清理均不得呼叫此方法。
     /// </summary>
     public static void NotifyReporterExited(EnemyController reporter)
     {
@@ -85,11 +117,12 @@ public class ReporterMissionTracker : MonoBehaviour
     private void HandleReporterExited(EnemyController reporter)
     {
         if (reporter == null) return;
-        // 只處理本次任務登記的 Reporter
+        // 只處理本次任務登記的 Reporter；非任務記者（場景裝飾）靜默忽略
         if (!_targets.Contains(reporter)) return;
-        // 重複通知忽略
+        // 重複通知忽略（Die() 已有 _isDead guard，此為第二層保護）
         if (!_exited.Add(reporter)) return;
 
+        OnRemainingCountChanged?.Invoke(RemainingCount);
         CheckCompletion();
     }
 
