@@ -97,14 +97,15 @@ public class ReporterMonitor : MonoBehaviour
         // ── 基本門檻 ──────────────────────────────────────────────────
         if (_ctrl.IsDead) return;
 
-        // Phase 檢查：完整流程由 GameplayState.BeginActive 推進到 Active；
-        // 直接 Play 場景（無 GameFlowManager）時 Phase 停在 None，
-        // 此時允許通過以便開發測試。
-        bool phaseOk = BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active
-                    || BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.None;
+        // Phase 檢查：只有 Active 才處罰；None 允許直接 Play 場景開發測試。
+        // RouteSelection / ObjectiveResolved / RewardSelection 等過關後階段一律不處罰。
+        var phase = BattleEventManager.CurrentEncounterPhase;
+        bool phaseOk = phase == BattleEventManager.EncounterPhase.Active
+                    || phase == BattleEventManager.EncounterPhase.None;
         if (!phaseOk)
         {
-            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：Phase={BattleEventManager.CurrentEncounterPhase}（非 Active/None）");
+            // 開發用 Log：只在非預期 Phase 時印一次，不每幀洗版（施法本身是離散事件）
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：Phase={phase}（只在 Active 處罰）");
             return;
         }
 
@@ -154,9 +155,21 @@ public class ReporterMonitor : MonoBehaviour
         if (player != null)
         {
             // 玩家：扣誠信 HP
-            if (playerPenaltyDamage > 0f && PlayerHealthSystem.HasInstance)
+            // 優先走 PlayerHealthSystem（護盾層等完整流程）；
+            // 若 singleton 不存在（直接 Play 場景），退一步直接改 GameDB，確保測試可見。
+            if (playerPenaltyDamage > 0f)
             {
-                PlayerHealthSystem.Instance.TakeDamage(playerPenaltyDamage);
+                if (PlayerHealthSystem.HasInstance)
+                {
+                    PlayerHealthSystem.Instance.TakeDamage(playerPenaltyDamage);
+                }
+                else
+                {
+                    // Fallback：直接扣 GameDB（繞過護盾，但確保扣血可被觀察）
+                    GameDB.Instance?.Run.ModifyIntegrityHp(-playerPenaltyDamage);
+                    Debug.LogWarning("[ReporterMonitor] PlayerHealthSystem 不存在，直接扣 GameDB.IntegrityHp。" +
+                                     "正式流程請確認 PlayerHealthSystem 已在場景中。");
+                }
                 Debug.Log($"[Reporter] 記者 {name} 抓到 {info.Caster.name} 施放 [{info.Skill.skillName}]，" +
                           $"扣除誠信 {playerPenaltyDamage}。CastId={info.CastId}");
             }
