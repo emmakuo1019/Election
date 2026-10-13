@@ -25,12 +25,10 @@ public static class EnemySpawnTracker
         _trackingActive = true;
         int count = GetAliveEnemies().Length;
         OnAliveCountChanged?.Invoke(count);
-        Debug.Log($"[EnemySpawnTracker] 開始追蹤，場上敵人數：{count}");
 
         // 防呆：若場上完全沒有敵人就立刻觸發
         if (count == 0)
         {
-            Debug.LogWarning("[EnemySpawnTracker] StartTracking 時場上已無敵人，立即觸發全滅事件。");
             BattleEventManager.TriggerAllEnemiesDefeated();
         }
     }
@@ -42,7 +40,6 @@ public static class EnemySpawnTracker
     {
         _trackingActive = false;
         OnAliveCountChanged?.Invoke(0);
-        Debug.Log("[EnemySpawnTracker] 停止追蹤");
     }
 
     /// <summary>
@@ -53,7 +50,6 @@ public static class EnemySpawnTracker
     {
         if (!_trackingActive)
         {
-            Debug.LogWarning("[EnemySpawnTracker] NotifyEnemyDied 被呼叫但追蹤器未啟動，已忽略。");
             return;
         }
 
@@ -74,12 +70,10 @@ public static class EnemySpawnTracker
         var enemies = GetAliveEnemies();
         int count = enemies.Length;
         
-        Debug.Log($"[EnemySpawnTracker] 敵人死亡，場上剩餘：{count}");
         OnAliveCountChanged?.Invoke(count);
 
         if (count == 0)
         {
-            Debug.Log("[EnemySpawnTracker] 場上敵人全滅，觸發 OnAllEnemiesDefeated 事件！");
             BattleEventManager.TriggerAllEnemiesDefeated();
         }
     }
@@ -92,16 +86,29 @@ public static class EnemySpawnTracker
         if (!_trackingActive) return;
         int count = GetAliveEnemies().Length;
         OnAliveCountChanged?.Invoke(count);
-        Debug.Log($"[EnemySpawnTracker] 敵人生成，場上數量：{count}");
     }
 
     /// <summary>
-    /// 取得場上所有活著的敵人。
+    /// 取得場上所有參與 EliminateAll 計數的敵人（排除 Reporter，Reporter 走獨立清場路徑）。
     /// </summary>
     private static EnemyController[] GetAliveEnemies()
     {
-        return Object.FindObjectsByType<EnemyController>(
-            FindObjectsInactive.Exclude, 
+        var all = Object.FindObjectsByType<EnemyController>(
+            FindObjectsInactive.Exclude,
             FindObjectsSortMode.None);
+
+        // Reporter 不參與 EliminateAll 計數：走 ReporterMissionTracker 獨立路徑
+        // ponytail: LINQ 在此 N < 30，每次死亡觸發一次，可接受；有效能需求再改 cached list
+        int validCount = 0;
+        for (int i = 0; i < all.Length; i++)
+            if (all[i].enemyRole != EnemyRole.Reporter) validCount++;
+
+        if (validCount == all.Length) return all;  // 全部都不是 Reporter，直接回傳
+
+        var result = new EnemyController[validCount];
+        int idx = 0;
+        for (int i = 0; i < all.Length; i++)
+            if (all[i].enemyRole != EnemyRole.Reporter) result[idx++] = all[i];
+        return result;
     }
 }

@@ -298,11 +298,20 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         // Play death animation (fallback to Idle if no specific death animation)
         Animator?.CrossFade("Die", 0.1f);
-        // Notify general spawn tracker（EliminateAll 任務的全敵人計數）
-        EnemySpawnTracker.NotifyEnemyDied();
-        // Notify Reporter mission tracker（只有 Reporter 角色需要）
+        // Notify Reporter mission tracker（只有 Reporter 角色需要，走獨立清場路徑）
         if (enemyRole == EnemyRole.Reporter)
+        {
             ReporterMissionTracker.NotifyReporterExited(this);
+            // Reporter 不計入 EliminateAll 全敵人計數：
+            // CheckEnemiesAfterFrame 等一幀，但 Destroy 有 0.5s 延遲，
+            // 一幀後 Reporter 還存在，count 不降到 0，導致任務永遠不完成。
+            // Reporter 走 ReporterMissionTracker 獨立路徑，不呼叫 NotifyEnemyDied。
+        }
+        else
+        {
+            // Notify general spawn tracker（EliminateAll 任務的全敵人計數，Volunteer/Volunteer 等）
+            EnemySpawnTracker.NotifyEnemyDied();
+        }
         // Destroy after short delay to allow animation to play
         Destroy(gameObject, 0.5f);
     }
