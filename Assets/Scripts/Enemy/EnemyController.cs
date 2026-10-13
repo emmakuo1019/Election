@@ -106,7 +106,15 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("Boss無敵模式：可被暈眩但不會死亡（用於Elite和FinalBoss關卡）")]
     [SerializeField] private bool isInvincible = false;
     
+    [Header("Reporter 受擊白名單")]
+    [Tooltip("只有在此清單內的玩家技能，才能對 Reporter 造成傷害。\n" +
+             "玩家普通攻擊不需列入（永遠有效）。\n" +
+             "此清單與 Task 06 的「監視技能清單」完全分開。")]
+    [SerializeField] private SkillData[] reporterDamageWhitelist = new SkillData[0];
+
     private int _currentHP = 3;
+    // Reporter 永久退場 guard：避免多 Collider 或連續傷害重複執行 Die()
+    private bool _isDead = false;
 
     [Header("UI")]
     [SerializeField] private EnemyHPBarUI hpBarUI;
@@ -163,12 +171,51 @@ public class EnemyController : MonoBehaviour, IAttackSource
     // ==========================================
 
     /// <summary>
-    /// 敵人受到傷害或控制技能時呼叫。
-    /// 扣除血量並強制切換至硬直狀態，中斷當前行為。
-    /// Boss無敵模式：只受暈眩，不扣血。
-    /// 志工語意：HP 即耐久；歸零進入長暈眩循環，不計死亡。
+    /// 帶來源語意的受擊入口（新版，供玩家攻擊呼叫）。
+    /// Reporter 白名單判斷從這裡進行；其他角色行為與舊 overload 相同。
+    /// </summary>
+    public void TakeDamage(int damage, float stunTime, EnemyHitInfo hitInfo)
+    {
+        // Reporter 白名單：只接受 BasicAttack 與白名單內的 PlayerSkill
+        if (enemyRole == EnemyRole.Reporter)
+        {
+            bool allowed = hitInfo.sourceType == EnemyHitSourceType.BasicAttack;
+            if (!allowed && hitInfo.sourceType == EnemyHitSourceType.PlayerSkill)
+            {
+                // 在白名單中找到對應技能才允許
+                if (reporterDamageWhitelist != null)
+                {
+                    foreach (var s in reporterDamageWhitelist)
+                    {
+                        if (s != null && s == hitInfo.sourceSkill) { allowed = true; break; }
+                    }
+                }
+            }
+            if (!allowed) return;  // 來源不在白名單，靜默忽略
+        }
+
+        TakeDamageInternal(damage, stunTime);
+    }
+
+    /// <summary>
+    /// 舊版受擊入口，保留供相容（內部技能、Debug 等）。
+    /// Reporter 語意：視為 Other 來源，不在白名單 → 不扣血。
+    /// Volunteer / Elite / Boss 行為不變。
     /// </summary>
     public void TakeDamage(int damage, float stunTime = -1f)
+    {
+        if (enemyRole == EnemyRole.Reporter)
+        {
+            // 舊入口不攜帶來源資訊，對 Reporter 語意為「Other」，靜默忽略
+            return;
+        }
+        TakeDamageInternal(damage, stunTime);
+    }
+
+    /// <summary>
+    /// 實際傷害處理邏輯，由兩個公開 overload 共用。
+    /// </summary>
+    private void TakeDamageInternal(int damage, float stunTime)
     {
         // 短硬直時間：優先用 Inspector 欄位，外部傳入值為相容保留
         float effectiveStunTime = (stunTime >= 0f) ? stunTime : hitStunDuration;
@@ -241,16 +288,21 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
     // --- Die method re-added for permanent death cases ---
     /// <summary>
-    /// Handles permanent death of the enemy.
-    /// Plays death animation, notifies the spawn tracker, and destroys the game object.
-    /// Note: Normal enemies never call this; used only for invincible bosses or debug.
+    /// 敵人永久退場（目前只有 Reporter 走此路徑）。
+    /// _isDead guard 確保多 Collider 或連續傷害只執行一次。
     /// </summary>
     public void Die()
     {
+        if (_isDead) return;
+        _isDead = true;
+
         // Play death animation (fallback to Idle if no specific death animation)
         Animator?.CrossFade("Die", 0.1f);
-        // Notify tracker
+        // Notify general spawn tracker（EliminateAll 任務的全敵人計數）
         EnemySpawnTracker.NotifyEnemyDied();
+        // Notify Reporter mission tracker（只有 Reporter 角色需要）
+        if (enemyRole == EnemyRole.Reporter)
+            ReporterMissionTracker.NotifyReporterExited(this);
         // Destroy after short delay to allow animation to play
         Destroy(gameObject, 0.5f);
     }
@@ -488,7 +540,10 @@ public class EnemyController : MonoBehaviour, IAttackSource
                      || StateMachine.CurrentState is EnemyStunState
                      || StateMachine.CurrentState is EnemyAttackState;
 
-        if (!isActing && equippedSkills != null && equippedSkills.Length > 0)
+        // Reporter 不使用技能排程（Task 06 才加入 Reporter 跟隨行為）
+        bool canUseSkills = enemyRole != EnemyRole.Reporter;
+
+        if (canUseSkills && !isActing && equippedSkills != null && equippedSkills.Length > 0)
         {
             for (int i = 0; i < equippedSkills.Length; i++)
             {
@@ -592,6 +647,8 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// </summary>
     public void PerformAttackHit()
     {
+        // Reporter 不執行普攻命中（不拉票、不攻擊玩家）
+        if (enemyRole == EnemyRole.Reporter) return;
         // 根據目標或移動方向，推算前方判定球的中心點
         Vector3 attackDir = transform.forward;
 

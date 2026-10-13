@@ -72,12 +72,10 @@ public class EnemySpawner : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("[EnemySpawner] 無 SpawnConfig 且無 fallbackEnemyPrefab，不生成敵人。");
                 }
                 break;
 
             default:
-                Debug.LogWarning($"[EnemySpawner] 未知的 SpawnConfig 類型：{config.GetType().Name}");
                 break;
         }
     }
@@ -88,11 +86,21 @@ public class EnemySpawner : MonoBehaviour
     private IEnumerator SpawnEliminateAll(EliminateAllSpawnConfig config)
     {
         int count = config.totalEnemyCount;
-        Debug.Log($"[EnemySpawner] EliminateAll — 開始生成 {count} 隻敵人");
+        bool isReporterMission = GameDB.Instance?.Campaign.ActiveRoom.mission?.isReporterMission ?? false;
 
         for (int i = 0; i < count; i++)
         {
-            SpawnEnemy(config.GetRandomPrefab());
+            GameObject obj = SpawnEnemy(config.GetRandomPrefab());
+
+            // Reporter 清場任務：將生成的 Reporter 登記到 ReporterMissionTracker
+            if (isReporterMission && obj != null)
+            {
+                EnemyController ec = obj.GetComponent<EnemyController>();
+                if (ec != null && ec.enemyRole == EnemyRole.Reporter)
+                {
+                    ReporterMissionTracker.Instance?.Register(ec);
+                }
+            }
             
             // 等待兩個 FixedUpdate 確保：
             // 1. Collider 完全註冊到 PhysicsSystem
@@ -101,15 +109,19 @@ public class EnemySpawner : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
 
-        // 所有敵人已放置完畢，開始追蹤存活數
+        // Reporter 清場任務：通知 registration 完成，開始監聽退場
+        if (isReporterMission)
+        {
+            ReporterMissionTracker.Instance?.FinishRegistration();
+        }
+
+        // 所有敵人已放置完畢，開始追蹤存活數（EliminateAll 原有邏輯）
         EnemySpawnTracker.StartTracking();
-        Debug.Log("[EnemySpawner] EliminateAll — 生成完畢，追蹤器啟動");
     }
 
     /// <summary>Survive：週期性湧入，不追蹤全滅條件</summary>
     private IEnumerator SpawnSurviveWaves(SurviveSpawnConfig config)
     {
-        Debug.Log($"[EnemySpawner] Survive — 等待初始延遲 {config.initialDelay}s");
         if (config.initialDelay > 0f)
             yield return new WaitForSeconds(config.initialDelay);
 
@@ -117,7 +129,6 @@ public class EnemySpawner : MonoBehaviour
         while (true)
         {
             waveIndex++;
-            Debug.Log($"[EnemySpawner] Survive — 第 {waveIndex} 波，生成 {config.enemiesPerWave} 隻");
             for (int i = 0; i < config.enemiesPerWave; i++)
             {
                 SpawnEnemy(config.GetRandomPrefab());
@@ -129,7 +140,6 @@ public class EnemySpawner : MonoBehaviour
     /// <summary>Fallback：無 config 時的保底流程（EliminateAll 邏輯）</summary>
     private IEnumerator SpawnFallback()
     {
-        Debug.Log($"[EnemySpawner] Fallback — 生成 {fallbackCount} 隻");
         for (int i = 0; i < fallbackCount; i++)
         {
             SpawnEnemy(fallbackEnemyPrefab);
@@ -141,12 +151,11 @@ public class EnemySpawner : MonoBehaviour
 
     // ── 單隻生成 ─────────────────────────────────────────────────────
 
-    private void SpawnEnemy(GameObject prefab)
+    private GameObject SpawnEnemy(GameObject prefab)
     {
         if (prefab == null)
         {
-            Debug.LogWarning("[EnemySpawner] SpawnEnemy 收到 null prefab，跳過。");
-            return;
+            return null;
         }
 
         Transform spawnPoint = GetRandomSpawnPoint();
@@ -154,7 +163,7 @@ public class EnemySpawner : MonoBehaviour
             Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
 
         GameObject obj = Instantiate(prefab, spawnPos, Quaternion.identity);
-        Debug.Log($"[EnemySpawner] 生成 {prefab.name} at {spawnPos}");
+        return obj;
     }
 
     // ── 生成點解析 ────────────────────────────────────────────────────
@@ -175,7 +184,6 @@ public class EnemySpawner : MonoBehaviour
         }
 
         // 3. 自身保底
-        Debug.LogWarning("[EnemySpawner] 找不到生成點，使用自身位置。");
         return new Transform[] { transform };
     }
 
@@ -213,6 +221,5 @@ public class EnemySpawner : MonoBehaviour
             FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var e in enemies)
             Object.Destroy(e.gameObject);
-        Debug.Log($"[EnemySpawner] ClearAllEnemies — 銷毀 {enemies.Length} 隻敵人");
     }
 }

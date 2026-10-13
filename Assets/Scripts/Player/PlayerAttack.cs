@@ -279,7 +279,7 @@ public class PlayerAttack : MonoBehaviour, IAttackSource
                 if (enemy != null)
                 {
                     Debug.Log($"[PlayerAttack]      🎯 對敵人 {enemy.name} 造成傷害！");
-                    enemy.TakeDamage(enemyHitDamage, enemyHitStunDuration);
+                    enemy.TakeDamage(enemyHitDamage, enemyHitStunDuration, EnemyHitInfo.BasicAttack);
                     hitAny = true;
                 }
                 // 如果是選民，則進行原本的拉票邏輯

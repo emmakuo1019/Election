@@ -63,6 +63,12 @@ public class RoomMissionData : ScriptableObject
     [Tooltip("此任務的敵人生成配置；留空時 EnemySpawner 使用場景 fallback 設定")]
     public EnemySpawnConfig spawnConfig;
 
+    [Header("Reporter 清場任務")]
+    [Tooltip("勾選後此任務的勝利條件改為：指定生成的 Reporter 全部永久退場。\n" +
+             "objectiveType 仍設 EliminateAll，MissionTracker 會依此 flag 分流。\n" +
+             "不得與 Survive / ReachVotePercent 一起使用。")]
+    public bool isReporterMission = false;
+
     [Header("戰役資格")]
     [Tooltip("可被抽到的最小正式節點；0 代表不限制。")]
     [Min(0)] public int minCampaignNode = 0;

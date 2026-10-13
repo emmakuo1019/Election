@@ -122,6 +122,15 @@ public class MissionTracker : MonoBehaviour
         switch (_mission.objectiveType)
         {
             case MissionObjectiveType.EliminateAll:
+                // Reporter 清場任務：訂閱 ReporterMissionTracker 的完成事件，而非全敵人全滅事件。
+                if (_mission.isReporterMission)
+                {
+                    ReporterMissionTracker.OnAllReportersDefeated += HandleEliminateAll;
+                    _subscribed = true;
+                    // 不做 AliveCount == 0 的提前判斷；registration 未完成前不可觸發。
+                    break;
+                }
+
                 BattleEventManager.OnAllEnemiesDefeated += HandleEliminateAll;
                 
                 // [FIX] 只在 Active 階段才檢查「敵人已全滅」的邊界情況
@@ -160,6 +169,7 @@ public class MissionTracker : MonoBehaviour
     {
         BattleEventManager.OnFinalBossDefeated -= HandleFinalBossDefeated;
         BattleEventManager.OnAllEnemiesDefeated -= HandleEliminateAll;
+        ReporterMissionTracker.OnAllReportersDefeated -= HandleEliminateAll;
         BattleEventManager.OnTimerExpired       -= HandleTimerExpired;
         BattleEventManager.OnSurvivalTimeUp     -= HandleSurvivalTimeUp;
     }
