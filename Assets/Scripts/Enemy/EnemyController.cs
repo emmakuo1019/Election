@@ -575,6 +575,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
             attackRangeMesh.ShowIdle();
     }    private void Update()
     {
+        // Fix-D：已死亡（Destroy 延遲期間）不再執行任何狀態邏輯
+        if (_isDead) return;
+
         StateMachine.CurrentState?.Update();
 
         // ── 多技能系統：檢查所有技能冷卻 ────────────────────────────
@@ -609,6 +612,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
     private void FixedUpdate()
     {
+        if (_isDead) return;
         StateMachine.CurrentState?.PhysicsUpdate();
     }
 

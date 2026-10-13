@@ -4,6 +4,10 @@ using UnityEngine;
 /// <summary>
 /// 戰鬥全域事件管理器 (極簡版範例)
 /// 負責在戰鬥場景中，提供怪物、玩家等物件觸發核心進度事件的管道。
+
+/// <summary>
+/// 戰鬥全域事件管理器 (極簡版範例)
+/// 負責在戰鬥場景中，提供怪物、玩家等物件觸發核心進度事件的管道。
 /// </summary>
 public static class BattleEventManager
 {
@@ -184,5 +188,30 @@ public static class BattleEventManager
     public static void TriggerOnDarkVoterConverted()
     {
         OnDarkVoterConverted?.Invoke();
+    }
+
+    // Fix-B：Play Mode 進入時重置靜態狀態，防止關閉 Domain Reload 的 Editor 跨 Session 殘留
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        CurrentEncounterPhase = EncounterPhase.None;
+        // 靜態事件清空（訂閱者本身會在自己的 OnEnable/OnDisable 管理）
+        OnRoomCleared              = null;
+        OnObjectiveResolved        = null;
+        OnRewardSelectionRequested = null;
+        OnRouteSelected            = null;
+        OnExitReached              = null;
+        OnEncounterPhaseChanged    = null;
+        OnAllEnemiesDefeated       = null;
+        OnFinalBossDefeated        = null;
+        OnSurvivalTimeUp           = null;
+        OnTimerExpired             = null;
+        OnPlayerDied               = null;
+        OnRewardCollected          = null;
+        OnReturnToHQConfirmed      = null;
+        OnVoterConverted           = null;
+        OnAnySkillUsed             = null;
+        OnSkillCast                = null;
+        OnDarkVoterConverted       = null;
     }
 }

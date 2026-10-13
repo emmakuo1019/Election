@@ -29,6 +29,9 @@ public class ReporterFollowState : IState
 
     public void Enter()
     {
+        // 死亡後不應再進入此狀態，但加 guard 以防萬一
+        if (_ctx.IsDead) return;
+
         if (_ctx.Agent != null && _ctx.Agent.isOnNavMesh)
             _ctx.Agent.isStopped = false;
 
@@ -38,6 +41,9 @@ public class ReporterFollowState : IState
 
     public void Update()
     {
+        // Fix-D：死亡後立即停止所有 FollowState 行為
+        if (_ctx.IsDead) return;
+
         _ctx.UpdateFacingDirection();
 
         // ── 定時重新尋找候選人 ──────────────────────────────────────
