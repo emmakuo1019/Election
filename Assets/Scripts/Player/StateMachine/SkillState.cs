@@ -68,6 +68,15 @@ public class SkillState : IState
             // 3. 呼叫多型介面執行真正的技能邏輯（生成特效等）
             _skillData.ExecuteSkill(_ctx.gameObject);
 
+            // 技能真正執行後：廣播監視事件（Task 06 記者處罰用）
+            BattleEventManager.TriggerOnSkillCast(new SkillCastInfo(_ctx.transform, _skillData));
+
+            // 土下座技能施放成功（MP 充足才到此處）時播放音效
+            if (_skillData is DogezaSkill)
+            {
+                AudioManager.Instance?.PlaySFX_SkillDogeza();
+            }
+
             // 4. 扣除資源消耗（MP / HP）
             if (GameDB.Instance != null)
             {

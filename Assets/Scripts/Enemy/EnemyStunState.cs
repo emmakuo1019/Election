@@ -56,7 +56,6 @@ public class EnemyStunState : IState
         }
 
         stunTimer = 0f;
-        Debug.Log($"Enemy: 進入 Stun 狀態，硬直時間 {stunDuration} 秒，已中斷原先行動！");
     }
 
     public void Update()
@@ -64,9 +63,13 @@ public class EnemyStunState : IState
         stunTimer += Time.deltaTime;
 
         // 硬直時間結束，切換回 Idle 重新索敵
+        // Reporter 恢復後繼續跟隨，不走 Idle（Idle 會尋找選民目標）
         if (stunTimer >= stunDuration)
         {
-            stateMachine.ChangeState(ctx.IdleState);
+            IState nextState = (ctx.enemyRole == EnemyRole.Reporter && ctx.ReporterFollowState != null)
+                ? (IState)ctx.ReporterFollowState
+                : ctx.IdleState;
+            stateMachine.ChangeState(nextState);
         }
     }
 

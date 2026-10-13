@@ -84,6 +84,9 @@ public class EnemySkillState : IState
         {
             _hasExecuted = true;
             _ctx.PerformSkillHit();
+            // 技能效果真正發生後廣播施法事件（供記者監視，Task 06）
+            // 暈眩中斷不會到達此處（StunState 會接管 StateMachine）
+            BattleEventManager.TriggerOnSkillCast(new SkillCastInfo(_ctx.transform, currentSkill));
         }
 
         // 4. 檢查技能總時間是否結束

@@ -58,6 +58,11 @@ public static class BattleEventManager
     // 玩家使用任意技能 (J/K/L) 事件 (SkillData 為施放的技能)
     public static event Action<SkillData> OnAnySkillUsed;
 
+    // 技能真正執行事件（Task 06：供記者監視判斷用）
+    // 只在 ExecuteSkill 真正發動後觸發；冷卻未完成、資源不足、前搖被中斷均不觸發。
+    // 普通攻擊不在此範圍。
+    public static event Action<SkillCastInfo> OnSkillCast;
+
     // 玩家轉化深色（Dark）選民事件
     public static event Action OnDarkVoterConverted;
 
@@ -66,19 +71,16 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerRoomCleared()
     {
-        Debug.Log("[BattleEventManager] 觸發房間過關事件 (OnRoomCleared)");
         OnRoomCleared?.Invoke();
     }
 
     public static void TriggerObjectiveResolved(EncounterOutcome outcome)
     {
-        Debug.Log($"[BattleEventManager] 任務結果：{outcome}");
         OnObjectiveResolved?.Invoke(outcome);
     }
 
     public static void TriggerRewardSelectionRequested(bool useDistressReward)
     {
-        Debug.Log($"[BattleEventManager] 請求獎勵選擇（失勢={useDistressReward}）");
         OnRewardSelectionRequested?.Invoke(useDistressReward);
     }
 
@@ -91,13 +93,11 @@ public static class BattleEventManager
 
     public static void TriggerRouteSelected(int optionIndex)
     {
-        Debug.Log($"[BattleEventManager] 路線選擇：{optionIndex}");
         OnRouteSelected?.Invoke(optionIndex);
     }
 
     public static void TriggerExitReached()
     {
-        Debug.Log("[BattleEventManager] 抵達實體出口");
         OnExitReached?.Invoke();
     }
 
@@ -106,13 +106,11 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerAllEnemiesDefeated()
     {
-        Debug.Log("[BattleEventManager] 觸發敵人全滅事件 (OnAllEnemiesDefeated)");
         OnAllEnemiesDefeated?.Invoke();
     }
 
     public static void TriggerFinalBossDefeated()
     {
-        Debug.Log("[BattleEventManager] 最終對手已被擊敗");
         OnFinalBossDefeated?.Invoke();
     }
 
@@ -121,13 +119,11 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerOnSurvivalTimeUp()
     {
-        Debug.Log("[BattleEventManager] 觸發生存時間結束事件 (OnSurvivalTimeUp)");
         OnSurvivalTimeUp?.Invoke();
     }
 
     public static void TriggerTimerExpired()
     {
-        Debug.Log("[BattleEventManager] 計時器已到期");
         OnTimerExpired?.Invoke();
     }
 
@@ -136,7 +132,6 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerPlayerDied()
     {
-        Debug.Log("[BattleEventManager] 觸發玩家死亡事件 (OnPlayerDied)");
         OnPlayerDied?.Invoke();
     }
 
@@ -146,7 +141,6 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerRewardCollected()
     {
-        Debug.Log("[BattleEventManager] 觸發獎勵選取完成事件 (OnRewardCollected)");
         OnRewardCollected?.Invoke();
     }
 
@@ -155,7 +149,6 @@ public static class BattleEventManager
     /// </summary>
     public static void TriggerReturnToHQConfirmed()
     {
-        Debug.Log("[BattleEventManager] 觸發確認返回總部事件 (OnReturnToHQConfirmed)");
         OnReturnToHQConfirmed?.Invoke();
     }
 
@@ -174,6 +167,15 @@ public static class BattleEventManager
     public static void TriggerOnAnySkillUsed(SkillData skill)
     {
         OnAnySkillUsed?.Invoke(skill);
+    }
+
+    /// <summary>
+    /// 技能真正執行後呼叫（Task 06 監視用）。
+    /// 與 OnAnySkillUsed 完全分開；前者是「按下鍵」語意，後者是「技能效果發生」語意。
+    /// </summary>
+    public static void TriggerOnSkillCast(SkillCastInfo info)
+    {
+        OnSkillCast?.Invoke(info);
     }
 
     /// <summary>

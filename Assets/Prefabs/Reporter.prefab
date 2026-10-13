@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2538185110753480166}
   - component: {fileID: 5636245655671424398}
   - component: {fileID: 8874614300515229391}
+  - component: {fileID: 3141592653589793238}
   m_Layer: 7
   m_Name: Reporter
   m_TagString: Enemy
@@ -885,3 +886,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &3141592653589793238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447725353262188044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b0019b2dd094db4963e0c6a39c6f30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReporterMonitor
+  monitorRange: 8
+  monitoredSkills: []
+  playerPenaltyDamage: 10
+  eliteBossStunDuration: 2
+  penaltyCooldown: 3

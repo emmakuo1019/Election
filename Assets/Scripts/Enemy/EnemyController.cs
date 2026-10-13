@@ -32,6 +32,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
     private Camera mainCamera;
     private PlayerController _cachedPlayer;       // 快取玩家參考
 
+    /// <summary>供 ReporterFollowState 查詢場上玩家（已在 Awake/OnEnable 快取）</summary>
+    public PlayerController _cachedPlayerPublic => _cachedPlayer;
+
     [Header("Visuals")]
     [Tooltip("用於控制翻面的 SpriteRenderer (建議放在子物件上)")]
     public SpriteRenderer spriteRenderer;
@@ -46,6 +49,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
     public EnemyAttackState AttackState { get; private set; }
     public EnemyStunState StunState { get; private set; }
     public EnemyWanderState WanderState { get; private set; }
+    public ReporterFollowState ReporterFollowState { get; private set; }
 
     // ==========================================
     // 共享數據與參考 (供各個 State 讀取/寫入)
@@ -112,9 +116,22 @@ public class EnemyController : MonoBehaviour, IAttackSource
              "此清單與 Task 06 的「監視技能清單」完全分開。")]
     [SerializeField] private SkillData[] reporterDamageWhitelist = new SkillData[0];
 
+    [Header("Reporter 跟隨設定（只對 enemyRole = Reporter 有效）")]
+    [Tooltip("掃描候選人的最大距離")]
+    [Min(0f)] public float followDetectionRange = 20f;
+    [Tooltip("與候選人保持的最小距離（停止前進）")]
+    [Min(0f)] public float followStopDistance = 3f;
+    [Tooltip("超過此距離才放棄目標")]
+    [Min(0f)] public float followLoseDistance = 30f;
+    [Tooltip("重新掃描候選人的間隔（秒）")]
+    [Min(0.1f)] public float targetSearchInterval = 2f;
+
     private int _currentHP = 3;
     // Reporter 永久退場 guard：避免多 Collider 或連續傷害重複執行 Die()
     private bool _isDead = false;
+
+    /// <summary>Reporter 是否已永久退場（供 ReporterFollowState 判斷停止）</summary>
+    public bool IsDead => _isDead;
 
     [Header("UI")]
     [SerializeField] private EnemyHPBarUI hpBarUI;
@@ -296,6 +313,13 @@ public class EnemyController : MonoBehaviour, IAttackSource
         if (_isDead) return;
         _isDead = true;
 
+        // 立即停止移動（Destroy 有 0.5s 延遲，避免死後還在滑行）
+        if (Agent != null && Agent.isOnNavMesh)
+        {
+            Agent.isStopped = true;
+            Agent.ResetPath();
+        }
+
         // Play death animation (fallback to Idle if no specific death animation)
         Animator?.CrossFade("Die", 0.1f);
         // Notify Reporter mission tracker（只有 Reporter 角色需要，走獨立清場路徑）
@@ -412,6 +436,7 @@ public class EnemyController : MonoBehaviour, IAttackSource
         AttackState = new EnemyAttackState(this, StateMachine);
         StunState = new EnemyStunState(this, StateMachine);
         WanderState = new EnemyWanderState(this, StateMachine);
+        ReporterFollowState = new ReporterFollowState(this, StateMachine);
 
         _cachedPlayer = FindObjectOfType<PlayerController>();
         
@@ -493,7 +518,11 @@ public class EnemyController : MonoBehaviour, IAttackSource
         }
 
         // 啟動狀態機，直接傳入快取好的 IdleState
-        StateMachine.Initialize(IdleState);
+        // Reporter 直接進入跟隨狀態，不走普通 Idle/Move/Attack 路徑
+        StateMachine.Initialize(
+            (enemyRole == EnemyRole.Reporter && ReporterFollowState != null)
+                ? (IState)ReporterFollowState
+                : IdleState);
     }
 
     private void OnEnable()
@@ -533,8 +562,14 @@ public class EnemyController : MonoBehaviour, IAttackSource
         hpBarUI?.Refresh(_currentHP, maxHP, isInvincible);
 
         // 重置狀態機回 Idle（避免從死亡/暈眩等中途狀態繼續執行）
+        // Reporter 重置到 FollowState，不走 Idle（Idle 會尋找選民目標）
         if (StateMachine != null && IdleState != null)
-            StateMachine.Initialize(IdleState);
+        {
+            IState resetTo = (enemyRole == EnemyRole.Reporter && ReporterFollowState != null)
+                ? (IState)ReporterFollowState
+                : IdleState;
+            StateMachine.Initialize(resetTo);
+        }
 
         if (attackRangeMesh != null)
             attackRangeMesh.ShowIdle();
