@@ -967,7 +967,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: f8fe2bb3ec82348358381c4329e8bda5, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 24b4aa5220e0644dda64eb64864ed5ea, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1290,12 +1290,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   bgmMenuAndHQ: {fileID: 8300000, guid: eadcefba34fca451da3a6dc8804c3742, type: 3}
   bgmMission: {fileID: 8300000, guid: cb47a9da5e66a42af98e789d58c2ee78, type: 3}
-  sfxAttackNormal: {fileID: 0}
-  sfxConvertSuccess: {fileID: 0}
-  sfxEnemyVolunteerDeath: {fileID: 0}
-  sfxEnemyConvertSuccess: {fileID: 0}
-  sfxSkillDogeza: {fileID: 0}
-  bgmVolume: 0.5
+  sfxAttackNormal: {fileID: 8300000, guid: 41cd142e8bf314fa2a795f7a278491a8, type: 3}
+  sfxConvertSuccess: {fileID: 8300000, guid: 7fbf01af5689c416cb5ac46769398b9b, type: 3}
+  sfxEnemyVolunteerDeath: {fileID: 8300000, guid: 73766dae1572243ef89f7de05d3c028a, type: 3}
+  sfxEnemyConvertSuccess: {fileID: 8300000, guid: 73b93b33e2d1a454487380008654a1b5, type: 3}
+  sfxSkillDogeza: {fileID: 8300000, guid: 26813e14a03af4f5e90ecf506e3154c7, type: 3}
+  bgmVolume: 0.397
   sfxVolume: 0.8
   bgmFadeDuration: 1.5
 --- !u!4 &160369575
@@ -3317,7 +3317,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 380.40002, y: 43}
+  m_AnchoredPosition: {x: 393, y: 72}
   m_SizeDelta: {x: 724.9, y: 1000}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &916288000
@@ -6546,7 +6546,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -294.99997, y: 386}
-  m_SizeDelta: {x: 700, y: 200}
+  m_SizeDelta: {x: 636.5, y: 151.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1658615790
 MonoBehaviour:
@@ -6604,7 +6604,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1687236778
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8171,8 +8171,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -295, y: 78}
-  m_SizeDelta: {x: 680.4, y: 270}
+  m_AnchoredPosition: {x: -295, y: 104}
+  m_SizeDelta: {x: 840, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2115793646
 MonoBehaviour:
