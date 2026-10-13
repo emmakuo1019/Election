@@ -39,7 +39,7 @@ public class EnemyCounterUI : MonoBehaviour
 
     private void BindToCurrentMission()
     {
-        RoomMissionData mission = GameDB.Instance?.Campaign?.ActiveRoom?.mission;
+        RoomMissionData mission = GameDB.Instance?.Campaign?.ActiveRoom.mission;
         _isReporterMode = mission != null && mission.isReporterMission;
 
         if (_isReporterMode)
