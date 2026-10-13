@@ -96,23 +96,52 @@ public class ReporterMonitor : MonoBehaviour
     {
         // ── 基本門檻 ──────────────────────────────────────────────────
         if (_ctrl.IsDead) return;
-        if (BattleEventManager.CurrentEncounterPhase != BattleEventManager.EncounterPhase.Active) return;
+
+        // Phase 檢查：完整流程由 GameplayState.BeginActive 推進到 Active；
+        // 直接 Play 場景（無 GameFlowManager）時 Phase 停在 None，
+        // 此時允許通過以便開發測試。
+        bool phaseOk = BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active
+                    || BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.None;
+        if (!phaseOk)
+        {
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：Phase={BattleEventManager.CurrentEncounterPhase}（非 Active/None）");
+            return;
+        }
+
         if (info.Caster == null) return;
         if (info.Skill == null) return;
 
         // ── 技能是否在監視清單 ────────────────────────────────────────
-        if (!IsMonitored(info.Skill)) return;
+        if (!IsMonitored(info.Skill))
+        {
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：{info.Skill.skillName} 不在 monitoredSkills 清單");
+            return;
+        }
 
         // ── 距離判斷（XZ 平面）────────────────────────────────────────
         Vector2 casterXZ = new Vector2(info.Caster.position.x, info.Caster.position.z);
         Vector2 selfXZ   = new Vector2(transform.position.x,   transform.position.z);
-        if (Vector2.Distance(casterXZ, selfXZ) > monitorRange) return;
+        float dist = Vector2.Distance(casterXZ, selfXZ);
+        if (dist > monitorRange)
+        {
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：距離 {dist:F1}m > monitorRange {monitorRange}m");
+            return;
+        }
 
         // ── 此記者的個人處罰冷卻 ─────────────────────────────────────
-        if (Time.time - _lastPenaltyTime < penaltyCooldown) return;
+        float cooldownRemain = penaltyCooldown - (Time.time - _lastPenaltyTime);
+        if (cooldownRemain > 0f)
+        {
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：個人冷卻剩餘 {cooldownRemain:F1}s");
+            return;
+        }
 
         // ── 跨記者去重：同一 CastId 已處理過，不重複處罰 ─────────────
-        if (!_processedCastIds.Add(info.CastId)) return;
+        if (!_processedCastIds.Add(info.CastId))
+        {
+            Debug.Log($"[ReporterMonitor] SkillCast 被過濾：CastId 已由其他記者處理");
+            return;
+        }
 
         _lastPenaltyTime = Time.time;
         ApplyPenalty(info);
