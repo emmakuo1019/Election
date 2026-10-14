@@ -132,6 +132,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("技能施放距離倍率：castRange = blastRadius × 此倍率。玩家超出此距離不出招。")]
     [Min(1f)] public float castRangeMultiplier = 1.5f;
 
+    [Header("技能排程除錯（EliteBoss 用，請勿在正式 Build 開啟）")]
+    [Tooltip("開啟後每 3 秒在 Console 輸出技能排程摘要（只對 EliteBoss 生效）")]
+    public bool debugSkillScheduling = false;
+    private float _debugLogTimer = 0f;
+    private const float DebugLogInterval = 3f;
+
     private int _currentHP = 3;
     // Reporter 永久退場 guard：避免多 Collider 或連續傷害重複執行 Die()
     private bool _isDead = false;
@@ -139,8 +145,17 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// <summary>Reporter 是否已永久退場（供 ReporterFollowState 判斷停止）</summary>
     public bool IsDead => _isDead;
 
-    // 共用出招間隔計時器（Task 07）
-    private float _sharedSkillIntervalTimer = 0f;
+    // ── Task 07-Fix：技能排程計時模型 ────────────────────────────────
+    // activeCombatTime：只在 Phase==Active 推進，所有狀態（含暈眩/普攻/施法）都推進。
+    // 不受施法資格條件限制，確保冷卻進度與真實戰鬥時間一致。
+    private float _activeCombatTime = 0f;
+    // 每個技能「下次可用的 activeCombatTime 時間戳」：
+    //   初始化為 initialDelay，首次施放只需等 initialDelay（不加 cooldown）。
+    private float[] _nextSkillReadyAt;
+    // 共用出招間隔：下次允許出招的 activeCombatTime 時間戳
+    private float _nextSharedSkillAt = 0f;
+    // Round-robin：下次優先檢查的技能索引（Problem C 修正）
+    private int _nextSkillCheckIndex = 0;
 
     [Header("UI")]
     [SerializeField] private EnemyHPBarUI hpBarUI;
@@ -359,20 +374,30 @@ public class EnemyController : MonoBehaviour, IAttackSource
     /// </summary>
     private void InitializeMultiSkillSystem()
     {
-        // 初始化多技能系統
         if (equippedSkills != null && equippedSkills.Length > 0)
         {
             _skillCooldownTimers = new float[equippedSkills.Length];
-            _skillStates = new EnemySkillState[equippedSkills.Length];
+            _nextSkillReadyAt    = new float[equippedSkills.Length];
+            _skillStates         = new EnemySkillState[equippedSkills.Length];
 
             for (int i = 0; i < equippedSkills.Length; i++)
             {
-                // 以負值實作首次施放延遲：計時器需先從 -initialDelay 爬升到 cooldown 才觸發
+                // Task 07-Fix Problem B：首次等待只用 initialDelay，不再額外加 cooldown
                 EnemySkillData skill = equippedSkills[i] as EnemySkillData;
-                _skillCooldownTimers[i] = skill != null ? -skill.initialDelay : 0f;
+                _nextSkillReadyAt[i] = skill != null ? skill.initialDelay : 0f;
+                _skillCooldownTimers[i] = 0f;  // 保留欄位（Inspector 顯示用），不再驅動排程
                 _skillStates[i] = new EnemySkillState(this, StateMachine);
             }
         }
+        else
+        {
+            _nextSkillReadyAt = new float[0];
+        }
+
+        _activeCombatTime  = 0f;
+        _nextSharedSkillAt = 0f;
+        _nextSkillCheckIndex = 0;
+    }
         else
         {
             // 無技能配置
@@ -580,6 +605,19 @@ public class EnemyController : MonoBehaviour, IAttackSource
             StateMachine.Initialize(resetTo);
         }
 
+        // 重置技能排程計時器（跨場景或物件 re-enable 時使用）
+        _activeCombatTime    = 0f;
+        _nextSharedSkillAt   = 0f;
+        _nextSkillCheckIndex = 0;
+        if (_nextSkillReadyAt != null && equippedSkills != null)
+        {
+            for (int i = 0; i < Mathf.Min(_nextSkillReadyAt.Length, equippedSkills.Length); i++)
+            {
+                EnemySkillData sd = equippedSkills[i] as EnemySkillData;
+                _nextSkillReadyAt[i] = sd != null ? sd.initialDelay : 0f;
+            }
+        }
+
         if (attackRangeMesh != null)
             attackRangeMesh.ShowIdle();
     }    private void Update()
@@ -599,40 +637,95 @@ public class EnemyController : MonoBehaviour, IAttackSource
         // Reporter 不使用技能排程（Task 06 才加入 Reporter 跟隨行為）
         bool canUseSkills = enemyRole != EnemyRole.Reporter;
 
-        if (canUseSkills && !isActing && equippedSkills != null && equippedSkills.Length > 0)
+        // ── Task 07-Fix：戰鬥計時推進（只在 Active 階段，所有狀態下均推進）──
+        bool isActive = BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active;
+        if (canUseSkills && isActive && _nextSkillReadyAt != null)
         {
-            // ── 施法前資格檢查（Task 07）────────────────────────────
-            bool phaseOk    = BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active;
-            bool playerOk   = _cachedPlayer != null && _cachedPlayer.gameObject.activeInHierarchy;
-            _sharedSkillIntervalTimer += Time.deltaTime;
-            bool intervalOk = _sharedSkillIntervalTimer >= sharedSkillInterval;
+            _activeCombatTime += Time.deltaTime;
+        }
 
-            if (phaseOk && playerOk && intervalOk)
+        // ── 技能排程：施法資格 + Round-robin 選擇 ───────────────────
+        if (canUseSkills && !isActing && isActive &&
+            equippedSkills != null && equippedSkills.Length > 0 &&
+            _nextSkillReadyAt != null)
+        {
+            // 玩家引用過期時重新查找（每次發現失效時做一次，不每幀掃）
+            if (_cachedPlayer == null || !_cachedPlayer.gameObject.activeInHierarchy)
+                _cachedPlayer = Object.FindFirstObjectByType<PlayerController>();
+
+            bool playerOk    = _cachedPlayer != null && _cachedPlayer.gameObject.activeInHierarchy;
+            bool sharedReady = _activeCombatTime >= _nextSharedSkillAt;
+
+            if (playerOk && sharedReady)
             {
-                for (int i = 0; i < equippedSkills.Length; i++)
+                int count = equippedSkills.Length;
+                // Round-robin：從 _nextSkillCheckIndex 開始，最多檢查 count 次
+                for (int k = 0; k < count; k++)
                 {
+                    int i = (_nextSkillCheckIndex + k) % count;
+
                     if (equippedSkills[i] == null) continue;
                     if (equippedSkills[i].cooldown <= 0f) continue;
 
-                    _skillCooldownTimers[i] += Time.deltaTime;
-                    if (_skillCooldownTimers[i] < equippedSkills[i].cooldown) continue;
+                    // 個別技能是否 Ready（Problem A 修正：由 activeCombatTime 判斷，不在此累加）
+                    bool skillReady = _activeCombatTime >= _nextSkillReadyAt[i];
+                    if (!skillReady) continue;
 
-                    // 4. 玩家必須在 XZ 施放距離內
+                    // 玩家在 XZ 施放距離內
                     EnemySkillData skillData = equippedSkills[i] as EnemySkillData;
                     if (skillData != null)
                     {
                         float castRange = skillData.blastRadius * castRangeMultiplier;
                         Vector3 diff = _cachedPlayer.transform.position - transform.position;
                         diff.y = 0f;
-                        if (diff.sqrMagnitude > castRange * castRange) continue;
+                        if (diff.sqrMagnitude > castRange * castRange)
+                        {
+                            // 距離不足：跳過此招但繼續看下一招（不消耗 ready）
+                            continue;
+                        }
                     }
 
-                    // 通過所有資格：觸發技能
-                    _skillCooldownTimers[i] = 0f;
-                    _sharedSkillIntervalTimer = 0f;
-                    _currentSkillIndex = i;
+                    // 通過所有資格：設定下次可用時間，觸發技能
+                    _nextSkillReadyAt[i]  = _activeCombatTime + equippedSkills[i].cooldown;
+                    _nextSharedSkillAt    = _activeCombatTime + sharedSkillInterval;
+                    _nextSkillCheckIndex  = (i + 1) % count;  // Round-robin 推進
+                    _currentSkillIndex    = i;
                     StateMachine.ChangeState(_skillStates[i]);
+
+                    if (debugSkillScheduling && enemyRole == EnemyRole.EliteBoss)
+                        Debug.Log($"[SkillSchedule] {name} 施放技能[{i}] {equippedSkills[i].skillName}" +
+                                  $" @ activeCombat={_activeCombatTime:F1}s，" +
+                                  $"下次可用={_nextSkillReadyAt[i]:F1}s");
                     break;
+                }
+            }
+
+            // 除錯摘要（每 3 秒一次，不洗版）
+            if (debugSkillScheduling && enemyRole == EnemyRole.EliteBoss)
+            {
+                _debugLogTimer += Time.deltaTime;
+                if (_debugLogTimer >= DebugLogInterval)
+                {
+                    _debugLogTimer = 0f;
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append($"[SkillSchedule] {name} | State={StateMachine.CurrentState?.GetType().Name}" +
+                              $" | Phase=Active | CombatT={_activeCombatTime:F1}s" +
+                              $" | SharedReady={sharedReady}({_nextSharedSkillAt:F1}s)");
+                    for (int i = 0; i < equippedSkills.Length; i++)
+                    {
+                        if (equippedSkills[i] == null) continue;
+                        float remain = _nextSkillReadyAt[i] - _activeCombatTime;
+                        bool ready = remain <= 0f;
+                        float castRange = (equippedSkills[i] is EnemySkillData sd)
+                            ? sd.blastRadius * castRangeMultiplier : 0f;
+                        float playerDist = playerOk
+                            ? Vector3.Distance(transform.position, _cachedPlayer.transform.position)
+                            : -1f;
+                        sb.Append($"\n  [{i}]{equippedSkills[i].skillName}" +
+                                  $" Ready={ready}(remain={Mathf.Max(0, remain):F1}s)" +
+                                  $" castRange={castRange:F1} playerDist={playerDist:F1}");
+                    }
+                    Debug.Log(sb.ToString());
                 }
             }
         }
