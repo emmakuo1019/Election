@@ -41,16 +41,25 @@ public class EnemySkillState : IState
             return;
         }
 
-        // 4. 顯示範圍提示預覽
+        // 4. 鎖定面向玩家的方向（施法方向在前搖開始時固定，玩家可在前搖期間閃避）
+        PlayerController player = _ctx._cachedPlayerPublic;
+        if (player != null)
+        {
+            Vector3 toPlayer = player.transform.position - _ctx.transform.position;
+            toPlayer.y = 0f;
+            if (toPlayer.sqrMagnitude > 0.001f)
+                _ctx.transform.forward = toPlayer.normalized;
+        }
+
+        // 5. 顯示範圍提示預覽（形狀與方向對齊鎖定後的 transform.forward）
         if (_ctx.attackRangeMesh != null)
         {
             _ctx.attackRangeMesh.SetShape(currentSkill.blastRadius, currentSkill.blastAngle);
             MeshRenderer mr = _ctx.attackRangeMesh.GetComponent<MeshRenderer>();
             if (mr != null) mr.enabled = true;
-            Debug.Log($"[SkillState] 範圍圈已顯示。blastRadius={currentSkill.blastRadius}, angle={currentSkill.blastAngle}");
         }
 
-        // 5. 觸發技能動畫
+        // 6. 觸發技能動畫
         if (!string.IsNullOrEmpty(currentSkill.animationTriggerName))
         {
             Animator animator = _ctx.GetComponent<Animator>();

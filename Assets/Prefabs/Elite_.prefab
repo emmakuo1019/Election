@@ -284,7 +284,7 @@ RectTransform:
   m_GameObject: {fileID: 5995658864947034504}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2.88, y: 2.88, z: 2.88}
+  m_LocalScale: {x: 3.54, y: 3.54, z: 3.54}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2022452098462962256}
@@ -866,6 +866,7 @@ MonoBehaviour:
   moveSpeed: 8
   attackRange: 2
   attackInfluence: -3
+  playerHitDamage: 1
   detectionRange: 30
   escapeRange: 40
   maxHP: 3
@@ -881,8 +882,6 @@ MonoBehaviour:
   attackHitTime: 0.3
   attackAngle: 90
   stunVfxPrefab: {fileID: 1171678833857807218, guid: 2b25135aae7404d37a47543c9919b0eb, type: 3}
-  stunVfxOffset: {x: 0, y: 2.3, z: 0}
+  stunVfxOffset: {x: 0, y: 2.71, z: 0}
   equippedSkills:
-  - {fileID: 11400000, guid: a25f3d005910046afa6f744cdbf199ec, type: 2}
-  - {fileID: 11400000, guid: 6f7199409ac424417bd7cd81603d5785, type: 2}
-  - {fileID: 11400000, guid: 02bd2b466d2fa46cd8786ef79d5c0c98, type: 2}
+  - {fileID: 11400000, guid: 2df10124942d4c309622320357463158, type: 2}

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f0a08ef93394d3dae1430f0f8bbd84, type: 3}
+  m_Name: B_Damage
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySkill_DamagePlayer
+  skillName: "\u8CA0\u9762\u6297\u5375"
+  cooldown: 12
+  duration: 2.5
+  mpCost: 0
+  hpCost: 0
+  socialClimateDelta: 0
+  faction: {fileID: 0}
+  Rarity: 0
+  animationTriggerName: 
+  vfxPrefab: {fileID: 0}
+  vfxDuration: 0.8
+  blastRadius: 5
+  blastAngle: 120
+  voterInfluenceAmount: 0
+  voterLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  playerStunDuration: 0
+  playerLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  skillWindupTime: 1.5
+  initialDelay: 8
+  playerDamage: 15

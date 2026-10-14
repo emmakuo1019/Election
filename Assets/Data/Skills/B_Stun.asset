@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17057d6c7be91472eb33cc3ddf513937, type: 3}
+  m_Name: B_Stun
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySkillData
+  skillName: "\u8FD1\u8DDD\u66B4\u8A00\uFF08Boss\uFF09"
+  cooldown: 8
+  duration: 2
+  mpCost: 0
+  hpCost: 0
+  socialClimateDelta: 0
+  faction: {fileID: 0}
+  Rarity: 0
+  animationTriggerName: 
+  vfxPrefab: {fileID: 0}
+  vfxDuration: 0.8
+  blastRadius: 5
+  blastAngle: 180
+  voterInfluenceAmount: 0
+  voterLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  playerStunDuration: 2.5
+  playerLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  skillWindupTime: 1
+  initialDelay: 5

@@ -126,12 +126,21 @@ public class EnemyController : MonoBehaviour, IAttackSource
     [Tooltip("重新掃描候選人的間隔（秒）")]
     [Min(0.1f)] public float targetSearchInterval = 2f;
 
+    [Header("技能排程（EliteBoss 用）")]
+    [Tooltip("兩次技能之間的最短間隔（秒），防止連招無空檔。EliteBoss 才有效。")]
+    [Min(0f)] public float sharedSkillInterval = 3f;
+    [Tooltip("技能施放距離倍率：castRange = blastRadius × 此倍率。玩家超出此距離不出招。")]
+    [Min(1f)] public float castRangeMultiplier = 1.5f;
+
     private int _currentHP = 3;
     // Reporter 永久退場 guard：避免多 Collider 或連續傷害重複執行 Die()
     private bool _isDead = false;
 
     /// <summary>Reporter 是否已永久退場（供 ReporterFollowState 判斷停止）</summary>
     public bool IsDead => _isDead;
+
+    // 共用出招間隔計時器（Task 07）
+    private float _sharedSkillIntervalTimer = 0f;
 
     [Header("UI")]
     [SerializeField] private EnemyHPBarUI hpBarUI;
@@ -592,23 +601,50 @@ public class EnemyController : MonoBehaviour, IAttackSource
 
         if (canUseSkills && !isActing && equippedSkills != null && equippedSkills.Length > 0)
         {
+            // ── 施法前資格檢查（Task 07）────────────────────────────
+            // 1. EncounterPhase 必須為 Active
+            if (BattleEventManager.CurrentEncounterPhase != BattleEventManager.EncounterPhase.Active)
+                goto SkipSkillSchedule;
+
+            // 2. 必須有有效的玩家目標（技能打玩家，不要求拉票 target 為玩家）
+            if (_cachedPlayer == null || !_cachedPlayer.gameObject.activeInHierarchy)
+                goto SkipSkillSchedule;
+
+            // 3. 共用出招間隔（防止兩招毫無空檔連施）
+            _sharedSkillIntervalTimer += Time.deltaTime;
+            if (_sharedSkillIntervalTimer < sharedSkillInterval)
+                goto SkipSkillSchedule;
+
             for (int i = 0; i < equippedSkills.Length; i++)
             {
                 if (equippedSkills[i] == null) continue;
-                // cooldown <= 0 視為「未設定」，跳過，避免每幀連續觸發技能
+                // cooldown <= 0 視為「未設定」，跳過
                 if (equippedSkills[i].cooldown <= 0f) continue;
 
                 _skillCooldownTimers[i] += Time.deltaTime;
-                if (_skillCooldownTimers[i] >= equippedSkills[i].cooldown)
+                if (_skillCooldownTimers[i] < equippedSkills[i].cooldown) continue;
+
+                // 4. 玩家必須在技能施放距離內（用 blastRadius * castRangeMultiplier 作為門檻）
+                EnemySkillData skillData = equippedSkills[i] as EnemySkillData;
+                if (skillData != null)
                 {
-                    _skillCooldownTimers[i] = 0f;
-                    _currentSkillIndex = i;
-                    StateMachine.ChangeState(_skillStates[i]);
-                    break;
+                    float castRange = skillData.blastRadius * castRangeMultiplier;
+                    float distSq = (_cachedPlayer.transform.position - transform.position).sqrMagnitude;
+                    // 移除 Y 軸差距，用 XZ 平面距離
+                    Vector3 diff = _cachedPlayer.transform.position - transform.position;
+                    diff.y = 0f;
+                    if (diff.sqrMagnitude > castRange * castRange) continue;
                 }
+
+                // 通過所有資格：觸發技能
+                _skillCooldownTimers[i] = 0f;
+                _sharedSkillIntervalTimer = 0f;
+                _currentSkillIndex = i;
+                StateMachine.ChangeState(_skillStates[i]);
+                break;
             }
         }
-    }
+        SkipSkillSchedule:;
 
     private void FixedUpdate()
     {
