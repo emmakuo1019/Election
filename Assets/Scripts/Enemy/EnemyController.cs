@@ -398,11 +398,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
         _nextSharedSkillAt = 0f;
         _nextSkillCheckIndex = 0;
     }
-        else
-        {
-            // 無技能配置
-        }
-    }
 
     /// <summary>
     /// 取得當前要執行的技能
