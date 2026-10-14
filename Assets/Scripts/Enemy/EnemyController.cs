@@ -602,49 +602,41 @@ public class EnemyController : MonoBehaviour, IAttackSource
         if (canUseSkills && !isActing && equippedSkills != null && equippedSkills.Length > 0)
         {
             // ── 施法前資格檢查（Task 07）────────────────────────────
-            // 1. EncounterPhase 必須為 Active
-            if (BattleEventManager.CurrentEncounterPhase != BattleEventManager.EncounterPhase.Active)
-                goto SkipSkillSchedule;
-
-            // 2. 必須有有效的玩家目標（技能打玩家，不要求拉票 target 為玩家）
-            if (_cachedPlayer == null || !_cachedPlayer.gameObject.activeInHierarchy)
-                goto SkipSkillSchedule;
-
-            // 3. 共用出招間隔（防止兩招毫無空檔連施）
+            bool phaseOk    = BattleEventManager.CurrentEncounterPhase == BattleEventManager.EncounterPhase.Active;
+            bool playerOk   = _cachedPlayer != null && _cachedPlayer.gameObject.activeInHierarchy;
             _sharedSkillIntervalTimer += Time.deltaTime;
-            if (_sharedSkillIntervalTimer < sharedSkillInterval)
-                goto SkipSkillSchedule;
+            bool intervalOk = _sharedSkillIntervalTimer >= sharedSkillInterval;
 
-            for (int i = 0; i < equippedSkills.Length; i++)
+            if (phaseOk && playerOk && intervalOk)
             {
-                if (equippedSkills[i] == null) continue;
-                // cooldown <= 0 視為「未設定」，跳過
-                if (equippedSkills[i].cooldown <= 0f) continue;
-
-                _skillCooldownTimers[i] += Time.deltaTime;
-                if (_skillCooldownTimers[i] < equippedSkills[i].cooldown) continue;
-
-                // 4. 玩家必須在技能施放距離內（用 blastRadius * castRangeMultiplier 作為門檻）
-                EnemySkillData skillData = equippedSkills[i] as EnemySkillData;
-                if (skillData != null)
+                for (int i = 0; i < equippedSkills.Length; i++)
                 {
-                    float castRange = skillData.blastRadius * castRangeMultiplier;
-                    float distSq = (_cachedPlayer.transform.position - transform.position).sqrMagnitude;
-                    // 移除 Y 軸差距，用 XZ 平面距離
-                    Vector3 diff = _cachedPlayer.transform.position - transform.position;
-                    diff.y = 0f;
-                    if (diff.sqrMagnitude > castRange * castRange) continue;
-                }
+                    if (equippedSkills[i] == null) continue;
+                    if (equippedSkills[i].cooldown <= 0f) continue;
 
-                // 通過所有資格：觸發技能
-                _skillCooldownTimers[i] = 0f;
-                _sharedSkillIntervalTimer = 0f;
-                _currentSkillIndex = i;
-                StateMachine.ChangeState(_skillStates[i]);
-                break;
+                    _skillCooldownTimers[i] += Time.deltaTime;
+                    if (_skillCooldownTimers[i] < equippedSkills[i].cooldown) continue;
+
+                    // 4. 玩家必須在 XZ 施放距離內
+                    EnemySkillData skillData = equippedSkills[i] as EnemySkillData;
+                    if (skillData != null)
+                    {
+                        float castRange = skillData.blastRadius * castRangeMultiplier;
+                        Vector3 diff = _cachedPlayer.transform.position - transform.position;
+                        diff.y = 0f;
+                        if (diff.sqrMagnitude > castRange * castRange) continue;
+                    }
+
+                    // 通過所有資格：觸發技能
+                    _skillCooldownTimers[i] = 0f;
+                    _sharedSkillIntervalTimer = 0f;
+                    _currentSkillIndex = i;
+                    StateMachine.ChangeState(_skillStates[i]);
+                    break;
+                }
             }
         }
-        SkipSkillSchedule:;
+    }
 
     private void FixedUpdate()
     {
