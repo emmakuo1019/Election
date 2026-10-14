@@ -58,8 +58,14 @@ public class GameDB : MonoBehaviour
         // 清除舊 Run 的觸發器訂閱（若 Manager 還在場景中）
         PolicyEffectRuntimeManager.Instance?.ClearAllTriggers();
 
+        // 解除 PlayerHealthSystem 對舊 RunData 的訂閱，換新 Run 後重新訂閱
+        if (PlayerHealthSystem.HasInstance)
+            PlayerHealthSystem.Instance.UnsubscribeFromRun(Run);
+
         Run = new RunData();
-        Debug.Log("[GameDB] RunData 已重置");
+
+        if (PlayerHealthSystem.HasInstance)
+            PlayerHealthSystem.Instance.SubscribeToRun(Run);
     }
 
     /// <summary>
@@ -70,7 +76,6 @@ public class GameDB : MonoBehaviour
     {
         Campaign = new CampaignData(_campaignDefinition, _missionPool);
         OnCampaignChanged?.Invoke(Campaign);
-        Debug.Log("[GameDB] CampaignData 已重置");
     }
 }
 
@@ -125,7 +130,6 @@ public class PlayerData
         if (faction != null && faction.starterSkill != null)
         {
             EquipBaseSkillJ(faction.starterSkill);
-            Debug.Log($"[PlayerData] 選擇派系：{faction.factionName}，裝備起始技能：{faction.starterSkill.skillName}");
         }
     }
 }
@@ -175,7 +179,6 @@ public class RunData
 #if UNITY_EDITOR
         if (GameDB.Instance.allPolicyCards == null || GameDB.Instance.allPolicyCards.Count == 0)
         {
-            Debug.LogWarning("[GameDB] allPolicyCards 為空！正在 Editor 模式下嘗試自動載入 Assets/Data/PolicyCards/ 內的卡牌...");
             string[] guids = UnityEditor.AssetDatabase.FindAssets("t:PolicyCardData", new[] { "Assets/Data/PolicyCards" });
             foreach (string guid in guids)
             {
@@ -503,24 +506,20 @@ public class CampaignData
         // 🔒 防止戰役進行中被重複呼叫
         if (CurrentNodeNumber > 0 && !IsTutorialActive)
         {
-            Debug.LogWarning($"[CampaignData] StartFormalCampaign 被呼叫，但戰役已在進行中（節點 {CurrentNodeNumber}），忽略此呼叫");
             return false;
         }
 
         string error = _definition == null ? "缺少 CampaignDefinition。" : string.Empty;
         if (_definition == null || !_definition.IsValid(out error))
         {
-            Debug.LogError($"[CampaignData] 無法啟動戰役：{error}");
             return false;
         }
 
         if (!HasValidMissionChoices(out error))
         {
-            Debug.LogError($"[CampaignData] 無法啟動戰役：{error}");
             return false;
         }
 
-        Debug.Log("[CampaignData] 🚀 開始新的戰役，清空進度");
         Results.Clear();
         IsTutorialActive = false;
         _resolvedNodeNumber = -1;
@@ -529,7 +528,6 @@ public class CampaignData
         CampaignNodeDefinition firstNode = _definition.GetNode(1);
         if (firstNode == null)
         {
-            Debug.LogError("[CampaignData] 缺少第 1 節點定義。");
             return false;
         }
 
@@ -553,17 +551,14 @@ public class CampaignData
 
     public void ResolveCurrentEncounter(EncounterOutcome outcome)
     {
-        Debug.Log($"[CampaignData] ResolveCurrentEncounter 被調用：CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}, IsTutorialActive={IsTutorialActive}, outcome={outcome}");
         
         if (IsTutorialActive || CurrentNodeNumber <= 0 || _resolvedNodeNumber == CurrentNodeNumber)
         {
-            Debug.Log($"[CampaignData] 跳過結算：IsTutorialActive={IsTutorialActive}, CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}");
             return;
         }
         
         Results.Add(new EncounterResult(CurrentNodeNumber, ActiveRoom.mission, outcome));
         _resolvedNodeNumber = CurrentNodeNumber;
-        Debug.Log($"[CampaignData] ✓ 已結算節點 {CurrentNodeNumber}，_resolvedNodeNumber 已更新為 {_resolvedNodeNumber}");
     }
 
     public bool TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete)
@@ -571,7 +566,6 @@ public class CampaignData
         needsRouteChoice = false;
         isRunComplete = false;
 
-        Debug.Log($"[CampaignData] TryPrepareNextStep 被調用：CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}, IsTutorialActive={IsTutorialActive}");
 
         if (IsTutorialActive)
         {
@@ -581,7 +575,6 @@ public class CampaignData
 
         if (_resolvedNodeNumber != CurrentNodeNumber)
         {
-            Debug.LogError($"[CampaignData] 任務尚未結算，不能推進正式節點。CurrentNodeNumber={CurrentNodeNumber}, _resolvedNodeNumber={_resolvedNodeNumber}");
             return false;
         }
 
@@ -595,25 +588,21 @@ public class CampaignData
         CampaignNodeDefinition next = _definition.GetNode(nextNode);
         if (next == null)
         {
-            Debug.LogError($"[CampaignData] 缺少第 {nextNode} 節點定義。");
             return false;
         }
 
-        Debug.Log($"[CampaignData] 準備進入節點 {nextNode}，角色：{next.role}");
 
         if (next.role == EncounterNodeRole.MissionChoice)
         {
             // UI 重載、雙門重進 Trigger 都只能讀到同一組已存選項，絕不能重新抽取。
             if (PendingOptions.Length == 2)
             {
-                Debug.Log($"[CampaignData] 已有待選路線，直接返回");
                 needsRouteChoice = true;
                 return true;
             }
 
             PendingOptions = BuildOffers(nextNode);
             needsRouteChoice = PendingOptions.Length == 2;
-            Debug.Log($"[CampaignData] 已生成 {PendingOptions.Length} 個路線選項，needsRouteChoice={needsRouteChoice}");
             return needsRouteChoice;
         }
 

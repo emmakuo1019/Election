@@ -2,27 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 記者監視元件：掛在 Reporter Prefab 上，負責監聽技能施放事件並套用處罰。
+/// 記者監視元件：掛在 Reporter Prefab，負責監聽技能施放事件並套用處罰。
 ///
-/// 與 ReporterFollowState 完全分開：
-///   FollowState    → 控制移動（我要跟著誰）
-///   ReporterMonitor → 監視邏輯（我有沒有抓到人）
+/// FollowState  → 移動（我要跟著誰）
+/// ReporterMonitor → 監視邏輯（我有沒有抓到人）
 ///
-/// ─── 去重架構 ───────────────────────────────────────────────────────
-/// CastId 去重（Fix-B）：
-///   靜態 _processedCastIds 以「施法識別碼」去重，確保同一次施法最多一次處罰。
-///   使用 Dictionary<Guid, float> 而非無界 HashSet，value 存入記錄時間，
-///   每次 Encounter 結束後全部清除，不會無限累積。
-///
-/// 候選人共享冷卻（Fix-C）：
-///   靜態 _candidatePenaltyTime 以「施法者的 InstanceId」作為 key，
-///   記錄上次對該候選人成功套用處罰的時間。
-///   多名 Reporter 共享同一份冷卻字典，避免繞過冷卻。
-///   仲裁規則：取所有 Reporter 中 penaltyCooldown 的最大值，避免結果依訂閱順序改變。
-///
-/// 訂閱管理（Fix-B）：
-///   Arbiter 改用具名靜態方法，可精確解除訂閱。
-///   每次 Encounter 結束後同步清除資料。
+/// 去重架構：
+///   CastId 去重  — _processedCastIds（有界 50 筆，最舊淘汰）
+///   候選人共享冷卻 — _candidatePenaltyTime（以施法者 InstanceId 為 key）
+///   仲裁規則      — 冷卻取所有存活 Reporter 中的最大值，結果與訂閱順序無關
+///   登記時機      — 只有真正成功套用處罰後才登記（Fix-B）
 /// </summary>
 [RequireComponent(typeof(EnemyController))]
 public class ReporterMonitor : MonoBehaviour
@@ -55,17 +44,17 @@ public class ReporterMonitor : MonoBehaviour
 #endif
 
     // ══════════════════════════════════════════════════════════════════
-    // 靜態共享仲裁資料（Fix-B + Fix-C）
+    // 靜態共享仲裁資料
     // ══════════════════════════════════════════════════════════════════
 
-    // CastId → 記錄時間；用 Dictionary 避免無界增長，Encounter 結束後全清
+    // CastId → 記錄時間；有界 50 筆，超過時淘汰最舊 20 筆
+    // ponytail: 每關施法次數 < 200，50 的上限在正常遊玩下不會觸發
     private static readonly Dictionary<System.Guid, float> _processedCastIds = new();
 
-    // 候選人 InstanceId → 上次成功處罰時間；跨 Reporter 共享
+    // 候選人 InstanceId → 上次成功處罰時間
     private static readonly Dictionary<int, float> _candidatePenaltyTime = new();
 
-    // 追蹤所有存活 Reporter 中 penaltyCooldown 的最大值，供冷卻仲裁使用
-    // ponytail: 每次施法掃一遍 _activeMonitors（數量 < 10），可接受
+    // 追蹤所有存活 Reporter，供冷卻仲裁使用
     private static readonly HashSet<ReporterMonitor> _activeMonitors = new();
 
     private static bool _arbiterSubscribed = false;
@@ -77,7 +66,6 @@ public class ReporterMonitor : MonoBehaviour
         BattleEventManager.OnObjectiveResolved += OnEncounterEnded;
     }
 
-    // 具名方法，可精確解除訂閱（Fix-B）
     private static void OnEncounterEnded(EncounterOutcome _) => ClearArbiter();
 
     private static void ClearArbiter()
@@ -88,7 +76,7 @@ public class ReporterMonitor : MonoBehaviour
         _arbiterSubscribed = false;
     }
 
-    // Fix-B：Play Mode 進入時重置靜態資料，防止關閉 Domain Reload 時跨 Session 殘留
+    // Play Mode 進入時重置靜態資料（防止關閉 Domain Reload 的跨 Session 殘留）
     [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
     {
@@ -136,10 +124,8 @@ public class ReporterMonitor : MonoBehaviour
 
     private void HandleSkillCast(SkillCastInfo info)
     {
-        // ── Fix-D：已死亡立即停止 ────────────────────────────────────
         if (_ctrl.IsDead) return;
 
-        // ── Fix-E：Phase 嚴格限定 Active ────────────────────────────
         var phase = BattleEventManager.CurrentEncounterPhase;
         bool phaseOk = phase == BattleEventManager.EncounterPhase.Active;
 #if UNITY_EDITOR
@@ -154,31 +140,29 @@ public class ReporterMonitor : MonoBehaviour
 
         if (info.Caster == null || info.Skill == null) return;
 
-        // ── 技能在監視清單 ───────────────────────────────────────────
         if (!IsMonitored(info.Skill))
         {
             Debug.Log($"[ReporterMonitor] 過濾：{info.Skill.skillName} 不在 monitoredSkills");
             return;
         }
 
-        // ── XZ 距離判斷 ──────────────────────────────────────────────
+        // XZ 距離判斷
         float dx = info.Caster.position.x - transform.position.x;
         float dz = info.Caster.position.z - transform.position.z;
-        float dist = Mathf.Sqrt(dx * dx + dz * dz);
-        if (dist > monitorRange)
+        if (dx * dx + dz * dz > monitorRange * monitorRange)
         {
-            Debug.Log($"[ReporterMonitor] 過濾：距離 {dist:F1}m > monitorRange {monitorRange}m");
+            Debug.Log($"[ReporterMonitor] 過濾：距離超出 monitorRange {monitorRange}m");
             return;
         }
 
-        // ── CastId 去重（Fix-B）：同一次施法最多一次 ─────────────────
+        // CastId 去重（先檢查，不先登記）
         if (_processedCastIds.ContainsKey(info.CastId))
         {
             Debug.Log("[ReporterMonitor] 過濾：CastId 已由其他記者處理");
             return;
         }
 
-        // ── 候選人共享冷卻（Fix-C）：取所有記者中最大冷卻值仲裁 ──────
+        // 候選人共享冷卻（先檢查，不先登記）
         int candidateId = info.Caster.GetInstanceID();
         float sharedCooldown = GetMaxPenaltyCooldown();
         if (_candidatePenaltyTime.TryGetValue(candidateId, out float lastTime))
@@ -191,14 +175,29 @@ public class ReporterMonitor : MonoBehaviour
             }
         }
 
-        // ── 通過所有檢查：記錄並執行 ─────────────────────────────────
-        _processedCastIds[info.CastId]      = Time.time;
-        _candidatePenaltyTime[candidateId]  = Time.time;
+        // 嘗試套用處罰；只有真正成功後才登記（Fix-B）
+        bool penaltyApplied = ApplyPenalty(info);
+        if (!penaltyApplied) return;
 
-        ApplyPenalty(info);
+        // Fix-C：有界淘汰
+        if (_processedCastIds.Count >= 50) PruneOldCastIds();
+        _processedCastIds[info.CastId]     = Time.time;
+        _candidatePenaltyTime[candidateId] = Time.time;
     }
 
-    // ── 取場上所有 Reporter 的最大 penaltyCooldown（Fix-C 仲裁） ─────
+    // Fix-C：移除最舊 20 筆 CastId
+    private static void PruneOldCastIds()
+    {
+        for (int i = 0; i < 20 && _processedCastIds.Count > 0; i++)
+        {
+            System.Guid oldest = default;
+            float oldestTime = float.MaxValue;
+            foreach (var kv in _processedCastIds)
+                if (kv.Value < oldestTime) { oldestTime = kv.Value; oldest = kv.Key; }
+            if (oldest != default) _processedCastIds.Remove(oldest);
+        }
+    }
+
     private static float GetMaxPenaltyCooldown()
     {
         float max = 0f;
@@ -207,38 +206,36 @@ public class ReporterMonitor : MonoBehaviour
         return max;
     }
 
-    private void ApplyPenalty(SkillCastInfo info)
+    // 回傳 true = 處罰成功套用（含護盾吸收）；false = 無有效目標或設定值為 0
+    private bool ApplyPenalty(SkillCastInfo info)
     {
         PlayerController player = info.Caster.GetComponentInParent<PlayerController>();
         if (player != null)
         {
-            if (playerPenaltyDamage > 0f)
+            if (playerPenaltyDamage <= 0f) return false;
+            if (!PlayerHealthSystem.HasInstance)
             {
-                // Fix-A：統一走 PlayerHealthSystem（護盾、CheckGameOver 完整流程）
-                if (!PlayerHealthSystem.HasInstance)
-                {
-                    Debug.LogError("[ReporterMonitor] PlayerHealthSystem 不存在！" +
-                                   "請確認 S0.unity 的 GameDB GameObject 上已掛載 PlayerHealthSystem。" +
-                                   "記者傷害未套用。");
-                    return;
-                }
-                PlayerHealthSystem.Instance.TakeDamage(playerPenaltyDamage);
-                Debug.Log($"[Reporter] {name} 抓到 {info.Caster.name} 施放 [{info.Skill.skillName}]，" +
-                           $"扣除誠信 {playerPenaltyDamage}。CastId={info.CastId}");
+                Debug.LogError("[ReporterMonitor] PlayerHealthSystem 不存在！" +
+                               "請確認 S0.unity 的 GameDB GameObject 上已掛載 PlayerHealthSystem。");
+                return false;
             }
-            return;
+            PlayerHealthSystem.Instance.TakeDamage(playerPenaltyDamage);
+            Debug.Log($"[Reporter] {name} 抓到 {info.Caster.name} 施放 [{info.Skill.skillName}]，" +
+                       $"扣除誠信 {playerPenaltyDamage}。CastId={info.CastId}");
+            return true;
         }
 
         EnemyController enemy = info.Caster.GetComponentInParent<EnemyController>();
         if (enemy != null && enemy.enemyRole == EnemyRole.EliteBoss)
         {
-            if (eliteBossStunDuration > 0f)
-            {
-                enemy.TakeDamage(0, eliteBossStunDuration);
-                Debug.Log($"[Reporter] {name} 抓到 {info.Caster.name}（EliteBoss）" +
-                           $"施放 [{info.Skill.skillName}]，暈眩 {eliteBossStunDuration}s。");
-            }
+            if (eliteBossStunDuration <= 0f) return false;
+            enemy.TakeDamage(0, eliteBossStunDuration);
+            Debug.Log($"[Reporter] {name} 抓到 {info.Caster.name}（EliteBoss）" +
+                       $"施放 [{info.Skill.skillName}]，暈眩 {eliteBossStunDuration}s。");
+            return true;
         }
+
+        return false;
     }
 
     private bool IsMonitored(SkillData skill)
@@ -272,8 +269,6 @@ public class ReporterMonitor : MonoBehaviour
                 UnityEditor.Handles.Label(transform.position + Vector3.up * 2.5f, $"→ {t.name}");
             }
         }
-
-        UnityEditor.Handles.color = Color.yellow;
         UnityEditor.Handles.Label(transform.position + Vector3.up * 1.5f, $"Monitor: {monitorRange}m");
     }
 #endif
