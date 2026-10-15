@@ -52,11 +52,14 @@ public class AudioTester : MonoBehaviour
     [Range(0f, 1f)]
     public float testSFXVolume = 0.8f;
 
+    // 記錄上次設定的音量，避免每幀覆寫 AudioManager 音量
+    private float _lastBGMVolume = -1f;
+    private float _lastSFXVolume = -1f;
+
     private void Update()
     {
         if (AudioManager.Instance == null)
         {
-            Debug.LogWarning("[AudioTester] AudioManager 不存在！請確保場景中有 AudioManager。");
             return;
         }
 
@@ -65,21 +68,18 @@ public class AudioTester : MonoBehaviour
         {
             playBGM_MenuAndHQ = false;
             AudioManager.Instance.PlayBGM_MenuAndHQ();
-            Debug.Log("▶ 播放：主選單/總部 BGM");
         }
 
         if (playBGM_Mission)
         {
             playBGM_Mission = false;
             AudioManager.Instance.PlayBGM_Mission();
-            Debug.Log("▶ 播放：關卡任務 BGM");
         }
 
         if (stopBGM)
         {
             stopBGM = false;
             AudioManager.Instance.StopBGM();
-            Debug.Log("⏹ 停止 BGM");
         }
 
         // SFX 測試
@@ -87,40 +87,44 @@ public class AudioTester : MonoBehaviour
         {
             playAttackNormal = false;
             AudioManager.Instance.PlaySFX_AttackNormal();
-            Debug.Log("🔊 播放：一般攻擊音效");
         }
 
         if (playConvertSuccess)
         {
             playConvertSuccess = false;
             AudioManager.Instance.PlaySFX_ConvertSuccess();
-            Debug.Log("🔊 播放：成功轉化音效");
         }
 
         if (playEnemyVolunteerDeath)
         {
             playEnemyVolunteerDeath = false;
             AudioManager.Instance.PlaySFX_EnemyVolunteerDeath();
-            Debug.Log("🔊 播放：對手志工死亡音效");
         }
 
         if (playEnemyConvertSuccess)
         {
             playEnemyConvertSuccess = false;
             AudioManager.Instance.PlaySFX_EnemyConvertSuccess();
-            Debug.Log("🔊 播放：對手成功轉化音效");
         }
 
         if (playSkillDogeza)
         {
             playSkillDogeza = false;
             AudioManager.Instance.PlaySFX_SkillDogeza();
-            Debug.Log("🔊 播放：土下座技能音效");
         }
 
-        // 音量調整
-        AudioManager.Instance.SetBGMVolume(testBGMVolume);
-        AudioManager.Instance.SetSFXVolume(testSFXVolume);
+        // 音量調整：只在值實際改變時才呼叫，不每幀覆寫
+        // ponytail: 改為 dirty-flag 模式，避免每幀覆寫正式遊戲音量
+        if (!Mathf.Approximately(testBGMVolume, _lastBGMVolume))
+        {
+            _lastBGMVolume = testBGMVolume;
+            AudioManager.Instance.SetBGMVolume(testBGMVolume);
+        }
+        if (!Mathf.Approximately(testSFXVolume, _lastSFXVolume))
+        {
+            _lastSFXVolume = testSFXVolume;
+            AudioManager.Instance.SetSFXVolume(testSFXVolume);
+        }
     }
 
     private void OnGUI()

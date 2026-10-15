@@ -79,6 +79,7 @@ public class AudioManager : MonoBehaviour
         bgmSource.loop = true;
         bgmSource.playOnAwake = false;
         bgmSource.volume = bgmVolume;
+        bgmSource.spatialBlend = 0f; // 2D 音效
 
         // 建立 SFX 音源池
         sfxSources = new AudioSource[SFX_POOL_SIZE];
@@ -88,6 +89,7 @@ public class AudioManager : MonoBehaviour
             sfxSources[i].loop = false;
             sfxSources[i].playOnAwake = false;
             sfxSources[i].volume = sfxVolume;
+            sfxSources[i].spatialBlend = 0f; // 2D 音效（重要！）
         }
     }
 
@@ -201,7 +203,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySFX_AttackNormal()
     {
-        PlaySFX(sfxAttackNormal);
+        PlaySFX(sfxAttackNormal, nameof(sfxAttackNormal));
     }
 
     /// <summary>
@@ -209,7 +211,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySFX_ConvertSuccess()
     {
-        PlaySFX(sfxConvertSuccess);
+        PlaySFX(sfxConvertSuccess, nameof(sfxConvertSuccess));
     }
 
     /// <summary>
@@ -217,7 +219,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySFX_EnemyVolunteerDeath()
     {
-        PlaySFX(sfxEnemyVolunteerDeath);
+        PlaySFX(sfxEnemyVolunteerDeath, nameof(sfxEnemyVolunteerDeath));
     }
 
     /// <summary>
@@ -225,7 +227,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySFX_EnemyConvertSuccess()
     {
-        PlaySFX(sfxEnemyConvertSuccess);
+        PlaySFX(sfxEnemyConvertSuccess, nameof(sfxEnemyConvertSuccess));
     }
 
     /// <summary>
@@ -233,25 +235,38 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlaySFX_SkillDogeza()
     {
-        PlaySFX(sfxSkillDogeza);
+        PlaySFX(sfxSkillDogeza, nameof(sfxSkillDogeza));
     }
 
     /// <summary>
     /// 播放指定音效
     /// </summary>
-    private void PlaySFX(AudioClip clip)
+    private void PlaySFX(AudioClip clip, string fieldName = "")
     {
         if (clip == null)
         {
-            Debug.LogWarning("[AudioManager] 音效為空！");
+            // 指出是哪個欄位為空，方便 Inspector 設定
+            Debug.LogWarning($"[AudioManager] 音效欄位 [{fieldName}] 未設定！請在 Inspector 中將音效檔案拖拉至 AudioManager 的 {fieldName} 欄位。");
+            return;
+        }
+
+        if (sfxSources == null || sfxSources.Length == 0)
+        {
+            Debug.LogError("[AudioManager] SFX 音源池未初始化！");
             return;
         }
 
         // 使用音源池中的下一個可用音源
         AudioSource source = sfxSources[currentSFXIndex];
-        source.clip = clip;
-        source.volume = sfxVolume;
-        source.Play();
+        
+        if (source == null)
+        {
+            Debug.LogError($"[AudioManager] SFX AudioSource[{currentSFXIndex}] 為 null！");
+            return;
+        }
+
+        // 使用 PlayOneShot 播放音效（更適合音效播放，不會被中斷）
+        source.PlayOneShot(clip, sfxVolume);
 
         // 移動到下一個音源
         currentSFXIndex = (currentSFXIndex + 1) % SFX_POOL_SIZE;
@@ -370,11 +385,42 @@ public class AudioManager : MonoBehaviour
     [ContextMenu("顯示音效狀態")]
     private void DebugAudioStatus()
     {
-        Debug.Log($"=== AudioManager 狀態 ===");
-        Debug.Log($"BGM 播放中: {bgmSource.isPlaying}");
-        Debug.Log($"BGM 音量: {bgmSource.volume}");
-        Debug.Log($"SFX 音量: {sfxVolume}");
-        Debug.Log($"當前 BGM: {(bgmSource.clip != null ? bgmSource.clip.name : "無")}");
+        
+        // 檢查音效設定
+        
+        // 檢查 SFX AudioSource
+        if (sfxSources != null)
+        {
+            for (int i = 0; i < sfxSources.Length; i++)
+            {
+                if (sfxSources[i] != null)
+                {
+                }
+                else
+                {
+                    Debug.LogError($"SFX[{i}]: ❌ null");
+                }
+            }
+        }
+        
+        // 檢查 AudioListener
+        AudioListener listener = FindFirstObjectByType<AudioListener>();
+        if (listener != null)
+        {
+        }
+        else
+        {
+            Debug.LogError("❌ 場景中沒有 AudioListener！");
+        }
+    }
+    
+    /// <summary>
+    /// 測試播放音效（Editor 測試用）
+    /// </summary>
+    [ContextMenu("測試播放音效")]
+    private void TestPlaySFX()
+    {
+        PlaySFX_AttackNormal();
     }
 
     #endregion
