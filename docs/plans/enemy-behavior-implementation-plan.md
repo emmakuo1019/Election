@@ -164,18 +164,25 @@ Inspector：技能引用、出招間隔、施放距離、前搖、半徑／角�
 #### 08｜Inspector 整理與索敵節流
 
 **任務名稱**：Inspector 整理與索敵節流  
-**計畫更新日期**：2026-10-15  
+**計畫更新日期**：2026-10-15（修訂 v2）  
 **依賴**：Task 07 程式碼完成（靜態部分無需等待 Unity Play Mode 驗收）。
 
 ---
 
 **要解決的問題**
 
-Task 01–07 累積了兩類已知品質問題：
+Task 01–07 累積了三類已知品質問題：
 
-1. **Inspector 可讀性不足**：`EnemyController` 的 Header 分組橫跨戰鬥、角色、UI、除錯等四大類，但混排無邏輯順序；距離欄位缺少 `escapeRange > detectionRange` 的 OnValidate 驗證（僅在 Start 以 `Debug.LogWarning` 修正，不阻止錯誤配置）；`EnemySkillData.OnValidate` 只驗證 `duration >= skillWindupTime`，缺少 `initialDelay >= 0`、`cooldown > 0` 等最基本保護；`castRangeMultiplier` 的說明與 `blastRadius` 的關係未在 Inspector 明示。
+1. **索敵每幀 OverlapSphere（Idle 與 Wander 兩處）**：靜態搜尋（`grep -rn "FindNearestTarget" Assets/Scripts/Enemy/`）確認三個呼叫點：
+   - `EnemyIdleState.Update()` L47：無目標時每幀呼叫（需節流）
+   - `EnemyWanderState.Update()` L48：每幀無條件呼叫（需節流）
+   - `EnemyAttackState.Update()` L61：攻擊動畫結束後一次性重新鎖定目標（語意正確，不需節流）
 
-2. **每幀索敵 OverlapSphere**：`EnemyIdleState.Update()` 在無目標時每幀呼叫 `FindNearestTarget()`，而 `FindNearestTarget()` 內部執行兩次 `Physics.OverlapSphere`。場景中存在多隻 Idle 敵人時，每幀都在做無謂的物理查詢。計畫 Task 08 原文已明確要求「索敵改可調間隔」。
+   `FindNearestTarget()` 內部執行兩次 `Physics.OverlapSphere`，Idle 與 Wander 在多隻敵人無目標時同時持續查詢。
+
+2. **OnValidate 驗證缺口**：`EnemyController.Start()` L538 對 `escapeRange <= detectionRange` 的處理是**靜默修正**（無任何 Log，直接寫回正確值），配置錯誤在 Inspector 儲存時不會有提示。`EnemySkillData.OnValidate` 只驗 `duration >= skillWindupTime`，缺少 `cooldown` 與 `initialDelay` 的最小值保護。
+
+3. **常駐 Debug.Log 無開關**：`ReporterMonitor.cs` 有 7 個 `Debug.Log`（5 個過濾原因 + 2 個成功事件），`EnemyAttackState.cs` L39 有一個每次進入攻擊都印出的常駐 log，正常遊玩時持續洗版。
 
 ---
 
@@ -183,37 +190,94 @@ Task 01–07 累積了兩類已知品質問題：
 
 | 項目 | 位置 | 現況 |
 |---|---|---|
-| 每幀索敵 | `EnemyIdleState.cs` L55–L67 | `if (ctx.target == null) { ctx.FindNearestTarget(); }` 無間隔節流 |
-| OnValidate 距離關係 | `EnemyController.cs` Start() L538 | `Debug.LogWarning + runtime fix`，不是編輯期 OnValidate |
+| 每幀索敵（Idle） | `EnemyIdleState.cs` L47 | `if (ctx.target == null) { ctx.FindNearestTarget(); }` 無節流 |
+| 每幀索敵（Wander） | `EnemyWanderState.cs` L48 | `ctx.FindNearestTarget();` 在 `Update()` 無條件每幀呼叫，無節流 |
+| 一次性索敵（Attack） | `EnemyAttackState.cs` L61 | 攻擊動畫結束後呼叫一次，語意正確，不需節流 |
+| escapeRange 距離修正 | `EnemyController.cs` Start() L538 | 靜默修正（無任何 Log），不是編輯期 OnValidate |
 | OnValidate 技能時間 | `EnemySkillData.cs` L21–24 | 只驗 `duration >= skillWindupTime`，缺 `cooldown > 0`、`initialDelay >= 0` |
-| castRangeMultiplier 說明 | `EnemyController.cs` L133 | Tooltip 寫了公式，但未說明預設值 1.5 的實際效果（blastRadius×1.5） |
-| 常駐 Debug.Log（監視處罰過濾） | `ReporterMonitor.cs` L137–L173 | 每次過濾都輸出 Log，無開關，正常遊玩時持續洗版 |
-| 技能排程 Debug.Log | `EnemyController.cs` L691, L723 | 已有 `debugSkillScheduling` 開關保護，符合規範，不需修改 |
+| ReporterMonitor 過濾 log | `ReporterMonitor.cs` L137/145/154/161/173 | 5 條過濾原因 Debug.Log，無開關 |
+| ReporterMonitor 成功事件 log | `ReporterMonitor.cs` L223/233 | 2 條成功處罰 Debug.Log，無開關 |
+| EnemyAttackState 常駐 log | `EnemyAttackState.cs` L39 | `Debug.Log("Enemy: 進入 Attack 狀態…")` 每次攻擊均輸出，無開關 |
+| 技能排程 Debug.Log | `EnemyController.cs` L691/723 | 已有 `debugSkillScheduling` 開關，符合規範，不需修改 |
+
+---
+
+**索敵節流方案：共用計時器放在 EnemyController**
+
+Idle 與 Wander 都需要節流，且共用同一份 `FindNearestTarget()` 邏輯。計時器放在 `EnemyController`，讓兩個 State 共用，避免各自複製：
+
+```
+EnemyController 新增：
+  float searchInterval = 0.3f（Inspector 可調，暫定值，待 playtest 確認）
+  float _searchTimer（私有）
+  void ResetSearchTimer()（Enter 時呼叫，讓進入狀態後第一次檢查立即發生）
+  bool TryFindNearestTarget()（推進計時器，時間到才呼叫 FindNearestTarget，回傳是否找到）
+
+EnemyIdleState.Update()：
+  if (ctx.target == null) 分支改呼叫 ctx.TryFindNearestTarget()
+
+EnemyWanderState.Update()：
+  ctx.FindNearestTarget() 改呼叫 ctx.TryFindNearestTarget()
+
+EnemyAttackState.Update() L61：
+  FindNearestTarget() 保留不動（一次性，不需節流）
+```
+
+`searchInterval` 的實際合適範圍需 playtest 確認，0.3s 為暫定起點。
 
 ---
 
 **本次範圍**
 
 包含：
-- `EnemyIdleState.cs`：加入 `_searchTimer` 與可調 `searchInterval`（從 `ctx` 讀取）；節流索敵，不改任何狀態切換邏輯。
-- `EnemyController.cs`：新增 `searchInterval` 欄位（帶 Header、Tooltip、`[Min(0.1f)]`）；將 Start() 的距離修正搬移至 `OnValidate()`。
-- `EnemySkillData.cs`：`OnValidate` 補充 `cooldown > 0`、`initialDelay >= 0` 的防呆 clamp。
-- `ReporterMonitor.cs`：將五行常駐 Debug.Log 加上 `[SerializeField] private bool debugMonitor` 開關，預設 `false`。
+- `EnemyController.cs`：新增 `searchInterval`、`_searchTimer`、`ResetSearchTimer()`、`TryFindNearestTarget()`；新建 `OnValidate()` 加入 `escapeRange` 驗證。
+- `EnemyIdleState.cs`：`Enter()` 末尾呼叫 `ctx.ResetSearchTimer()`；`Update()` 改用 `ctx.TryFindNearestTarget()`。
+- `EnemyWanderState.cs`：`Update()` 改用 `ctx.TryFindNearestTarget()`。
+- `EnemyAttackState.cs`：刪除 L39 常駐 Debug.Log。
+- `EnemySkillData.cs`：`OnValidate` 補充 `cooldown` 與 `initialDelay` 最小值保護。
+- `ReporterMonitor.cs`：加 `debugMonitor` 開關，控制全部 7 個 Debug.Log（見下方說明）。
 
 不包含（明確排除）：
-- EnemyWanderState、PlayerAttack、UI 的整理（Task 08 原文提及但非本輪最小必要）
+- `EnemyMoveState`、`EnemySkillState`、`PlayerAttack`、UI 的修改
 - 自訂 Editor Inspector 面板
 - ECS / Jobs / 全新池化系統
-- 效能量測與宣稱百分比
+- 效能量測或宣稱任何百分比提升
 - Task 07 Unity Play Mode 尚待驗收的行為邏輯
+
+---
+
+**OnValidate 與 Start() 的關係**
+
+`EnemyController.Start()` L538 對 `escapeRange <= detectionRange` 做靜默修正。規劃：
+- 新建 `OnValidate()` 加入同樣的 clamp，讓配置錯誤在 Inspector 儲存時立即被修正。
+- **保留** Start() 的靜默修正，作為執行期雙重保護。OnValidate 只在 Editor 下觸發，Start() 能覆蓋非 Editor 路徑（程式碼動態實例化等）。刪除 Start() 保護不帶任何好處。
+
+---
+
+**ReporterMonitor 日誌範圍定義**
+
+確認 repo 中 7 個 Debug.Log 的語意分類（行號均經靜態搜尋確認）：
+
+| 行號 | 分類 | 內容摘要 |
+|---|---|---|
+| L137 | 過濾原因 | Phase 不是 Active |
+| L145 | 過濾原因 | 技能不在 monitoredSkills |
+| L154 | 過濾原因 | 距離超出 monitorRange |
+| L161 | 過濾原因 | CastId 已由其他記者處理 |
+| L173 | 過濾原因 | 候選人冷卻剩餘 |
+| L223 | 成功事件 | 記者抓到玩家施法並扣誠信 |
+| L233 | 成功事件 | 記者抓到 EliteBoss 施法並暈眩 |
+
+`debugMonitor` **控制全部 7 個 Debug.Log**（過濾原因 5 條 ＋ 成功事件 2 條）。理由：成功事件在正式遊玩每次生效都必印，屬除錯訊息，預設不應洗版。`Debug.LogError`（L218）不加 guard，屬系統配置錯誤，需永遠可見。
+
+`EnemyAttackState.cs` L39 的常駐 log 直接刪除，不為此加新 Inspector 欄位。
 
 ---
 
 **前置條件與相依項目**
 
-- Task 07 程式碼完成（HEAD `0260c1aa`），`equippedSkills` 欄位結構與 `EnemySkillData` 類型已確定。
-- `EnemyIdleState` 目前透過 `ctx.detectionRange` 做 OverlapSphere，新增 `ctx.searchInterval` 欄位不改動任何現有欄位。
-- `ReporterMonitor.cs` 的 `debugMonitor` 欄位為新增 SerializeField，不影響既有 Reporter prefab 序列化（預設值 false）。
+- Task 07 程式碼完成（HEAD `0260c1aa`），`EnemySkillState` 在暈眩/施法中不呼叫 `FindNearestTarget()`，`TryFindNearestTarget()` 不影響技能狀態。
+- `ReporterMonitor.cs` 的 `debugMonitor` 為新增 SerializeField，不影響既有 Reporter.prefab 序列化（預設 false）。
 
 ---
 
@@ -221,59 +285,72 @@ Task 01–07 累積了兩類已知品質問題：
 
 | 檔案 | 修改目的 |
 |---|---|
-| `Assets/Scripts/Enemy/EnemyController.cs` | 新增 `searchInterval` 欄位；將 Start() 距離修正搬到 `OnValidate()` |
-| `Assets/Scripts/Enemy/EnemyIdleState.cs` | 加入 `_searchTimer` 節流；每隔 `ctx.searchInterval` 才呼叫 `FindNearestTarget()` |
-| `Assets/Scripts/Enemy/EnemySkillData.cs` | `OnValidate` 補 `cooldown` 與 `initialDelay` 最小值保護 |
-| `Assets/Scripts/Enemy/ReporterMonitor.cs` | 加 `debugMonitor` 開關，預設關閉 |
+| `Assets/Scripts/Enemy/EnemyController.cs` | 新增 `searchInterval` 欄位與計時輔助方法；新建 OnValidate 加 escapeRange 驗證 |
+| `Assets/Scripts/Enemy/EnemyIdleState.cs` | Enter 呼叫 ResetSearchTimer；Update 改用 TryFindNearestTarget |
+| `Assets/Scripts/Enemy/EnemyWanderState.cs` | Update 改用 TryFindNearestTarget |
+| `Assets/Scripts/Enemy/EnemyAttackState.cs` | 刪除 L39 常駐 Debug.Log |
+| `Assets/Scripts/Enemy/EnemySkillData.cs` | OnValidate 補 cooldown 與 initialDelay 最小值保護 |
+| `Assets/Scripts/Enemy/ReporterMonitor.cs` | 加 debugMonitor 開關，預設關閉，控制全部 7 個 Debug.Log |
 
-**不修改**：`EnemyMoveState`、`EnemyWanderState`、`EnemyAttackState`、`EnemySkillState`、所有 Prefab、所有 ScriptableObject。
+**不修改**：Prefab、ScriptableObject、Scene、其他 C# 腳本。
 
 ---
 
 **實作步驟（小而可驗證）**
 
 1. **EnemyController.cs**
-   - 在 `[Header("Targeting")]` 區塊新增：
+   - `[Header("Targeting")]` 區塊末尾新增：
      ```csharp
-     [Tooltip("EnemyIdleState 的索敵間隔（秒）。降低每幀 OverlapSphere 呼叫次數。")]
+     [Tooltip("索敵間隔（秒），暫定 0.3s，待 playtest 確認合適範圍。")]
      [Min(0.1f)] public float searchInterval = 0.3f;
      ```
-   - 在現有 `OnValidate()` 中（或新建 `private void OnValidate()`）加入：
+   - 新增私有欄位 `private float _searchTimer;`
+   - 新增輔助方法：
      ```csharp
-     if (escapeRange <= detectionRange) escapeRange = detectionRange + 2f;
-     if (attackHitTime > attackDuration)  attackHitTime = attackDuration * 0.5f;
-     ```
-   - 同步刪除 Start() 中相同邏輯的 `Debug.LogWarning + runtime fix`（已有 OnValidate 保護，保留 `Debug.LogError` 的 Collider 檢查不動）。
-   - 加 `ponytail:` 注解說明 searchInterval 的上限：「高值對靜止大量敵人友好，但 0.1s 已是場上最多 12 隻的合理下限。」
-
-2. **EnemyIdleState.cs**
-   - 加入私有欄位 `private float _searchTimer`
-   - 在 `Enter()` 重置 `_searchTimer = ctx.searchInterval`（進 Idle 立即索敵一次）
-   - 在 `Update()` 的 `if (ctx.target == null)` 分支內：
-     ```csharp
-     _searchTimer += Time.deltaTime;
-     if (_searchTimer >= ctx.searchInterval)
+     public void ResetSearchTimer() { _searchTimer = searchInterval; }
+     public bool TryFindNearestTarget()
      {
+         _searchTimer += Time.deltaTime;
+         if (_searchTimer < searchInterval) return target != null;
          _searchTimer = 0f;
-         ctx.FindNearestTarget();
+         FindNearestTarget();
+         return target != null;
      }
      ```
-   - 其餘邏輯（`_idleTimer`、`WanderState` 切換）不變。
+   - 新建 `private void OnValidate()`：
+     ```csharp
+     private void OnValidate()
+     {
+         if (escapeRange <= detectionRange) escapeRange = detectionRange + 2f;
+         if (attackHitTime > attackDuration) attackHitTime = attackDuration * 0.5f;
+     }
+     ```
+   - **保留** Start() L538 的靜默修正不動（執行期雙重保護，見前述理由）。
 
-3. **EnemySkillData.cs**
-   - `OnValidate` 補充：
+2. **EnemyIdleState.cs**
+   - `Enter()` 末尾加 `ctx.ResetSearchTimer();`
+   - `Update()` 的 `ctx.FindNearestTarget()` 改為 `ctx.TryFindNearestTarget()`，其餘邏輯不變。
+
+3. **EnemyWanderState.cs**
+   - `Update()` 的 `ctx.FindNearestTarget();` 改為 `ctx.TryFindNearestTarget();`，其餘邏輯不變。
+
+4. **EnemyAttackState.cs**
+   - 刪除 `Enter()` L39：`Debug.Log("Enemy: 進入 Attack 狀態，對選民發動拉票！");`
+
+5. **EnemySkillData.cs**
+   - 現有 `OnValidate` 補充：
      ```csharp
      if (cooldown < 0.1f) cooldown = 0.1f;
      if (initialDelay < 0f) initialDelay = 0f;
      ```
 
-4. **ReporterMonitor.cs**
-   - 在 `[Header` 區域新增：
+6. **ReporterMonitor.cs**
+   - 新增欄位：
      ```csharp
-     [Tooltip("開啟後輸出監視過濾原因（只供除錯，正式遊玩請關閉）")]
+     [Tooltip("開啟後輸出監視過濾原因與成功事件（只供除錯，正式遊玩請關閉）")]
      [SerializeField] private bool debugMonitor = false;
      ```
-   - 將 L137、L145、L154、L161、L173、L223、L233 的 `Debug.Log(...)` 包入 `if (debugMonitor)` guard（`Debug.LogError` 保留，不加 guard）。
+   - 將 L137、L145、L154、L161、L173、L223、L233 的 `Debug.Log(...)` 全部包入 `if (debugMonitor)`。`Debug.LogError`（L218）保留，不加 guard。
 
 ---
 
@@ -281,40 +358,41 @@ Task 01–07 累積了兩類已知品質問題：
 
 | 風險 | 評估 | 緩解方式 |
 |---|---|---|
-| `searchInterval = 0.3s` 讓敵人反應略慢 | 低風險：Idle 狀態本身已有 wanderInterval 緩衝，0.3s 在正常遊玩下不可察覺 | 欄位 Inspector 可調，playtest 後調整 |
-| Start() 距離修正刪除後，若 OnValidate 在 PlayMode 不觸發 | 低風險：Unity OnValidate 在 Inspector 改值時觸發，Editor 與 PlayMode 進入前均執行 | 保留 Start() 的簡短 `if` check（不含 LogWarning，僅靜默修正），雙重保護 |
-| Reporter.prefab 新增 `debugMonitor` 欄位後序列化 | 無風險：新 SerializeField 預設 false，舊 prefab 不讀此欄位時等同 false | — |
-| EnemySkillData OnValidate 修改 cooldown 最小值 | 無風險：現有 B_Stun(8s)、B_Damage(12s)、E_Stun(10s) 均遠超 0.1s | — |
+| `searchInterval` 暫定 0.3s 讓敵人發現目標有短暫延遲 | 低風險：Idle/Wander 下最多延遲 searchInterval 秒，正常追擊不受影響 | 欄位可調，playtest 後視情況縮短 |
+| Wander Enter 未呼叫 ResetSearchTimer | 接受：Wander 是移動中狀態，計時器從 Idle/上一狀態延續；最多在 searchInterval 秒內首次觸發 | 語意合理，不需 Wander Enter 重置 |
+| OnValidate 新建後在 Play Mode 不觸發 | 已知：OnValidate 只在 Editor 下觸發；Start() 靜默修正仍存在，無風險 | 保留 Start() 保護 |
+| EnemyAttackState L39 刪除後 log 消失 | 預期行為：此 log 為開發期臨時輸出，無功能意義 | 若回歸需要可臨時加回 |
+| EnemySkillData OnValidate clamp cooldown | 無風險：B_Stun(8s)、B_Damage(12s)、E_Stun(10s) 均遠超 0.1s | — |
 
 ---
 
-**靜態檢查方式**
+**靜態驗收方式**
 
-- `grep -n "FindNearestTarget" Assets/Scripts/Enemy/EnemyIdleState.cs` 結果應只在計時分支出現，不在裸 `if (ctx.target == null)` 直接呼叫。
+- `grep -rn "FindNearestTarget" Assets/Scripts/Enemy/` 結果：`EnemyIdleState.cs` 與 `EnemyWanderState.cs` 不再直接呼叫 `FindNearestTarget()`；`EnemyAttackState.cs` L61 仍保留；`EnemyController.cs` 有定義與 `TryFindNearestTarget` 的內部呼叫。
 - `grep -n "OnValidate" Assets/Scripts/Enemy/EnemyController.cs` 應找到含 `escapeRange` 驗證的方法。
-- `grep -n "debugMonitor" Assets/Scripts/Enemy/ReporterMonitor.cs` 應覆蓋所有 `Debug.Log`（非 `Debug.LogError`）。
+- `grep -n "debugMonitor" Assets/Scripts/Enemy/ReporterMonitor.cs` 應涵蓋 L137/145/154/161/173/223/233 共 7 個 `Debug.Log`，不含 `Debug.LogError`。
 - Unity Console 無新增 compile error。
-- `Assets/Prefabs/Reporter.prefab`、`Assets/Prefabs/Boss_ .prefab`、`Assets/Prefabs/Elite_.prefab` 的 GUID 不變（不修改 Prefab，不需確認）。
 
 ---
 
 **Unity Play Mode 驗收案例與預期結果**
 
-1. **索敵節流**：場景中放 3 隻 Volunteer，Console 開 Deep Profile。確認 `FindNearestTarget` 呼叫頻率從每幀降至約每 0.3s 一次；敵人仍能正常偵測並追擊選民。
-2. **OnValidate 距離關係**：在 Inspector 將 `escapeRange` 設為小於 `detectionRange` 的值（如 3），儲存後 `escapeRange` 應自動修正為 `detectionRange + 2`，Console 不出現 LogWarning。
-3. **debugMonitor 預設關閉**：在記者關卡正常通關，Console 不出現 `[ReporterMonitor] 過濾：` 字樣。將 `debugMonitor` 勾起後，過濾原因重新出現。
-4. **技能冷卻不受影響**：Task 07 的 Boss/Elite 技能排程行為不因本次修改改變（Tech Regression：Boss 兩招輪流，Elite 一招，debugSkillScheduling 開關仍有效）。
+1. **Idle 索敵節流**：場景中有選民，敵人處於 Idle 無目標狀態，選民進入偵測範圍後，確認敵人在 `searchInterval` 秒內切換追擊，不會長期無視目標。
+2. **Wander 索敵節流**：敵人 Wander 移動中，選民進入偵測範圍後，確認在 `searchInterval` 秒內切換為 Idle → MoveState，不會持續遊蕩無視。
+3. **OnValidate 距離關係**：在 Inspector 將 `escapeRange` 設為小於等於 `detectionRange` 的值，儲存後 `escapeRange` 自動修正，Console 無新的錯誤或警告。
+4. **debugMonitor 預設關閉**：記者關卡正常通關，Console 不出現 `[ReporterMonitor]` 字樣（`Debug.LogError` 除外）。勾選 `debugMonitor` 後，過濾原因與成功事件均重新出現。
+5. **Task 07 技能排程回歸**：Boss/Elite 技能排程行為不受本次修改影響（Boss 兩招輪流，Elite 一招，`debugSkillScheduling` 開關仍有效）。
 
 ---
 
 **完成條件**
 
-- 上述四個 Play Mode 案例通過。
-- `grep -rn "FindNearestTarget" Assets/Scripts/Enemy/EnemyIdleState.cs` 只出現在計時分支。
+- 上述五個 Play Mode 案例通過。
+- 靜態驗收四項全部通過。
 - 沒有新 compile error。
 - 更新進度表。
 
-**停止點**：若 OnValidate 搬移造成任何現有 Prefab 資料丟失，立即回報並回滾，不繼續。
+**停止點**：若 `TryFindNearestTarget()` 導致現有任何關卡的敵人無法正常追擊目標，立即回報並回滾。不在同一 PR 中追加新功能修正。
 
 #### 09｜完整關卡回歸與交接
 
