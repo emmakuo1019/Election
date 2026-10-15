@@ -21,6 +21,10 @@ public class MissionTracker : MonoBehaviour
     private RoomMissionData _mission;
     private bool _resolved;
     private bool _subscribed = false;  // 訂閱完成標記
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private float _diagLogTimer = 0f;     // 診斷 log 節流計時器
+    private const float DiagLogInterval = 3f;
+#endif
 
     // ── Unity 生命週期 ────────────────────────────────────────────────
 
@@ -199,6 +203,21 @@ public class MissionTracker : MonoBehaviour
         if (targetPct <= 0f) return;  // 防呆：未設定門檻不自動勝利
 
         float percent = GameDB.Instance.Run.GetCurrentVotePercentage() * 100f;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // 每 DiagLogInterval 秒印一次診斷摘要，避免每幀洗版
+        _diagLogTimer += Time.deltaTime;
+        if (_diagLogTimer >= DiagLogInterval)
+        {
+            _diagLogTimer = 0f;
+            int pVotes = GameDB.Instance.Run.GetCurrentPlayerVotes();
+            int total  = GameDB.Instance.Run.GetCurrentTotalVotes();
+            float rem  = LevelTimer.Instance != null ? LevelTimer.Instance.RemainingTime : -1f;
+            Debug.Log($"[MissionTracker][FinalBoss 輪詢] 票數={pVotes}/{total}（{percent:F1}%） " +
+                      $"門檻={targetPct}% | 剩餘={rem:F1}s | Phase={BattleEventManager.CurrentEncounterPhase}");
+        }
+#endif
+
         if (percent >= targetPct)
         {
             // 停計時器防止同幀時限觸發失敗
@@ -252,6 +271,15 @@ public class MissionTracker : MonoBehaviour
         // FinalBoss：時限到未達票數門檻 → 敗選
         if (IsFinalBossEncounter() && !_resolved)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (GameDB.Instance != null)
+            {
+                int pv = GameDB.Instance.Run.GetCurrentPlayerVotes();
+                int tv = GameDB.Instance.Run.GetCurrentTotalVotes();
+                float pct = tv > 0 ? (float)pv / tv * 100f : 0f;
+                Debug.Log($"[MissionTracker][FinalBoss 時限到] 敗選 | 票數={pv}/{tv}（{pct:F1}%） 門檻={( _mission != null ? _mission.targetValue : 0f )}%");
+            }
+#endif
             NotifyResult(false);
         }
     }
@@ -266,7 +294,27 @@ public class MissionTracker : MonoBehaviour
     {
         if (_resolved) return;
         _resolved = true;
-        
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // ── 診斷 log：結算來源 ────────────────────────────────────────
+        // 記錄每次結算的關鍵狀態，供 Boss 提前結算問題調查使用。
+        // 格式固定，每次結算只印一次，不影響效能。
+        if (IsFinalBossEncounter() && GameDB.Instance != null)
+        {
+            int playerVotes  = GameDB.Instance.Run.GetCurrentPlayerVotes();
+            int totalVoters  = GameDB.Instance.Run.GetCurrentTotalVotes();
+            float pct        = totalVoters > 0 ? (float)playerVotes / totalVoters * 100f : 0f;
+            float threshold  = _mission != null ? _mission.targetValue : 0f;
+            float remaining  = LevelTimer.Instance != null ? LevelTimer.Instance.RemainingTime : -1f;
+            var phase        = BattleEventManager.CurrentEncounterPhase;
+            Debug.Log($"[MissionTracker][FinalBoss 結算] 結果={( success ? "勝利" : "失敗" )} " +
+                      $"| Phase={phase} " +
+                      $"| 票數={playerVotes}/{totalVoters}（{pct:F1}%） 門檻={threshold}% " +
+                      $"| 剩餘時間={remaining:F1}s " +
+                      $"| _subscribed={_subscribed}");
+        }
+#endif
+
         if (success)
         {
             OnMissionCompleted?.Invoke();

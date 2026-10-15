@@ -494,6 +494,16 @@ public class EnemyController : MonoBehaviour, IAttackSource
                         $"SamplePosition 找到 {hit.position} 但 Warp 失敗（warped={warped}, isOnNavMesh={Agent.isOnNavMesh}）。" +
                         "敵人可能無法移動。");
                 }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                else if (enemyRole == EnemyRole.EliteBoss)
+                {
+                    // Boss/Elite 的 NavMesh 修正結果診斷（只在成功時印，避免與 Warning 重複）
+                    Debug.Log($"[EnemyController][NavMesh 診斷] {name}" +
+                              $" | 原始位置={transform.position}" +
+                              $" | SamplePosition 成功，命中={hit.position}（距離={Vector3.Distance(transform.position, hit.position):F2}m）" +
+                              $" | Warp 成功，isOnNavMesh={Agent.isOnNavMesh}");
+                }
+#endif
             }
             else
             {
@@ -502,6 +512,15 @@ public class EnemyController : MonoBehaviour, IAttackSource
                     "請確認場景已烘焙 NavMesh 且生成點位於 NavMesh 上。");
             }
         }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        else if (enemyRole == EnemyRole.EliteBoss && Agent != null)
+        {
+            // Boss/Elite 正常在 NavMesh 上時也印一條確認訊息，確保能區分兩種情況
+            Debug.Log($"[EnemyController][NavMesh 診斷] {name}" +
+                      $" | 位置={transform.position}" +
+                      $" | isOnNavMesh={Agent.isOnNavMesh}（無需 Warp）");
+        }
+#endif
         
         // ── Collider 驗證 ─────────────────────────────────────────────
         // 確保 Collider 存在且啟用，避免無法被玩家攻擊偵測
