@@ -25,7 +25,6 @@ public class SpawnObjectEffect : ICardEffect
     {
         if (prefabToSpawn == null)
         {
-            Debug.LogWarning("[SpawnObjectEffect] 缺少 prefabToSpawn，無法生成物件。");
             return;
         }
 
@@ -35,11 +34,9 @@ public class SpawnObjectEffect : ICardEffect
             if (PolicyEffectRuntimeManager.Instance != null)
             {
                 PolicyEffectRuntimeManager.Instance.RegisterSpawnEffect(this);
-                Debug.Log($"[SpawnObjectEffect] 已向 PolicyEffectRuntimeManager 註冊持續性生成效果，間隔: {spawnInterval}秒。");
             }
             else
             {
-                Debug.LogWarning("[SpawnObjectEffect] 找不到 PolicyEffectRuntimeManager 實體，無法註冊持續生成效果！將執行單次生成防呆。");
                 ExecuteSingleSpawn();
             }
         }
@@ -56,13 +53,11 @@ public class SpawnObjectEffect : ICardEffect
         if (spawnInterval > 0f && PolicyEffectRuntimeManager.Instance != null)
         {
             PolicyEffectRuntimeManager.Instance.UnregisterSpawnEffect(this);
-            Debug.Log("[SpawnObjectEffect] 已從 PolicyEffectRuntimeManager 註銷持續性生成效果。");
         }
     }
 
     private void ExecuteSingleSpawn()
     {
-        Debug.Log($"[SpawnObjectEffect] 執行單次生成 => 物件: {(prefabToSpawn != null ? prefabToSpawn.name : "Null")}, 數量: {spawnCount}");
 
         Vector3 spawnCenter = Vector3.zero;
         var playerObj = GameObject.FindAnyObjectByType<PlayerController>();
@@ -93,6 +88,5 @@ public class SpawnObjectEffect : ICardEffect
             }
         }
         
-        Debug.Log($"[SpawnObjectEffect] 已單次生成 {spawnCount} 個 {prefabToSpawn.name}。");
     }
 }

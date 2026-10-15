@@ -84,7 +84,6 @@ public class StatModifierEffect : ICardEffect
                 break;
         }
 
-        Debug.Log($"[StatModifierEffect] 數值套用偵錯 => 屬性: {TargetStat.ToString()}, 計算: {ModType.ToString()}, 數值: {Value}, 變更前: {beforeValue} -> 變更後: {afterValue} (SSOT GameDB已同步更新: {(beforeValue != afterValue)})");
     }
 
     public void RemoveEffect()

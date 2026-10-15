@@ -107,7 +107,6 @@ public class RoomExitController : MonoBehaviour
         // 1. 找到場上所有 VoterLogic
         // 2. 讓他們走向 GetVoterExitPosition()
         // 3. 到達後 Destroy
-        Debug.Log("[RoomExitController] TriggerVoterRetreat（未實作）");
     }
 
     // ── 事件處理 ──────────────────────────────────────────────────────
@@ -121,7 +120,6 @@ public class RoomExitController : MonoBehaviour
         {
             singleDoor.gameObject.SetActive(true);
             singleDoor.ForceUnlock();
-            Debug.Log("[RoomExitController] Survive 時間到，解鎖出口。");
         }
     }
 
@@ -131,7 +129,6 @@ public class RoomExitController : MonoBehaviour
     {
         if (singleDoor == null)
         {
-            Debug.LogError("[RoomExitController] singleDoor 未設定！");
             return;
         }
 
@@ -143,14 +140,12 @@ public class RoomExitController : MonoBehaviour
     {
         if (routeDoorLeft == null || routeDoorRight == null)
         {
-            Debug.LogError($"[RoomExitController] 選路門未設定！Left={routeDoorLeft}, Right={routeDoorRight}");
             return;
         }
 
         var options = GameDB.Instance?.Campaign.PendingOptions;
         if (options == null || options.Length != 2)
         {
-            Debug.LogError($"[RoomExitController] PendingOptions 數量不正確！長度={options?.Length ?? 0}");
             return;
         }
 
@@ -160,7 +155,6 @@ public class RoomExitController : MonoBehaviour
         routeDoorLeft.ConfigureRoute(0);
         routeDoorRight.ConfigureRoute(1);
 
-        Debug.Log($"[RoomExitController] 雙門配置完成 - 左：{options[0].mission.objectiveType}，右：{options[1].mission.objectiveType}");
     }
 
     private void HideAllDoors()
@@ -196,7 +190,6 @@ public class RoomExitController : MonoBehaviour
         // 根據門的數量選擇顯示方式
         if (activeDoors.Count == 0)
         {
-            Debug.LogWarning("[RoomExitController] 沒有啟用的門可以顯示方向指示器。");
             return;
         }
 
@@ -204,7 +197,6 @@ public class RoomExitController : MonoBehaviour
         {
             // 單門：使用原本的單一指示器
             UIManager.Instance?.ShowExitDirectionIndicator(activeDoors[0]);
-            Debug.Log($"[RoomExitController] 單一出口指示器指向：{activeDoors[0].name}");
         }
         else
         {
@@ -213,14 +205,12 @@ public class RoomExitController : MonoBehaviour
             if (multiIndicator != null)
             {
                 multiIndicator.ShowMultipleExits(activeDoors);
-                Debug.Log($"[RoomExitController] 多出口指示器顯示 {activeDoors.Count} 個門：{string.Join(", ", activeDoors.ConvertAll(d => d.name))}");
             }
             else
             {
                 // 回退方案：只顯示最近的門（向後相容）
                 Transform targetDoor = GetNearestDoor(activeDoors);
                 UIManager.Instance?.ShowExitDirectionIndicator(targetDoor);
-                Debug.LogWarning($"[RoomExitController] MultiExitIndicatorManager 未找到，使用回退方案（最近的門）：{targetDoor.name}");
             }
         }
     }

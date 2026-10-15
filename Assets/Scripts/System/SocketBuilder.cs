@@ -68,12 +68,6 @@ public class SocketBuilder : MonoBehaviour
             string lower = category.suffix.ToLower();
             if (lower == "_signh" || lower == "_signv")
             {
-                Debug.LogWarning(
-                    $"[SocketBuilder] 偵測到已廢棄的招牌後綴 '{category.suffix}'。\n" +
-                    "直式與橫式招牌已統一合併為 '_Sign'，請將此 category 的後綴改為 '_Sign'，" +
-                    "並將所有招牌 Prefab 集中放入該分類。",
-                    this
-                );
             }
         }
     }

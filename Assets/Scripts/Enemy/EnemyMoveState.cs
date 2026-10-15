@@ -22,7 +22,6 @@ public class EnemyMoveState : IState
         }
 
         ctx.Animator?.Play("Move");
-        Debug.Log("Enemy: 進入 Move 狀態，開始追擊目標");
     }
 
     public void Update()

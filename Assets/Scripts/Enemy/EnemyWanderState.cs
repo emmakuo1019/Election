@@ -37,7 +37,6 @@ public class EnemyWanderState : IState
         }
 
         ctx.Animator?.Play("Move");
-        Debug.Log("Enemy: 進入 Wander 狀態，開始隨機遊蕩");
     }
 
     public void Update()

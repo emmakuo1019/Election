@@ -43,100 +43,55 @@ public class RouteSelectionDebugger : MonoBehaviour
         // 按 8：手動呼叫 ShowExitDoors（測試用）
         if (Input.GetKeyDown(KeyCode.Alpha8))
         {
-            Debug.Log("=== [診斷] 手動呼叫 ShowExitDoors ===");
             var exitController = FindFirstObjectByType<RoomExitController>();
             if (exitController != null)
             {
                 exitController.ShowExitDoors(needsRouteChoice: true);
-                Debug.Log("[診斷] ShowExitDoors(true) 已執行");
             }
             else
             {
-                Debug.LogError("[診斷] 找不到 RoomExitController！");
             }
         }
 
         // 按 9：手動觸發教學完成（測試用）
         if (Input.GetKeyDown(KeyCode.Alpha9))
         {
-            Debug.Log("=== [診斷] 手動觸發教學完成 ===");
             BattleEventManager.TriggerRoomCleared();
         }
     }
 
     private void DiagnoseCampaignState()
     {
-        Debug.Log("=== [診斷] Campaign 狀態 ===");
         
         var campaign = GameDB.Instance?.Campaign;
         if (campaign == null)
         {
-            Debug.LogError("Campaign 為 null！");
             return;
         }
 
-        Debug.Log($"CurrentNodeNumber: {campaign.CurrentNodeNumber}");
-        Debug.Log($"CurrentRole: {campaign.CurrentRole}");
-        Debug.Log($"IsTutorialActive: {campaign.IsTutorialActive}");
-        Debug.Log($"PendingOptions 數量: {campaign.PendingOptions?.Length ?? 0}");
 
         if (campaign.PendingOptions != null && campaign.PendingOptions.Length > 0)
         {
             for (int i = 0; i < campaign.PendingOptions.Length; i++)
             {
                 var option = campaign.PendingOptions[i];
-                Debug.Log($"  選項 {i}: {option.mission?.name ?? "null"} (場景: {option.sceneName})");
             }
         }
 
-        Debug.Log($"ActiveRoom: {campaign.ActiveRoom.mission?.name ?? "null"}");
-        Debug.Log("========================");
     }
 
     private void DiagnoseDoorsInScene()
     {
-        Debug.Log("=== [診斷] 場景中的門 ===");
         
         var doors = FindObjectsByType<DoorController>(FindObjectsSortMode.None);
-        Debug.Log($"找到 {doors.Length} 個 DoorController");
 
         foreach (var door in doors)
         {
-            Debug.Log($"門: {door.gameObject.name}");
-            Debug.Log($"  - Active: {door.gameObject.activeInHierarchy}");
-            Debug.Log($"  - Position: {door.transform.position}");
-            
-            // 使用反射檢查私有欄位
-            var type = door.GetType();
-            var isUnlockedField = type.GetField("_isUnlocked", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var isRouteDoorField = type.GetField("_isRouteDoor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var optionIndexField = type.GetField("optionIndex", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            if (isUnlockedField != null)
-                Debug.Log($"  - IsUnlocked: {isUnlockedField.GetValue(door)}");
-            if (isRouteDoorField != null)
-                Debug.Log($"  - IsRouteDoor: {isRouteDoorField.GetValue(door)}");
-            if (optionIndexField != null)
-                Debug.Log($"  - OptionIndex: {optionIndexField.GetValue(door)}");
-
-            // 檢查 Collider
-            var collider = door.GetComponent<Collider>();
-            if (collider != null)
-            {
-                Debug.Log($"  - Collider enabled: {collider.enabled}");
-                Debug.Log($"  - Collider isTrigger: {collider.isTrigger}");
-            }
-            else
-            {
-                Debug.LogWarning($"  - 沒有 Collider！");
-            }
         }
-        Debug.Log("========================");
     }
 
     private void DiagnoseEventSubscriptions()
     {
-        Debug.Log("=== [診斷] 事件訂閱狀態 ===");
         
         // 檢查 BattleEventManager 的事件訂閱數量
         var type = typeof(BattleEventManager);
@@ -147,12 +102,10 @@ public class RouteSelectionDebugger : MonoBehaviour
         if (onRouteSelectedField != null)
         {
             var evt = (System.Delegate)onRouteSelectedField.GetValue(null);
-            Debug.Log($"OnRouteSelected 訂閱數: {evt?.GetInvocationList().Length ?? 0}");
             if (evt != null)
             {
                 foreach (var handler in evt.GetInvocationList())
                 {
-                    Debug.Log($"  - {handler.Method.DeclaringType?.Name}.{handler.Method.Name}");
                 }
             }
         }
@@ -160,33 +113,25 @@ public class RouteSelectionDebugger : MonoBehaviour
         if (onRoomClearedField != null)
         {
             var evt = (System.Delegate)onRoomClearedField.GetValue(null);
-            Debug.Log($"OnRoomCleared 訂閱數: {evt?.GetInvocationList().Length ?? 0}");
             if (evt != null)
             {
                 foreach (var handler in evt.GetInvocationList())
                 {
-                    Debug.Log($"  - {handler.Method.DeclaringType?.Name}.{handler.Method.Name}");
                 }
             }
         }
         
-        Debug.Log("========================");
     }
 
     private void DiagnoseRoomExitController()
     {
-        Debug.Log("=== [診斷] RoomExitController ===");
         
         var exitController = FindFirstObjectByType<RoomExitController>();
         if (exitController == null)
         {
-            Debug.LogError("場景中找不到 RoomExitController！");
-            Debug.LogError("這是無法選路的主要原因之一。");
             return;
         }
 
-        Debug.Log($"RoomExitController: {exitController.gameObject.name}");
-        Debug.Log($"  - Active: {exitController.gameObject.activeInHierarchy}");
 
         // 使用反射檢查私有欄位
         var type = exitController.GetType();
@@ -194,36 +139,12 @@ public class RouteSelectionDebugger : MonoBehaviour
         var routeDoorLeftField = type.GetField("routeDoorLeft", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var routeDoorRightField = type.GetField("routeDoorRight", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-        if (singleDoorField != null)
-        {
-            var singleDoor = singleDoorField.GetValue(exitController) as DoorController;
-            Debug.Log($"  - singleDoor: {(singleDoor != null ? singleDoor.gameObject.name : "null")}");
-        }
 
-        if (routeDoorLeftField != null)
-        {
-            var leftDoor = routeDoorLeftField.GetValue(exitController) as DoorController;
-            Debug.Log($"  - routeDoorLeft: {(leftDoor != null ? leftDoor.gameObject.name : "null")}");
-            if (leftDoor != null)
-                Debug.Log($"    Active: {leftDoor.gameObject.activeInHierarchy}");
-        }
 
-        if (routeDoorRightField != null)
-        {
-            var rightDoor = routeDoorRightField.GetValue(exitController) as DoorController;
-            Debug.Log($"  - routeDoorRight: {(rightDoor != null ? rightDoor.gameObject.name : "null")}");
-            if (rightDoor != null)
-                Debug.Log($"    Active: {rightDoor.gameObject.activeInHierarchy}");
-        }
-
-        Debug.Log("========================");
     }
 
     private void DiagnoseEncounterPhase()
     {
-        Debug.Log("=== [診斷] 當前戰鬥階段 ===");
-        Debug.Log($"CurrentEncounterPhase: {BattleEventManager.CurrentEncounterPhase}");
-        Debug.Log("========================");
     }
 
     private void OnGUI()

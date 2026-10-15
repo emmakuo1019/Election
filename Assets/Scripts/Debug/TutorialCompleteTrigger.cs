@@ -28,11 +28,9 @@ public class TutorialCompleteTrigger : MonoBehaviour
         if (!enableInTutorial || GameDB.Instance?.Campaign.IsTutorialActive != true)
         {
             enabled = false;
-            Debug.Log("[TutorialCompleteTrigger] 不在教學場景中，已禁用");
         }
         else
         {
-            Debug.Log("[TutorialCompleteTrigger] 已啟用，等待玩家觸發");
         }
     }
 
@@ -43,11 +41,9 @@ public class TutorialCompleteTrigger : MonoBehaviour
         if (!other.CompareTag("Player")) return;
 
         _hasTriggered = true;
-        Debug.Log("=== [TutorialCompleteTrigger] 玩家觸發！強制執行教學完成流程 ===");
 
         // 方法 1：觸發 RoomCleared 事件
         BattleEventManager.TriggerRoomCleared();
-        Debug.Log("[TutorialCompleteTrigger] 已觸發 TriggerRoomCleared()");
 
         // 如果方法 1 沒效，等 1 秒後直接呼叫 ShowExitDoors
         StartCoroutine(FallbackShowDoors());
@@ -71,7 +67,6 @@ public class TutorialCompleteTrigger : MonoBehaviour
 
         if (!anyRouteDoorActive)
         {
-            Debug.LogWarning("[TutorialCompleteTrigger] 1 秒後門仍未顯示，使用 Fallback 方法");
             
             var campaign = GameDB.Instance?.Campaign;
             if (campaign != null)
@@ -79,29 +74,24 @@ public class TutorialCompleteTrigger : MonoBehaviour
                 // 強制啟動正式戰役
                 if (campaign.StartFormalCampaign())
                 {
-                    Debug.Log($"[TutorialCompleteTrigger] StartFormalCampaign() 成功，PendingOptions 數量: {campaign.PendingOptions?.Length ?? 0}");
                     
                     // 強制顯示門
                     var exitController = FindFirstObjectByType<RoomExitController>();
                     if (exitController != null)
                     {
-                        Debug.Log("[TutorialCompleteTrigger] 找到 RoomExitController，呼叫 ShowExitDoors(true)");
                         exitController.ShowExitDoors(needsRouteChoice: true);
                     }
                     else
                     {
-                        Debug.LogError("[TutorialCompleteTrigger] 找不到 RoomExitController！");
                     }
                 }
                 else
                 {
-                    Debug.LogError("[TutorialCompleteTrigger] StartFormalCampaign() 失敗！");
                 }
             }
         }
         else
         {
-            Debug.Log("[TutorialCompleteTrigger] 門已正常顯示，無需 Fallback");
         }
     }
 

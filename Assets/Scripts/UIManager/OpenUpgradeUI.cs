@@ -17,14 +17,12 @@ public class OpenUpgradeUI : MonoBehaviour
     {
         if (tips == null)
         {
-            Debug.LogError("tips 未指定！");
             enabled = false;
             return;
         }
 
         if (upgradePanelUI == null)
         {
-            Debug.LogError("upgradePanelUI 未指定！");
             enabled = false;
             return;
         }

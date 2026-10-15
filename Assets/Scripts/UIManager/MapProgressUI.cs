@@ -27,7 +27,6 @@ public class MapProgressUI : MonoBehaviour
     {
         if (progressText == null)
         {
-            Debug.LogWarning("MapProgressUI：progressText 沒有指定");
             return;
         }
 

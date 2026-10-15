@@ -31,7 +31,6 @@ public class MiniSettlementUI : MonoBehaviour
     {
         if (panelRoot == null)
         {
-            Debug.LogWarning("MiniSettlementUI：panelRoot 沒有指定");
             return;
         }
 

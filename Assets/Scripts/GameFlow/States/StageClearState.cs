@@ -56,7 +56,6 @@ public class StageClearState : IState
         CampaignData campaign = GameDB.Instance?.Campaign;
         if (campaign == null || !campaign.TryPrepareNextStep(out bool needsRouteChoice, out bool isRunComplete))
         {
-            Debug.LogError("[StageClearState] 無法準備下一個戰役節點。");
             return;
         }
 
@@ -84,14 +83,12 @@ public class StageClearState : IState
 
     private void HandleExitReached()
     {
-        Debug.Log("[StageClearState] HandleExitReached 被調用");
         if (_transitioned) return;
         CampaignData campaign = GameDB.Instance?.Campaign;
         if (campaign == null) return;
         
         _transitioned = true;
         BattleEventManager.SetEncounterPhase(BattleEventManager.EncounterPhase.Transitioning);
-        Debug.Log($"[StageClearState] 準備切換到節點 {campaign.CurrentNodeNumber}");
         GameFlowManager.Instance?.ChangeState(new GameplayState());
     }
 

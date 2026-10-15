@@ -8,7 +8,6 @@ public class HQState : IState
 
     public void Enter()
     {
-        Debug.Log("[HQState] Enter - 進入總部 (純介面流程)");
         Time.timeScale = 1f;
         
         // 隱藏戰鬥 HUD（從戰鬥場景返回時）
@@ -38,7 +37,6 @@ public class HQState : IState
                 yield return null;
             }
             
-            Debug.Log($"[HQState] 場景 {hqSceneName} 載入完成，啟動 UI 選角流程。");
 
             // 禁用玩家移動（純介面操作，不需要玩家跑動）
             DisablePlayerMovement();
@@ -53,14 +51,12 @@ public class HQState : IState
             }
             else
             {
-                Debug.LogWarning("[HQState] 找不到 HQSceneController，請確認場景內有掛載此腳本。");
                 // Fallback：至少打開候選人面板
                 if (UIManager.Instance != null) UIManager.Instance.ShowHQCandidateStep();
             }
         }
         else
         {
-            Debug.LogWarning($"[HQState] 找不到場景 {hqSceneName}，請確認是否加入 Build Settings。");
         }
     }
 
@@ -74,13 +70,11 @@ public class HQState : IState
         foreach (var p in players)
         {
             p.enabled = false;
-            Debug.Log($"[HQState] 已停用 PlayerController: {p.gameObject.name}");
         }
     }
 
     public void Exit()
     {
-        Debug.Log("[HQState] Exit");
         if (UIManager.Instance != null) UIManager.Instance.HideHQPanel();
 
         // 出發前恢復玩家輸入（進入戰鬥場景後 PlayerController 會重新初始化，這裡保險用）

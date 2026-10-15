@@ -26,7 +26,6 @@ public class MapSkillSelectionPrompt : MonoBehaviour
         UpgradePanelUI upgradePanelUI = FindFirstObjectByType<UpgradePanelUI>(FindObjectsInactive.Include);
         if (upgradePanelUI == null)
         {
-            Debug.LogWarning("⚠️ MapScene 找不到 UpgradePanelUI，無法開啟技能二選一");
             Destroy(gameObject);
             return;
         }

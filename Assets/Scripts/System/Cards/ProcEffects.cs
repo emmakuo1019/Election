@@ -132,8 +132,6 @@ public class IntegrityShieldEffect : ICardEffect
     {
         if (PlayerHealthSystem.HasInstance)
             PlayerHealthSystem.Instance.AddShield(1);
-        else
-            Debug.LogWarning("[IntegrityShieldEffect] 找不到 PlayerHealthSystem。");
     }
 
     public void RemoveEffect() { }

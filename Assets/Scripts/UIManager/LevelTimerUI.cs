@@ -27,7 +27,6 @@ public class LevelTimerUI : MonoBehaviour
 
         if (LevelTimer.Instance == null)
         {
-            Debug.LogError("❌ 場景中找不到 LevelTimer，請確認此關卡有放置 LevelTimer");
             return;
         }
 

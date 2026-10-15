@@ -25,7 +25,6 @@ public class IdleState : IState
 
         if (_ctx.DashInputThisFrame && _ctx.CanDash)
         {
-            Debug.Log("[IdleState] 偵測到衝刺輸入，切換至 DashState");
             _ctx.StateMachine.ChangeState(new DashState(_ctx));
             return;
         }

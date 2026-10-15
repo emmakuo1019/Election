@@ -74,7 +74,6 @@ public class HQSceneController : MonoBehaviour
         SwitchCamera(vcamCandidate);
         UIManager.Instance?.ShowHQCandidateStep();
 
-        Debug.Log("[HQSceneController] 流程開始：Step.Candidate（候選人介紹）");
     }
 
     // ── 輸入回調（由 HQInputHandler 呼叫）────────────────────────────
@@ -89,7 +88,6 @@ public class HQSceneController : MonoBehaviour
         SwitchToFactionCamera(factionCursor);
         UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
 
-        Debug.Log($"[HQSceneController] 派系游標 ← {factionCursor}: {factions[factionCursor]?.factionName}");
     }
 
     public void OnNavigateRight()
@@ -101,7 +99,6 @@ public class HQSceneController : MonoBehaviour
         SwitchToFactionCamera(factionCursor);
         UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
 
-        Debug.Log($"[HQSceneController] 派系游標 → {factionCursor}: {factions[factionCursor]?.factionName}");
     }
 
     public void OnConfirm()
@@ -127,28 +124,24 @@ public class HQSceneController : MonoBehaviour
         SwitchToFactionCamera(factionCursor);
         UIManager.Instance?.ShowHQFactionStep(factionCursor, factions);
 
-        Debug.Log("[HQSceneController] 確認候選人，進入 Step.Faction（選派系）");
     }
 
     private void ConfirmFactionAndStart()
     {
         if (factions == null || factions.Length == 0)
         {
-            Debug.LogWarning("[HQSceneController] 沒有可選派系！請在 Inspector 填入 factions。");
             return;
         }
 
         FactionData chosen = factions[factionCursor];
         if (chosen == null)
         {
-            Debug.LogWarning($"[HQSceneController] factions[{factionCursor}] 為 null！");
             return;
         }
 
         // 寫入 GameDB（同時自動裝備起始技能）
         GameDB.Instance?.Player.SelectFaction(chosen);
 
-        Debug.Log($"[HQSceneController] 確認派系：{chosen.factionName}，進入教學！");
 
         UIManager.Instance?.FadeOut(1.0f, () =>
         {

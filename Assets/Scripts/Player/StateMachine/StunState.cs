@@ -25,7 +25,6 @@ public class StunState : IState
             _stunVfxInstance.transform.SetParent(_ctx.transform, worldPositionStays: true);
         }
 
-        Debug.Log($"[StunState] Enter — duration: {_duration}");
     }
 
     public void Update()
@@ -47,6 +46,5 @@ public class StunState : IState
             _stunVfxInstance = null;
         }
 
-        Debug.Log("[StunState] Exit");
     }
 }

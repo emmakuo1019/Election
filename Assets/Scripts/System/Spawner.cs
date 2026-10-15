@@ -61,7 +61,6 @@ public class Spawner : MonoBehaviour
     {
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogWarning("[Spawner] 沒有設定生怪點 (spawnPoints)！");
             yield break;
         }
 
@@ -118,7 +117,6 @@ public class Spawner : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("生成的選民缺少 VoterLogic，無法初始化新標籤邏輯。");
         }
     }
 

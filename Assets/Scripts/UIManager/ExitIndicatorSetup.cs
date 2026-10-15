@@ -51,7 +51,6 @@ public class ExitIndicatorSetup : MonoBehaviour
     [ContextMenu("自動設置雙箭頭系統")]
     public void SetupMultipleExitIndicators()
     {
-        Debug.Log("[ExitIndicatorSetup] 開始設置雙箭頭系統...");
 
         // 1. 驗證現有指示器
         if (existingIndicator == null)
@@ -59,7 +58,6 @@ public class ExitIndicatorSetup : MonoBehaviour
             existingIndicator = GetComponentInChildren<ExitDirectionIndicator>(true);
             if (existingIndicator == null)
             {
-                Debug.LogError("[ExitIndicatorSetup] 找不到現有的 ExitDirectionIndicator！請在 Inspector 中指定。", this);
                 return;
             }
         }
@@ -68,7 +66,6 @@ public class ExitIndicatorSetup : MonoBehaviour
         ExitDirectionIndicator[] indicators = GetComponentsInChildren<ExitDirectionIndicator>(true);
         if (indicators.Length >= 2)
         {
-            Debug.Log($"[ExitIndicatorSetup] 已經有 {indicators.Length} 個指示器，跳過創建。");
             existingIndicator = indicators[0];
             secondIndicator = indicators[1];
             isSetupComplete = true;
@@ -85,12 +82,10 @@ public class ExitIndicatorSetup : MonoBehaviour
         secondIndicator = secondPanel.GetComponent<ExitDirectionIndicator>();
         if (secondIndicator == null)
         {
-            Debug.LogError("[ExitIndicatorSetup] 複製的物件缺少 ExitDirectionIndicator 腳本！", secondPanel);
             Destroy(secondPanel);
             return;
         }
 
-        Debug.Log("[ExitIndicatorSetup] ✓ 已創建第二個指示器");
 
         // 4. 設置顏色
         SetupColors();
@@ -103,7 +98,6 @@ public class ExitIndicatorSetup : MonoBehaviour
         secondIndicator.Hide();
 
         isSetupComplete = true;
-        Debug.Log("[ExitIndicatorSetup] ✓ 雙箭頭系統設置完成！");
     }
 
     /// <summary>
@@ -116,7 +110,6 @@ public class ExitIndicatorSetup : MonoBehaviour
         if (firstArrowImage != null)
         {
             firstArrowImage.color = firstArrowColor;
-            Debug.Log($"[ExitIndicatorSetup] 第一個箭頭顏色: {firstArrowColor}");
         }
 
         // 第二個箭頭
@@ -126,7 +119,6 @@ public class ExitIndicatorSetup : MonoBehaviour
             if (secondArrowImage != null)
             {
                 secondArrowImage.color = secondArrowColor;
-                Debug.Log($"[ExitIndicatorSetup] 第二個箭頭顏色: {secondArrowColor}");
             }
         }
     }
@@ -141,11 +133,9 @@ public class ExitIndicatorSetup : MonoBehaviour
         if (multiManager == null)
         {
             multiManager = gameObject.AddComponent<MultiExitIndicatorManager>();
-            Debug.Log("[ExitIndicatorSetup] ✓ 已添加 MultiExitIndicatorManager");
         }
 
         // 創建指示器列表供 MultiManager 使用
-        Debug.Log("[ExitIndicatorSetup] ✓ MultiExitIndicatorManager 已設置");
     }
 
     /// <summary>
@@ -183,7 +173,6 @@ public class ExitIndicatorSetup : MonoBehaviour
         }
 
         isSetupComplete = false;
-        Debug.Log("[ExitIndicatorSetup] 已重置雙箭頭系統");
     }
 
     /// <summary>
@@ -192,19 +181,11 @@ public class ExitIndicatorSetup : MonoBehaviour
     [ContextMenu("顯示設置狀態")]
     public void ShowStatus()
     {
-        Debug.Log("========== ExitIndicatorSetup 狀態 ==========");
-        Debug.Log($"現有指示器: {(existingIndicator != null ? existingIndicator.gameObject.name : "null")}");
-        Debug.Log($"第二指示器: {(secondIndicator != null ? secondIndicator.gameObject.name : "null")}");
-        Debug.Log($"MultiManager: {(multiManager != null ? "已設置" : "未設置")}");
-        Debug.Log($"設置完成: {isSetupComplete}");
         
         ExitDirectionIndicator[] all = GetComponentsInChildren<ExitDirectionIndicator>(true);
-        Debug.Log($"總共找到 {all.Length} 個 ExitDirectionIndicator");
         for (int i = 0; i < all.Length; i++)
         {
-            Debug.Log($"  [{i}] {all[i].gameObject.name}");
         }
-        Debug.Log("=============================================");
     }
 
 #if UNITY_EDITOR
@@ -216,7 +197,6 @@ public class ExitIndicatorSetup : MonoBehaviour
     {
         if (existingIndicator == null)
         {
-            Debug.LogError("[ExitIndicatorSetup] 請先指定 existingIndicator");
             return;
         }
 
@@ -238,12 +218,10 @@ public class ExitIndicatorSetup : MonoBehaviour
 
         if (prefab != null)
         {
-            Debug.Log($"[ExitIndicatorSetup] ✓ Prefab 已創建: {prefabPath}");
             UnityEditor.Selection.activeObject = prefab;
         }
         else
         {
-            Debug.LogError("[ExitIndicatorSetup] Prefab 創建失敗！");
         }
     }
 #endif

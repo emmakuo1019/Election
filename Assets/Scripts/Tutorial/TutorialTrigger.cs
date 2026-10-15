@@ -26,7 +26,6 @@ public class TutorialTrigger : MonoBehaviour
         if (!other.CompareTag("Player")) return;
         if (stepData == null)
         {
-            Debug.LogWarning($"[TutorialTrigger] {gameObject.name} 的 stepData 未設定！");
             return;
         }
 

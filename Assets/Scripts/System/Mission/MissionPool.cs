@@ -29,7 +29,6 @@ public class MissionPool : ScriptableObject
     {
         if (entries == null || entries.Count == 0)
         {
-            Debug.LogWarning("[MissionPool] 任務池為空，回傳 null 陣列");
             return new RoomMissionData[count]; // 全 null，DoorController 顯示 fallback 文字
         }
 
@@ -76,7 +75,6 @@ public class MissionPool : ScriptableObject
     {
         if (entries == null)
         {
-            Debug.LogError("[MissionPool] 任務列表為空。");
             return System.Array.Empty<RoomMissionData>();
         }
 
@@ -89,7 +87,6 @@ public class MissionPool : ScriptableObject
 
         if (candidates.Count < count)
         {
-            Debug.LogError($"[MissionPool] 第 {nodeNumber} 節點只有 {candidates.Count} 個有效任務，至少需要 {count} 個。");
             return System.Array.Empty<RoomMissionData>();
         }
 

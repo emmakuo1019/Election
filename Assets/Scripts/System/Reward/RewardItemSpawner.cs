@@ -59,14 +59,12 @@ public class RewardItemSpawner : MonoBehaviour
     {
         if (rewardItemPrefab == null)
         {
-            Debug.LogWarning("[RewardItemSpawner] rewardItemPrefab 未設定！");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
 
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogWarning("[RewardItemSpawner] spawnPoints 未設定！");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
@@ -76,7 +74,6 @@ public class RewardItemSpawner : MonoBehaviour
             : GameDB.Instance?.Run.DrawRandomPolicyCards(rewardCount);
         if (cards == null || cards.Count == 0)
         {
-            Debug.LogWarning("[RewardItemSpawner] 牌池為空，無法生成獎勵");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
@@ -99,7 +96,6 @@ public class RewardItemSpawner : MonoBehaviour
             _spawnedItems.Add(item);
         }
 
-        Debug.Log($"[RewardItemSpawner] 生成 {count} 個獎勵物件");
     }
 
     // ── 選擇處理 ─────────────────────────────────────────────────────
@@ -110,7 +106,6 @@ public class RewardItemSpawner : MonoBehaviour
         if (card != null)
         {
             GameDB.Instance?.Run.AddPolicyCard(card);
-            Debug.Log($"[RewardItemSpawner] 套用卡牌：{card.cardName}");
         }
 
         // 移除所有獎勵物件（包含已選與未選）
@@ -125,7 +120,6 @@ public class RewardItemSpawner : MonoBehaviour
         _spawnedItems.Clear();
         _rewardActive = false;
 
-        Debug.Log("[RewardItemSpawner] 選擇完成，通知獎勵完成");
         BattleEventManager.TriggerRewardCollected();
     }
 }

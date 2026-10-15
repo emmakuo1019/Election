@@ -30,14 +30,11 @@ public class StartGame : MonoBehaviour
             
             if (currentState is TutorialState)
             {
-                Debug.Log("[StartGame] 在教學場景中，忽略觸發");
                 return;
             }
 
             if (currentState is GameplayState or StageClearState)
             {
-                Debug.LogWarning($"[StartGame] 在戰鬥/結算場景中被觸發！場景配置可能有誤。" +
-                               $"當前節點: {GameDB.Instance?.Campaign.CurrentNodeNumber}");
                 return;
             }
 
@@ -45,7 +42,6 @@ public class StartGame : MonoBehaviour
             var campaign = GameDB.Instance?.Campaign;
             if (campaign != null && campaign.CurrentNodeNumber > 0)
             {
-                Debug.LogWarning($"[StartGame] 戰役已在進行中（節點 {campaign.CurrentNodeNumber}），忽略觸發");
                 return;
             }
 
@@ -69,14 +65,12 @@ public class StartGame : MonoBehaviour
         var currentState = GameFlowManager.Instance?.CurrentState;
         if (currentState is GameplayState or StageClearState or TutorialState)
         {
-            Debug.LogWarning("[StartGame] OpenUpgradePanel 在非 HQ 場景中被呼叫，忽略");
             return;
         }
 
         var campaign = GameDB.Instance?.Campaign;
         if (campaign != null && campaign.CurrentNodeNumber > 0)
         {
-            Debug.LogWarning($"[StartGame] 戰役已在進行中（節點 {campaign.CurrentNodeNumber}），忽略");
             return;
         }
 

@@ -74,7 +74,6 @@ public class DoorController : MonoBehaviour
             if (phase == BattleEventManager.EncounterPhase.RouteSelection || 
                 phase == BattleEventManager.EncounterPhase.Transitioning)
             {
-                Debug.Log("[DoorController] 門在獎勵階段後生成，直接解鎖");
                 _isUnlocked = true;
             }
         }
@@ -85,7 +84,6 @@ public class DoorController : MonoBehaviour
         Collider col = GetComponent<Collider>();
         if (col != null && !col.isTrigger)
         {
-            Debug.LogWarning($"[DoorController] {gameObject.name} 的 Collider 未設為 Trigger，自動修正。");
             col.isTrigger = true;
         }
     }
@@ -114,7 +112,6 @@ public class DoorController : MonoBehaviour
         RoomMissionData mission = GetMission();
         string label = mission != null ? BuildLabel(mission) : "前往下一區域";
         
-        Debug.Log($"[DoorController] ShowTip 被調用 - 門:{gameObject.name}, 任務:{mission?.objectiveType}, 圖示:{(mission?.icon != null ? "有" : "無")}");
         
         UIManager.Instance?.ShowTutorialTipsText(label, mission?.icon);
     }
@@ -153,7 +150,6 @@ public class DoorController : MonoBehaviour
 
         _isUnlocked = true;
         UpdateVisual();
-        Debug.Log($"[DoorController] 門 {optionIndex} 解鎖（needsReward={needsReward}）");
     }
 
     // ── 觸發區偵測（門框小範圍）────────────────────────────────────────

@@ -28,7 +28,6 @@ public class EnemyIdleState : IState
 
         ctx.Animator?.Play("Idle");
         
-        Debug.Log("Enemy: 進入 Idle 狀態");
     }
 
     public void Update()

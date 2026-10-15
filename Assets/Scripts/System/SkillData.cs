@@ -57,7 +57,6 @@ public class SkillData : ScriptableObject, ISkillData
                 vfxInstance.duration = vfxDuration;
             }
         }
-        Debug.Log($"[SkillData] 執行技能邏輯：{skillName}");
     }
 
     public virtual void UpdateSkill(GameObject caster, float deltaTime)

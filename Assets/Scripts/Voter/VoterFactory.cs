@@ -28,7 +28,6 @@ public class VoterFactory : MonoBehaviour, IVoterFactory
 
         if (prefabToInstantiate == null)
         {
-            Debug.LogWarning("[VoterFactory] 找不到對應屬性的選民 Prefab！將退回使用預設");
             prefabToInstantiate = normalVoterPrefab;
         }
         

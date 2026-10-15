@@ -87,7 +87,6 @@ public class RewardItem : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         _playerInRange = true;
-        Debug.Log($"[RewardItem] 玩家進入獎勵觸發範圍 - 卡牌: {_card?.cardName}, 生成後經過: {Time.time - _spawnTime:F2}秒");
         UIManager.Instance?.ShowRewardDescription(_card);
     }
 
@@ -95,7 +94,6 @@ public class RewardItem : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         _playerInRange = false;
-        Debug.Log($"[RewardItem] 玩家離開獎勵觸發範圍 - 卡牌: {_card?.cardName}");
         UIManager.Instance?.HideRewardDescription();
     }
 
@@ -122,7 +120,6 @@ public class RewardItem : MonoBehaviour
 
         UIManager.Instance?.HideRewardDescription();
 
-        Debug.Log($"[RewardItem] 玩家選擇卡牌：{_card?.cardName}（生成後 {Time.time - _spawnTime:F2}秒）");
         OnItemSelected?.Invoke(this, _card);
     }
 }

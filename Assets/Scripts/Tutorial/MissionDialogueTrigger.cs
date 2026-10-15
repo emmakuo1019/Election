@@ -34,12 +34,10 @@ public class MissionDialogueTrigger : MonoBehaviour
         // 只在教學場景啟用，非教學場景自動禁用
         if (GameDB.Instance?.Campaign.IsTutorialActive != true)
         {
-            Debug.Log("[MissionDialogueTrigger] 非教學場景，禁用此腳本");
             enabled = false;
             return;
         }
 
-        Debug.Log("[MissionDialogueTrigger] 教學場景中啟動，開始監聽任務事件");
     }
 
     private void OnEnable()
@@ -64,21 +62,18 @@ public class MissionDialogueTrigger : MonoBehaviour
         // 防止重複觸發
         if (_hasTriggeredAllEnemiesDefeated)
         {
-            Debug.Log("[MissionDialogueTrigger] AllEnemiesDefeated 已觸發過，跳過");
             return;
         }
 
         // 檢查是否有設定對話資料
         if (onAllEnemiesDefeatedDialogue == null)
         {
-            Debug.Log("[MissionDialogueTrigger] AllEnemiesDefeated 觸發，但未設定對話資料，跳過");
             return;
         }
 
         // 標記為已觸發
         _hasTriggeredAllEnemiesDefeated = true;
 
-        Debug.Log($"[MissionDialogueTrigger] AllEnemiesDefeated 觸發，顯示對話：{onAllEnemiesDefeatedDialogue.name}");
 
         // 顯示對話，並在對話關閉後觸發獎勵選擇
         if (TutorialManager.Instance != null)
@@ -87,14 +82,12 @@ public class MissionDialogueTrigger : MonoBehaviour
                 onAllEnemiesDefeatedDialogue,
                 () =>
                 {
-                    Debug.Log("[MissionDialogueTrigger] 對話關閉，觸發獎勵選擇");
                     BattleEventManager.TriggerRewardSelectionRequested(false);
                 }
             );
         }
         else
         {
-            Debug.LogWarning("[MissionDialogueTrigger] TutorialManager.Instance 為 null，無法顯示對話！");
         }
     }
 }

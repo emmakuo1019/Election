@@ -60,7 +60,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
 
         card.trigger.Register(card.FireProcEffects);
         _registeredTriggers[card.cardName] = card.trigger;
-        Debug.Log($"[ProcTriggerBridge] 已註冊觸發器：{card.cardName}");
     }
 
     /// <summary>
@@ -71,7 +70,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         if (card == null || !_registeredTriggers.TryGetValue(card.cardName, out var trigger)) return;
         trigger.Unregister();
         _registeredTriggers.Remove(card.cardName);
-        Debug.Log($"[ProcTriggerBridge] 已取消觸發器：{card.cardName}");
     }
 
     private void UnregisterAllTriggers()
@@ -97,8 +95,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
         foreach (var card in activeCards)
             RegisterCard(card);
 
-        if (activeCards.Count > 0)
-            Debug.Log($"[ProcTriggerBridge] 場景載入：重新綁定 {_registeredTriggers.Count} 個觸發器");
     }
 
     /// <summary>
@@ -119,7 +115,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
             }
         }
         activeSpawnedObjects.Clear();
-        Debug.Log("[PolicyEffectRuntimeManager] 執行 Cleanup 清理所有生成物");
     }
 
     /// <summary>
@@ -183,7 +178,6 @@ public class PolicyEffectRuntimeManager : MonoBehaviour
 
     private void ExecuteSpawn(SpawnObjectEffect effect)
     {
-        Debug.Log($"[PolicyEffectRuntimeManager] 執行定時生成 => 物件: {(effect.prefabToSpawn != null ? effect.prefabToSpawn.name : "Null")}, 數量: {effect.spawnCount}");
 
         if (effect.prefabToSpawn == null) return;
 

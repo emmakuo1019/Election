@@ -26,7 +26,6 @@ public class HQSkillSelectionUI : MonoBehaviour
     {
         if (skillToEquip == null)
         {
-            Debug.LogWarning("[HQSkillSelectionUI] 嘗試裝備空的技能資料！");
             return;
         }
 
@@ -34,12 +33,10 @@ public class HQSkillSelectionUI : MonoBehaviour
         if (GameDB.Instance != null && GameDB.Instance.Player != null)
         {
             GameDB.Instance.Player.EquipBaseSkillJ(skillToEquip);
-            Debug.Log($"[HQSkillSelectionUI] 已成功裝備技能：{skillToEquip.skillName} (已寫入 GameDB)");
             RefreshUI();
         }
         else
         {
-            Debug.LogError("[HQSkillSelectionUI] 找不到 GameDB 實例，裝備失敗！請確認場景中是否有初始化 GameDB。");
         }
     }
 

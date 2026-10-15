@@ -19,7 +19,6 @@ public class HQSkillActivator : MonoBehaviour
     {
         if (skillToUnlock == null)
         {
-            Debug.LogWarning("[HQSkillActivator] 尚未指定 skillToUnlock，無法執行解鎖資料寫入。");
             return;
         }
 
@@ -29,7 +28,6 @@ public class HQSkillActivator : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[HQSkillActivator] 找不到 GameDB 或 Player 資料，解鎖失敗！");
         }
     }
 }

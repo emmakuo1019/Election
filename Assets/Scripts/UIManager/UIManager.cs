@@ -74,7 +74,6 @@ public class UIManager : MonoBehaviour
         if (candidatePanel != null) candidatePanel.SetActive(true);
         if (skillPanel != null) skillPanel.SetActive(false);
 
-        Debug.Log("[UIManager] 候選人介紹面板");
     }
 
     /// <summary>
@@ -127,7 +126,6 @@ public class UIManager : MonoBehaviour
 
         string logName = (factions.Length > cursorIndex && factions[cursorIndex] != null)
             ? factions[cursorIndex].factionName : "?";
-        Debug.Log($"[UIManager] 派系面板：cursor={cursorIndex} ({logName})");
     }
 
     /// <summary>
@@ -206,7 +204,6 @@ public class UIManager : MonoBehaviour
     {
         if (fadeCanvasGroup == null)
         {
-            Debug.LogWarning("[UIManager] FadeCanvasGroup 未設定！直接執行 onComplete。");
             onComplete?.Invoke();
             return;
         }
@@ -306,7 +303,6 @@ public class UIManager : MonoBehaviour
     {
         if (tutorialDialogueUI == null)
         {
-            Debug.LogWarning("[UIManager] tutorialDialogueUI 未設定，請在 Inspector 綁定。");
             return;
         }
         tutorialDialogueUI.Show(step);
@@ -327,7 +323,6 @@ public class UIManager : MonoBehaviour
     {
         if (tutorialTipsUI == null)
         {
-            Debug.LogWarning("[UIManager] tutorialTipsUI 未設定，請在 Inspector 綁定。");
             return;
         }
         tutorialTipsUI.Show(step);
@@ -340,7 +335,6 @@ public class UIManager : MonoBehaviour
     {
         if (tutorialTipsUI == null)
         {
-            Debug.LogWarning("[UIManager] tutorialTipsUI 未設定，請在 Inspector 綁定。");
             return;
         }
         tutorialTipsUI.ShowText(text, icon);
@@ -381,16 +375,6 @@ public class UIManager : MonoBehaviour
         // 原因：它是 UIManager 的子物件，會跟著 DontDestroyOnLoad 保留
         // 如果重新綁定會在教學場景找不到而被清空
 
-        if (tutorialDialogueUI == null)
-            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialDialogueUI。");
-        if (tutorialTipsUI == null)
-            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 TutorialTipsUI。");
-        if (rewardDescriptionUI == null)
-            Debug.LogWarning("[UIManager] RebindTutorialUI：場景中找不到 RewardDescriptionUI。");
-        
-        // 檢查 exitDirectionIndicator 是否仍然有效（應該一直有效）
-        if (exitDirectionIndicator == null)
-            Debug.LogError("[UIManager] RebindTutorialUI：exitDirectionIndicator 為 null！請檢查 S0.unity 中的設定。");
     }
 
     /// <summary>
@@ -426,7 +410,6 @@ public class UIManager : MonoBehaviour
     {
         if (exitDirectionIndicator == null)
         {
-            Debug.LogWarning("[UIManager] exitDirectionIndicator 未設定。");
             return;
         }
         exitDirectionIndicator.SetTarget(exitTarget);

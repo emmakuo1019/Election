@@ -101,7 +101,6 @@ public class LevelTimer : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"⚠️ [LevelTimer] levelDuration={levelDuration} 無效，改用預設 {FallbackDuration} 秒");
         levelDuration = FallbackDuration;
     }
 
@@ -115,7 +114,6 @@ public class LevelTimer : MonoBehaviour
     {
         if (isTimeUp)
         {
-            Debug.LogWarning("⚠️ 時間已用完，無法繼續");
             return;
         }
 

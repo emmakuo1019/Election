@@ -64,14 +64,12 @@ public class TutorialRewardItemSpawner : MonoBehaviour
     {
         if (rewardItemPrefab == null)
         {
-            Debug.LogWarning("[TutorialRewardItemSpawner] rewardItemPrefab 未設定！");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
 
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogWarning("[TutorialRewardItemSpawner] spawnPoints 未設定！");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
@@ -79,7 +77,6 @@ public class TutorialRewardItemSpawner : MonoBehaviour
         // 檢查固定卡牌陣列
         if (fixedCards == null || fixedCards.Length == 0)
         {
-            Debug.LogWarning("[TutorialRewardItemSpawner] fixedCards 未設定，無法生成獎勵");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
@@ -94,7 +91,6 @@ public class TutorialRewardItemSpawner : MonoBehaviour
 
         if (validCards.Count == 0)
         {
-            Debug.LogWarning("[TutorialRewardItemSpawner] fixedCards 中沒有有效的卡牌資料");
             BattleEventManager.TriggerRewardCollected();
             return;
         }
@@ -118,7 +114,6 @@ public class TutorialRewardItemSpawner : MonoBehaviour
             _spawnedItems.Add(item);
         }
 
-        Debug.Log($"[TutorialRewardItemSpawner] 生成 {count} 個獎勵物件（教學固定卡牌）");
     }
 
     // ── 選擇處理 ─────────────────────────────────────────────────────
@@ -129,7 +124,6 @@ public class TutorialRewardItemSpawner : MonoBehaviour
         if (card != null)
         {
             GameDB.Instance?.Run.AddPolicyCard(card);
-            Debug.Log($"[TutorialRewardItemSpawner] 套用卡牌：{card.cardName}");
         }
 
         // 移除所有獎勵物件（包含已選與未選）
@@ -144,7 +138,6 @@ public class TutorialRewardItemSpawner : MonoBehaviour
         _spawnedItems.Clear();
         _rewardActive = false;
 
-        Debug.Log("[TutorialRewardItemSpawner] 選擇完成，通知獎勵完成");
         BattleEventManager.TriggerRewardCollected();
     }
 }

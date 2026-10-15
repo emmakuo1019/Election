@@ -71,7 +71,6 @@ public class SceneBootstrap : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SceneBootstrap] 場景 '{sceneName}' 部分檢查失敗，請查看上方日誌。");
         }
     }
 
@@ -85,13 +84,9 @@ public class SceneBootstrap : MonoBehaviour
             return true;
         }
 
-        Debug.LogError($"[SceneBootstrap] ✗ UIManager 不存在！這會導致 UI 功能失效。");
-        Debug.LogError("[SceneBootstrap] 原因：此場景可能是直接開啟並按 Play，而不是從 S0.unity 啟動。");
-        Debug.LogError("[SceneBootstrap] 解決方法：請從 S0.unity 開始遊戲，或在 Build Settings 中將 S0.unity 設為第一個場景。");
 
         if (autoLoadS0IfMissingUIManager)
         {
-            Debug.LogWarning("[SceneBootstrap] 正在自動載入 S0.unity...");
             SceneManager.LoadScene("S0");
         }
 
@@ -107,8 +102,6 @@ public class SceneBootstrap : MonoBehaviour
             return true;
         }
 
-        Debug.LogError("[SceneBootstrap] ✗ MainCamera 不存在！這會導致 ExitDirectionIndicator 等 UI 元件失效。");
-        Debug.LogError("[SceneBootstrap] 原因：場景中沒有標記為 'MainCamera' 的攝影機。");
         
         if (autoCreateMainCamera)
         {
@@ -117,7 +110,6 @@ public class SceneBootstrap : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[SceneBootstrap] 解決方法：在場景中新增 Camera 並設定 Tag 為 'MainCamera'，或啟用 autoCreateMainCamera 選項。");
             return false;
         }
     }
@@ -130,7 +122,6 @@ public class SceneBootstrap : MonoBehaviour
             return true;
         }
 
-        Debug.LogWarning("[SceneBootstrap] ✗ GameDB 不存在！這可能導致任務系統無法運作。");
         return false;
     }
 
@@ -138,7 +129,6 @@ public class SceneBootstrap : MonoBehaviour
 
     private void CreateMainCamera()
     {
-        Debug.LogWarning("[SceneBootstrap] 正在自動創建 MainCamera...");
 
         GameObject cameraObj = new GameObject("Main Camera (Auto-Created)");
         Camera camera = cameraObj.AddComponent<Camera>();
@@ -161,8 +151,6 @@ public class SceneBootstrap : MonoBehaviour
         cameraObj.transform.position = new Vector3(0f, 1.5f, -10f);
         cameraObj.transform.rotation = Quaternion.identity;
 
-        Debug.LogWarning($"[SceneBootstrap] MainCamera 已創建：{cameraObj.name}");
-        Debug.LogWarning("[SceneBootstrap] 注意：這是臨時解決方案，建議在場景中手動設置攝影機。");
     }
 
     // ── 輔助方法 ──────────────────────────────────────────────────────
@@ -171,7 +159,6 @@ public class SceneBootstrap : MonoBehaviour
     {
         if (verboseLogging)
         {
-            Debug.Log(message);
         }
     }
 
@@ -188,13 +175,6 @@ public class SceneBootstrap : MonoBehaviour
     private void ShowSceneInfo()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        Debug.Log($"=== 場景資訊：{sceneName} ===");
-        Debug.Log($"UIManager: {(UIManager.Instance != null ? "存在" : "不存在")}");
-        Debug.Log($"MainCamera: {(Camera.main != null ? Camera.main.gameObject.name : "不存在")}");
-        Debug.Log($"GameDB: {(GameDB.Instance != null ? "存在" : "不存在")}");
-        Debug.Log($"總 Camera 數量: {FindObjectsOfType<Camera>().Length}");
-        Debug.Log($"總 Canvas 數量: {FindObjectsOfType<Canvas>().Length}");
-        Debug.Log("================================");
     }
 #endif
 }

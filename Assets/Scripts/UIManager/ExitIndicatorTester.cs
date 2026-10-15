@@ -47,7 +47,6 @@ public class ExitIndicatorTester : MonoBehaviour
     {
         if (UIManager.Instance == null)
         {
-            Debug.LogError("[ExitIndicatorTester] UIManager.Instance 為 null！");
             return;
         }
 
@@ -76,7 +75,6 @@ public class ExitIndicatorTester : MonoBehaviour
         // 使用單一指示器
         UIManager.Instance.ShowExitDirectionIndicator(testTargetLeft.transform);
 
-        Debug.Log("[ExitIndicatorTester] ✓ 單一出口測試：應該看到 1 個箭頭指向青色球體");
     }
 
     /// <summary>
@@ -87,14 +85,12 @@ public class ExitIndicatorTester : MonoBehaviour
     {
         if (UIManager.Instance == null)
         {
-            Debug.LogError("[ExitIndicatorTester] UIManager.Instance 為 null！");
             return;
         }
 
         MultiExitIndicatorManager multiManager = UIManager.Instance.GetComponent<MultiExitIndicatorManager>();
         if (multiManager == null)
         {
-            Debug.LogError("[ExitIndicatorTester] MultiExitIndicatorManager 未找到！請先執行 ExitIndicatorSetup。");
             return;
         }
 
@@ -134,8 +130,6 @@ public class ExitIndicatorTester : MonoBehaviour
 
         multiManager.ShowMultipleExits(exits);
 
-        Debug.Log("[ExitIndicatorTester] ✓ 雙出口測試：應該看到 2 個箭頭分別指向藍色和紅色球體");
-        Debug.Log("[ExitIndicatorTester] 藍色球體在左側，紅色球體在右側");
     }
 
     /// <summary>
@@ -152,7 +146,6 @@ public class ExitIndicatorTester : MonoBehaviour
         MultiExitIndicatorManager multiManager = UIManager.Instance?.GetComponent<MultiExitIndicatorManager>();
         multiManager?.HideAll();
 
-        Debug.Log("[ExitIndicatorTester] 已隱藏所有測試目標和箭頭");
     }
 
     // ── 輔助方法 ──────────────────────────────────────────────────────

@@ -125,8 +125,6 @@ public class PlayerController : MonoBehaviour
         StateMachine.Initialize(new IdleState(this));
         
         // [DEBUG] 診斷輸入系統配置
-        Debug.Log($"[PlayerController] Start - attackAction={(attackAction != null ? "已綁定" : "NULL")}");
-        Debug.Log($"[PlayerController] Start - 當前 EncounterPhase={BattleEventManager.CurrentEncounterPhase}");
         
         // 場景換載後仍顯式啟用 action；是否接收輸入完全由 EncounterPhase 決定。
         EnableInputAction(moveAction);
@@ -137,8 +135,6 @@ public class PlayerController : MonoBehaviour
         EnableInputAction(skillLAction);
         
         ApplyEncounterPhase(BattleEventManager.CurrentEncounterPhase);
-        
-        Debug.Log($"[PlayerController] Start - _combatInputEnabled={_combatInputEnabled}, _movementInputEnabled={_movementInputEnabled}");
     }
 
     private void Update()
@@ -226,8 +222,6 @@ public class PlayerController : MonoBehaviour
             EnableInputAction(skillJAction);
             EnableInputAction(skillKAction);
             EnableInputAction(skillLAction);
-            
-            Debug.Log("[PlayerController] 戰鬥輸入已啟用，重新啟用所有 Input Actions");
         }
         
         // 移除自動切換到 Idle 的邏輯，讓玩家可以在任務結算後繼續行動

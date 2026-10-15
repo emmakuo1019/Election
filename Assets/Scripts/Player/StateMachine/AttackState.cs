@@ -48,6 +48,9 @@ public class AttackState : IState
         Debug.Log($"[AttackState] 呼叫 PerformAttack，方向={_ctx.LastMoveDirection}");
         _ctx.PlayerAttack.PerformAttack(_ctx.LastMoveDirection);
         
+        // 5. 播放普通攻擊音效（通過 CanAttack() 才算實際執行，空揮也播放）
+        AudioManager.Instance?.PlaySFX_AttackNormal();
+        
         Debug.Log("[AttackState] ═══ Enter 執行完畢 ═══");
     }
 

@@ -226,7 +226,6 @@ public class VoterLogic : MonoBehaviour, IPoolable
             if (Agent.isOnNavMesh) return true;
         }
 
-        Debug.LogWarning($"[VoterLogic] {name} 找不到可用 NavMesh，已停用 NavMeshAgent。");
         Agent.enabled = false;
         return false;
     }
@@ -407,6 +406,15 @@ public class VoterLogic : MonoBehaviour, IPoolable
         // 深色選民被玩家轉化 → 額外觸發 Dark 專用事件
         if (side == VoterData.PlayerSideSign && Data != null && Data.HasDarkAttribute)
             BattleEventManager.TriggerOnDarkVoterConverted();
+
+        // 播放轉化音效：依轉化後的陣營選擇音效，每次成功轉化只播一次
+        if (AudioManager.Instance != null)
+        {
+            if (side == VoterData.PlayerSideSign)
+                AudioManager.Instance.PlaySFX_ConvertSuccess();
+            else if (side == VoterData.EnemySideSign)
+                AudioManager.Instance.PlaySFX_EnemyConvertSuccess();
+        }
 
         // 顯示成功轉化的 UI
         Visuals?.ShowEmote(EmoteType.Success);

@@ -68,7 +68,6 @@ public class PoolManager : MonoBehaviour
     {
         if (prefab == null)
         {
-            Debug.LogWarning("[PoolManager] Get 失敗：prefab 為空。");
             return null;
         }
 
@@ -87,20 +86,17 @@ public class PoolManager : MonoBehaviour
     {
         if (instanceToRelease == null)
         {
-            Debug.LogWarning("[PoolManager] Release 失敗：instance 為空。");
             return;
         }
 
         if (!instanceToPrefab.TryGetValue(instanceToRelease, out GameObject prefab))
         {
-            Debug.LogWarning($"[PoolManager] 找不到 {instanceToRelease.name} 對應的 prefab 池，改為直接回收為 inactive。");
             PrepareInstanceForRelease(instanceToRelease);
             return;
         }
 
         if (!pools.TryGetValue(prefab, out ObjectPool<GameObject> pool))
         {
-            Debug.LogWarning($"[PoolManager] 找不到 prefab {prefab.name} 對應的池，改為直接回收為 inactive。");
             instanceToPrefab.Remove(instanceToRelease);
             PrepareInstanceForRelease(instanceToRelease);
             return;

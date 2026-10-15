@@ -16,7 +16,6 @@ public class RoomResultCalculator : MonoBehaviour
         if (totalVoters <= 0)
         {
             if (showDebugLog)
-                Debug.LogWarning("⚠️ 本房間找不到任何有效選民資料，無法計算支持率");
 
             return 0;
         }

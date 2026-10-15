@@ -80,7 +80,6 @@ public class UpgradePanelUI : MonoBehaviour
     {
         if (panel == null)
         {
-            Debug.LogError("❌ panel 未指定！");
             enabled = false;
             return;
         }
@@ -88,7 +87,6 @@ public class UpgradePanelUI : MonoBehaviour
         if (closeButton == null || partyStatusText == null ||
             policyDebateButton == null || dogezaButton == null)
         {
-            Debug.LogError("❌ UpgradePanelUI 的 UI 元件有未指定項目！");
             enabled = false;
             return;
         }
@@ -126,7 +124,6 @@ public class UpgradePanelUI : MonoBehaviour
     {
         if (skillData == null)
         {
-            Debug.LogWarning("⚠️ 尚未指定技能資料，無法裝備。");
             return;
         }
 

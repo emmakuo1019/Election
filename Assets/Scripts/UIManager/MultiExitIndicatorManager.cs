@@ -46,7 +46,6 @@ public class MultiExitIndicatorManager : MonoBehaviour
     {
         if (indicatorPrefab == null && !useExistingIndicators)
         {
-            Debug.LogError("[MultiExitIndicatorManager] indicatorPrefab 未設定且 useExistingIndicators=false！請在 Inspector 中指定指示器 Prefab。", this);
         }
 
         // 如果使用場景中已存在的指示器，將它們加入池中
@@ -65,7 +64,6 @@ public class MultiExitIndicatorManager : MonoBehaviour
         
         if (existing.Length == 0)
         {
-            Debug.LogWarning("[MultiExitIndicatorManager] 場景中找不到現有的 ExitDirectionIndicator。");
             return;
         }
 
@@ -75,11 +73,9 @@ public class MultiExitIndicatorManager : MonoBehaviour
             {
                 indicator.Hide(); // 初始隱藏
                 indicatorPool.Enqueue(indicator);
-                Debug.Log($"[MultiExitIndicatorManager] 已加入現有指示器: {indicator.gameObject.name}");
             }
         }
 
-        Debug.Log($"[MultiExitIndicatorManager] 初始化完成，找到 {existing.Length} 個現有指示器");
     }
 
     // ── 公開 API ──────────────────────────────────────────────────────
@@ -92,7 +88,6 @@ public class MultiExitIndicatorManager : MonoBehaviour
     {
         if (exits == null || exits.Count == 0)
         {
-            Debug.LogWarning("[MultiExitIndicatorManager] 沒有出口需要顯示。");
             HideAll();
             return;
         }
@@ -133,13 +128,11 @@ public class MultiExitIndicatorManager : MonoBehaviour
             }
 
             indicator.Show();
-            Debug.Log($"[MultiExitIndicatorManager] 指示器 {i} 指向：{exits[i].name}");
         }
         
         // 如果指示器不夠，警告
         if (activeIndicators.Count < needCount)
         {
-            Debug.LogWarning($"[MultiExitIndicatorManager] 只有 {activeIndicators.Count} 個指示器，但需要 {needCount} 個！請確認 ExitIndicatorSetup 已創建第二個箭頭。");
         }
 
         // 隱藏多餘的指示器
@@ -194,14 +187,12 @@ public class MultiExitIndicatorManager : MonoBehaviour
         // 如果使用現有指示器但池已空，不創建新的
         if (useExistingIndicators)
         {
-            Debug.LogWarning("[MultiExitIndicatorManager] 現有指示器已用完，無法顯示更多出口。");
             return null;
         }
 
         // 創建新指示器（從 Prefab）
         if (indicatorPrefab == null)
         {
-            Debug.LogError("[MultiExitIndicatorManager] 無法創建指示器：Prefab 未設定。", this);
             return null;
         }
 
@@ -210,7 +201,6 @@ public class MultiExitIndicatorManager : MonoBehaviour
 
         if (newIndicator == null)
         {
-            Debug.LogError($"[MultiExitIndicatorManager] Prefab 缺少 ExitDirectionIndicator 腳本：{indicatorPrefab.name}", this);
             Destroy(obj);
             return null;
         }

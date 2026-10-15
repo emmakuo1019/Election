@@ -56,7 +56,6 @@ public class ExitDirectionIndicator : MonoBehaviour
         // ===== 防禦性檢查 =====
         if (arrowRect == null)
         {
-            Debug.LogError($"[ExitDirectionIndicator] arrowRect 未設定！請在 Inspector 中指定箭頭的 RectTransform。GameObject: {gameObject.name}", this);
         }
 
         if (canvasGroup == null)
@@ -74,7 +73,6 @@ public class ExitDirectionIndicator : MonoBehaviour
         if (canvas != null)
             canvasRect = canvas.GetComponent<RectTransform>();
         else
-            Debug.LogWarning($"[ExitDirectionIndicator] 找不到父層 Canvas！GameObject: {gameObject.name}", this);
 
         if (arrowImage != null && arrowColor != Color.white)
             arrowImage.color = arrowColor;
@@ -107,7 +105,6 @@ public class ExitDirectionIndicator : MonoBehaviour
             // ===== 除錯日誌（每秒最多一次）=====
             if (Time.frameCount % 60 == 0 && target != null)
             {
-                Debug.Log($"[ExitDirectionIndicator] alpha: {oldAlpha:F2} → {canvasGroup.alpha:F2}, target: {targetAlpha:F2}, hasTarget: {target != null}, hasCamera: {mainCamera != null}");
             }
         }
     }
@@ -125,7 +122,6 @@ public class ExitDirectionIndicator : MonoBehaviour
         // ===== 防禦性檢查 =====
         if (mainCamera == null)
         {
-            Debug.LogError("[ExitDirectionIndicator] Camera.main 為 null！請確認場景中有標記為 'MainCamera' 的攝影機。", this);
             targetAlpha = 0f;
             isVisible = false;
             return;
@@ -133,7 +129,6 @@ public class ExitDirectionIndicator : MonoBehaviour
 
         if (arrowRect == null)
         {
-            Debug.LogError("[ExitDirectionIndicator] arrowRect 未設定，無法顯示指示器！", this);
             targetAlpha = 0f;
             isVisible = false;
             return;

@@ -185,22 +185,18 @@ public class TutorialManager : MonoBehaviour
         {
             case TutorialCompletionCondition.UseAnySkill:
                 BattleEventManager.OnAnySkillUsed += HandleSkillUsed;
-                Debug.Log("[TutorialManager] 等待玩家使用技能...");
                 break;
 
             case TutorialCompletionCondition.ConvertVoter:
                 BattleEventManager.OnVoterConverted += HandleVoterConverted;
-                Debug.Log("[TutorialManager] 等待玩家轉化選民...");
                 break;
 
             case TutorialCompletionCondition.ConvertDarkVoter:
                 BattleEventManager.OnDarkVoterConverted += HandleDarkVoterConverted;
-                Debug.Log("[TutorialManager] 等待玩家轉化深色選民...");
                 break;
 
             case TutorialCompletionCondition.ReachExit:
                 BattleEventManager.OnRoomCleared += HandleReachExit;
-                Debug.Log("[TutorialManager] 等待玩家走進出口...");
                 break;
         }
     }
@@ -229,7 +225,6 @@ public class TutorialManager : MonoBehaviour
         string completedText = _pendingCompletedText;
         StopWaitingForAction();
 
-        Debug.Log("[TutorialManager] 玩家完成教學動作！");
 
         // 若有設定完成後的提示文字，更新 Tips
         if (!string.IsNullOrEmpty(completedText))
@@ -249,7 +244,6 @@ public class TutorialManager : MonoBehaviour
         OnActionCompleted();
         
         // 教學最後一步完成，觸發房間過關事件（讓 TutorialState 接手顯示選路門）
-        Debug.Log("[TutorialManager] 教學最後一步完成，觸發 TriggerRoomCleared");
         BattleEventManager.TriggerRoomCleared();
     }
 }

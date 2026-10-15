@@ -17,7 +17,6 @@ public class DoorPreviewZone : MonoBehaviour
         Collider col = GetComponent<Collider>();
         if (col != null && !col.isTrigger)
         {
-            Debug.LogWarning($"[DoorPreviewZone] {gameObject.name} 的 Collider 未設為 Trigger，自動修正。");
             col.isTrigger = true;
         }
 
@@ -32,11 +31,9 @@ public class DoorPreviewZone : MonoBehaviour
             
             if (door != null)
             {
-                Debug.Log($"[DoorPreviewZone] 自動找到 DoorController：{door.gameObject.name}");
             }
             else
             {
-                Debug.LogError($"[DoorPreviewZone] {gameObject.name} 找不到 DoorController！請在 Inspector 中設定。");
             }
         }
     }
@@ -44,28 +41,24 @@ public class DoorPreviewZone : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-        Debug.Log($"[DoorPreviewZone] 玩家進入感應區：{gameObject.name}");
         door?.ShowTip();
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-        Debug.Log($"[DoorPreviewZone] 玩家離開感應區：{gameObject.name}");
         UIManager.Instance?.HideTutorialTips();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        Debug.Log($"[DoorPreviewZone] 玩家進入感應區（2D）：{gameObject.name}");
         door?.ShowTip();
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        Debug.Log($"[DoorPreviewZone] 玩家離開感應區（2D）：{gameObject.name}");
         UIManager.Instance?.HideTutorialTips();
     }
 }

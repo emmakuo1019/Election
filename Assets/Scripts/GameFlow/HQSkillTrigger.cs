@@ -86,7 +86,6 @@ public class HQSkillTrigger : HQSkillActivator
 
                 // 2. 將該技能寫入 GameDB 進行裝備
                 GameDB.Instance.Player.EquipBaseSkillJ(skillToUnlock);
-                Debug.Log($"[HQSkillTrigger] 玩家撞擊方塊！已成功解鎖並裝備技能：{skillToUnlock.skillName}");
 
                 // 3. 先把自己變成「已選擇」的外觀
                 SetSelectedState(true);
@@ -96,7 +95,6 @@ public class HQSkillTrigger : HQSkillActivator
             }
             else
             {
-                Debug.LogWarning("[HQSkillTrigger] 尚未指定 skillToUnlock，或是 GameDB 尚未初始化！");
             }
         }
     }

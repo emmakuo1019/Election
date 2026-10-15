@@ -24,7 +24,6 @@ public class DashState : IState
             _ctx.AnimController.PlayDashAnimation(dashFacingDir);
         }
 
-        Debug.Log($"[DashState] Enter — 方向: {_dashDir}");
     }
 
     public void Update()
@@ -47,7 +46,6 @@ public class DashState : IState
 
     public void Exit()
     {
-        Debug.Log("[DashState] Exit");
     }
 
     public void OnStunned(float duration)
