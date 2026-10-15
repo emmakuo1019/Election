@@ -161,19 +161,160 @@ Inspector：技能引用、出招間隔、施放距離、前搖、半徑／角�
 
 ### 階段三：驗收與必要優化
 
-#### 08｜Inspector 整理與效能檢查
+#### 08｜Inspector 整理與索敵節流
 
-依賴：07。
-必讀：本輪新增／修改元件、EnemyIdleState.cs、EnemyWanderState.cs、PlayerAttack.cs、相關 UI。
-實作：
-1. 整理 Header、Tooltip、Min／Range 與 OnValidate；正值、距離關係、技能時間關係有明確驗證。
-2. 戰鬥數值在編輯模式可直接調。移速、傷害、暈眩、距離與冷卻在 Play Mode 的生效時機需明載；移速同步 Agent，技能清單結構變更可要求重啟。
-3. 增加低成本除錯資訊（狀態／目標／不能移動或施法的原因），不為此做大型自訂 Editor。
-4. 索敵改可調間隔，停止額外 Debug 物理掃描與大量常駐日誌；必要時採有容量處理的查詢快取，不為追求零 GC 默默漏目標。
-5. 使用相同場景、角色數量及硬體比較 CPU／GC／幀時間。先確認實際同場數量上限；無量測工具則待驗，不宣稱優化百分比。
-Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊。
-驗收：修改有明確效果；多個敵人技能冷卻互不污染；效能整理前後功能一致。
-停止點：不加入 ECS、Jobs、全新池化系統或未經量測的全面重寫。
+**任務名稱**：Inspector 整理與索敵節流  
+**計畫更新日期**：2026-10-15  
+**依賴**：Task 07 程式碼完成（靜態部分無需等待 Unity Play Mode 驗收）。
+
+---
+
+**要解決的問題**
+
+Task 01–07 累積了兩類已知品質問題：
+
+1. **Inspector 可讀性不足**：`EnemyController` 的 Header 分組橫跨戰鬥、角色、UI、除錯等四大類，但混排無邏輯順序；距離欄位缺少 `escapeRange > detectionRange` 的 OnValidate 驗證（僅在 Start 以 `Debug.LogWarning` 修正，不阻止錯誤配置）；`EnemySkillData.OnValidate` 只驗證 `duration >= skillWindupTime`，缺少 `initialDelay >= 0`、`cooldown > 0` 等最基本保護；`castRangeMultiplier` 的說明與 `blastRadius` 的關係未在 Inspector 明示。
+
+2. **每幀索敵 OverlapSphere**：`EnemyIdleState.Update()` 在無目標時每幀呼叫 `FindNearestTarget()`，而 `FindNearestTarget()` 內部執行兩次 `Physics.OverlapSphere`。場景中存在多隻 Idle 敵人時，每幀都在做無謂的物理查詢。計畫 Task 08 原文已明確要求「索敵改可調間隔」。
+
+---
+
+**repo 現況證據**
+
+| 項目 | 位置 | 現況 |
+|---|---|---|
+| 每幀索敵 | `EnemyIdleState.cs` L55–L67 | `if (ctx.target == null) { ctx.FindNearestTarget(); }` 無間隔節流 |
+| OnValidate 距離關係 | `EnemyController.cs` Start() L538 | `Debug.LogWarning + runtime fix`，不是編輯期 OnValidate |
+| OnValidate 技能時間 | `EnemySkillData.cs` L21–24 | 只驗 `duration >= skillWindupTime`，缺 `cooldown > 0`、`initialDelay >= 0` |
+| castRangeMultiplier 說明 | `EnemyController.cs` L133 | Tooltip 寫了公式，但未說明預設值 1.5 的實際效果（blastRadius×1.5） |
+| 常駐 Debug.Log（監視處罰過濾） | `ReporterMonitor.cs` L137–L173 | 每次過濾都輸出 Log，無開關，正常遊玩時持續洗版 |
+| 技能排程 Debug.Log | `EnemyController.cs` L691, L723 | 已有 `debugSkillScheduling` 開關保護，符合規範，不需修改 |
+
+---
+
+**本次範圍**
+
+包含：
+- `EnemyIdleState.cs`：加入 `_searchTimer` 與可調 `searchInterval`（從 `ctx` 讀取）；節流索敵，不改任何狀態切換邏輯。
+- `EnemyController.cs`：新增 `searchInterval` 欄位（帶 Header、Tooltip、`[Min(0.1f)]`）；將 Start() 的距離修正搬移至 `OnValidate()`。
+- `EnemySkillData.cs`：`OnValidate` 補充 `cooldown > 0`、`initialDelay >= 0` 的防呆 clamp。
+- `ReporterMonitor.cs`：將五行常駐 Debug.Log 加上 `[SerializeField] private bool debugMonitor` 開關，預設 `false`。
+
+不包含（明確排除）：
+- EnemyWanderState、PlayerAttack、UI 的整理（Task 08 原文提及但非本輪最小必要）
+- 自訂 Editor Inspector 面板
+- ECS / Jobs / 全新池化系統
+- 效能量測與宣稱百分比
+- Task 07 Unity Play Mode 尚待驗收的行為邏輯
+
+---
+
+**前置條件與相依項目**
+
+- Task 07 程式碼完成（HEAD `0260c1aa`），`equippedSkills` 欄位結構與 `EnemySkillData` 類型已確定。
+- `EnemyIdleState` 目前透過 `ctx.detectionRange` 做 OverlapSphere，新增 `ctx.searchInterval` 欄位不改動任何現有欄位。
+- `ReporterMonitor.cs` 的 `debugMonitor` 欄位為新增 SerializeField，不影響既有 Reporter prefab 序列化（預設值 false）。
+
+---
+
+**預計修改檔案及用途**
+
+| 檔案 | 修改目的 |
+|---|---|
+| `Assets/Scripts/Enemy/EnemyController.cs` | 新增 `searchInterval` 欄位；將 Start() 距離修正搬到 `OnValidate()` |
+| `Assets/Scripts/Enemy/EnemyIdleState.cs` | 加入 `_searchTimer` 節流；每隔 `ctx.searchInterval` 才呼叫 `FindNearestTarget()` |
+| `Assets/Scripts/Enemy/EnemySkillData.cs` | `OnValidate` 補 `cooldown` 與 `initialDelay` 最小值保護 |
+| `Assets/Scripts/Enemy/ReporterMonitor.cs` | 加 `debugMonitor` 開關，預設關閉 |
+
+**不修改**：`EnemyMoveState`、`EnemyWanderState`、`EnemyAttackState`、`EnemySkillState`、所有 Prefab、所有 ScriptableObject。
+
+---
+
+**實作步驟（小而可驗證）**
+
+1. **EnemyController.cs**
+   - 在 `[Header("Targeting")]` 區塊新增：
+     ```csharp
+     [Tooltip("EnemyIdleState 的索敵間隔（秒）。降低每幀 OverlapSphere 呼叫次數。")]
+     [Min(0.1f)] public float searchInterval = 0.3f;
+     ```
+   - 在現有 `OnValidate()` 中（或新建 `private void OnValidate()`）加入：
+     ```csharp
+     if (escapeRange <= detectionRange) escapeRange = detectionRange + 2f;
+     if (attackHitTime > attackDuration)  attackHitTime = attackDuration * 0.5f;
+     ```
+   - 同步刪除 Start() 中相同邏輯的 `Debug.LogWarning + runtime fix`（已有 OnValidate 保護，保留 `Debug.LogError` 的 Collider 檢查不動）。
+   - 加 `ponytail:` 注解說明 searchInterval 的上限：「高值對靜止大量敵人友好，但 0.1s 已是場上最多 12 隻的合理下限。」
+
+2. **EnemyIdleState.cs**
+   - 加入私有欄位 `private float _searchTimer`
+   - 在 `Enter()` 重置 `_searchTimer = ctx.searchInterval`（進 Idle 立即索敵一次）
+   - 在 `Update()` 的 `if (ctx.target == null)` 分支內：
+     ```csharp
+     _searchTimer += Time.deltaTime;
+     if (_searchTimer >= ctx.searchInterval)
+     {
+         _searchTimer = 0f;
+         ctx.FindNearestTarget();
+     }
+     ```
+   - 其餘邏輯（`_idleTimer`、`WanderState` 切換）不變。
+
+3. **EnemySkillData.cs**
+   - `OnValidate` 補充：
+     ```csharp
+     if (cooldown < 0.1f) cooldown = 0.1f;
+     if (initialDelay < 0f) initialDelay = 0f;
+     ```
+
+4. **ReporterMonitor.cs**
+   - 在 `[Header` 區域新增：
+     ```csharp
+     [Tooltip("開啟後輸出監視過濾原因（只供除錯，正式遊玩請關閉）")]
+     [SerializeField] private bool debugMonitor = false;
+     ```
+   - 將 L137、L145、L154、L161、L173、L223、L233 的 `Debug.Log(...)` 包入 `if (debugMonitor)` guard（`Debug.LogError` 保留，不加 guard）。
+
+---
+
+**可能風險與回歸影響**
+
+| 風險 | 評估 | 緩解方式 |
+|---|---|---|
+| `searchInterval = 0.3s` 讓敵人反應略慢 | 低風險：Idle 狀態本身已有 wanderInterval 緩衝，0.3s 在正常遊玩下不可察覺 | 欄位 Inspector 可調，playtest 後調整 |
+| Start() 距離修正刪除後，若 OnValidate 在 PlayMode 不觸發 | 低風險：Unity OnValidate 在 Inspector 改值時觸發，Editor 與 PlayMode 進入前均執行 | 保留 Start() 的簡短 `if` check（不含 LogWarning，僅靜默修正），雙重保護 |
+| Reporter.prefab 新增 `debugMonitor` 欄位後序列化 | 無風險：新 SerializeField 預設 false，舊 prefab 不讀此欄位時等同 false | — |
+| EnemySkillData OnValidate 修改 cooldown 最小值 | 無風險：現有 B_Stun(8s)、B_Damage(12s)、E_Stun(10s) 均遠超 0.1s | — |
+
+---
+
+**靜態檢查方式**
+
+- `grep -n "FindNearestTarget" Assets/Scripts/Enemy/EnemyIdleState.cs` 結果應只在計時分支出現，不在裸 `if (ctx.target == null)` 直接呼叫。
+- `grep -n "OnValidate" Assets/Scripts/Enemy/EnemyController.cs` 應找到含 `escapeRange` 驗證的方法。
+- `grep -n "debugMonitor" Assets/Scripts/Enemy/ReporterMonitor.cs` 應覆蓋所有 `Debug.Log`（非 `Debug.LogError`）。
+- Unity Console 無新增 compile error。
+- `Assets/Prefabs/Reporter.prefab`、`Assets/Prefabs/Boss_ .prefab`、`Assets/Prefabs/Elite_.prefab` 的 GUID 不變（不修改 Prefab，不需確認）。
+
+---
+
+**Unity Play Mode 驗收案例與預期結果**
+
+1. **索敵節流**：場景中放 3 隻 Volunteer，Console 開 Deep Profile。確認 `FindNearestTarget` 呼叫頻率從每幀降至約每 0.3s 一次；敵人仍能正常偵測並追擊選民。
+2. **OnValidate 距離關係**：在 Inspector 將 `escapeRange` 設為小於 `detectionRange` 的值（如 3），儲存後 `escapeRange` 應自動修正為 `detectionRange + 2`，Console 不出現 LogWarning。
+3. **debugMonitor 預設關閉**：在記者關卡正常通關，Console 不出現 `[ReporterMonitor] 過濾：` 字樣。將 `debugMonitor` 勾起後，過濾原因重新出現。
+4. **技能冷卻不受影響**：Task 07 的 Boss/Elite 技能排程行為不因本次修改改變（Tech Regression：Boss 兩招輪流，Elite 一招，debugSkillScheduling 開關仍有效）。
+
+---
+
+**完成條件**
+
+- 上述四個 Play Mode 案例通過。
+- `grep -rn "FindNearestTarget" Assets/Scripts/Enemy/EnemyIdleState.cs` 只出現在計時分支。
+- 沒有新 compile error。
+- 更新進度表。
+
+**停止點**：若 OnValidate 搬移造成任何現有 Prefab 資料丟失，立即回報並回滾，不繼續。
 
 #### 09｜完整關卡回歸與交接
 
@@ -216,8 +357,8 @@ Inspector：搜尋間隔、除錯開關、數值分組與執行中唯讀資訊�
 | 04 Boss 資產與結算 | 完成（使用者 Unity Play Mode 實測通過） | 8bf4037 + e9d35de + c4459df + 128113a | MissionTracker FinalBoss 票數輪詢＋時限敗選；GameplayState FinalBoss LevelTimer；BattleFlowController FinalBoss 清場；NavMesh Warp 回傳值檢查；HandleObjectiveResolved 改為 pending+delay-one-frame 競態仲裁 | 使用者已在 Unity Play Mode 實測確認 | — |
 | 05 記者與清場 | ✅ 完成（使用者 Unity Play Mode 實測回報正常） | be9fefb + 95cc10d + d6b4821 + 4924426 | EnemyHitInfo/EnemyHitSourceType；TakeDamage 白名單；ReporterMissionTracker；EnemySpawner Register/FinishRegistration；MissionTracker isReporterMission 分流；Die() _isDead guard；M_EliminateAll hudLayout 修正；S_EliminateAll 移除 Volunteer；Timer 預設 inactive；.meta 補交 | 使用者已確認 3 隻 Reporter 正常計數過關，計時器顯示問題修正後通過 | Task 06 已可開始 |
 | 06 記者監視 | 程式完成，待 Unity Play Mode 驗收 | f3a37cc + 1dd55d1 + eff70b4 + c925106 | ReporterFollowState（跟隨候選人）；ReporterMonitor（監視+處罰+去重）；SkillCastInfo；BattleEventManager.OnSkillCast；SkillState/EnemySkillState 觸發點；EnemyController Reporter 分流初始化；Die() 停止 Agent；EnemyStunState 恢復到 FollowState；06-Fix：PlayerHealthSystem 加入 S0 GameDB GO；靜態事件改具名解除訂閱；候選人共享冷卻；死亡後 Update/FixedUpdate guard；Phase 嚴格限定 Active；Domain Reload 保護 | 待使用者 Unity Play Mode 驗收 | allowMonitorInNonePhase 預設關閉；monitoredSkills 需 Inspector 設定 |
-| 07 精英／Boss 技能 | 程式完成（排程修正後），待 Unity Play Mode 驗收 | e443168 + 60c9843 + 4f6b889 | 07-Fix：activeCombatTime 時間戳模型（冷卻在所有狀態推進）；首次延遲修正（initialDelay 不疊加 cooldown）；Round-robin 防第二招飢餓；debugSkillScheduling Inspector 開關 | 待使用者 Unity Play Mode 驗收 | Task 06-Fix 靜態審查完成，修正後待 Unity 回歸驗收 |
-| 08 設定與效能 | 待開始 | — | 未執行 | 未執行 | 依賴 07 |
+| 07 精英／Boss 技能 | 程式完成（排程修正後），待 Unity Play Mode 驗收 | e443168 + 60c9843 + 4f6b889 + 0260c1a | 07-Fix：activeCombatTime 時間戳模型（冷卻在所有狀態推進）；首次延遲修正（initialDelay 不疊加 cooldown）；Round-robin 防第二招飢餓；debugSkillScheduling Inspector 開關；0260c1a 修正 InitializeMultiSkillSystem 懸空 else 造成括號錯位 | 待使用者 Unity Play Mode 驗收（精英一招、Boss 兩招輪流、不空放、被打斷） | Unity 驗收尚未回報；Task 08 靜態部分已可並行規劃 |
+| 08 設定與效能 | 規劃完成，待 ChatGPT 審查確認後實作 | — | 未執行 | 未執行 | Task 07 Unity 驗收尚待使用者執行；Task 08 靜態整理部分不阻擋（見 Task 08 規劃） |
 | 09 關卡回歸 | 待開始 | — | 未執行 | 未執行 | 依賴 01–08 |
 
 回報格式：
