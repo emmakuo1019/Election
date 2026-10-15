@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: M_Boss
   m_EditorClassIdentifier: Assembly-CSharp::RoomMissionData
   sceneName: Boss_Arena
-  objectiveType: 1
+  objectiveType: 0
   targetValue: 70
   icon: {fileID: 21300000, guid: 79c04b0f82c7f43e8909f2a0d81ceda1, type: 3}
   briefingStep: {fileID: 11400000, guid: 527894f5c481f4d7e8fe6c98a149498d, type: 2}
