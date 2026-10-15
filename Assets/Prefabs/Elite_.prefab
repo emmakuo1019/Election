@@ -875,6 +875,14 @@ MonoBehaviour:
   enemyRole: 2
   isFinalBossOpponent: 0
   isInvincible: 1
+  reporterDamageWhitelist: []
+  followDetectionRange: 20
+  followStopDistance: 3
+  followLoseDistance: 30
+  targetSearchInterval: 2
+  sharedSkillInterval: 3
+  castRangeMultiplier: 1.5
+  debugSkillScheduling: 0
   hpBarUI: {fileID: 8041737377043882103}
   attackHitRadius: 1
   attackHitOffset: {x: 0, y: 0, z: 0}
@@ -885,3 +893,4 @@ MonoBehaviour:
   stunVfxOffset: {x: 0, y: 2.71, z: 0}
   equippedSkills:
   - {fileID: 11400000, guid: 2df10124942d4c309622320357463158, type: 2}
+  - {fileID: 11400000, guid: 6f7199409ac424417bd7cd81603d5785, type: 2}

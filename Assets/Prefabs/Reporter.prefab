@@ -151,6 +151,11 @@ MonoBehaviour:
   enemyRole: 1
   isFinalBossOpponent: 0
   isInvincible: 0
+  reporterDamageWhitelist: []
+  followDetectionRange: 20
+  followStopDistance: 3
+  followLoseDistance: 30
+  targetSearchInterval: 2
   hpBarUI: {fileID: 1356372295820075687}
   attackHitRadius: 1
   attackHitOffset: {x: 0, y: 0, z: 0}
@@ -161,6 +166,24 @@ MonoBehaviour:
   stunVfxOffset: {x: 0, y: 2, z: 0}
   equippedSkills:
   - {fileID: 11400000, guid: 21714bfba46a14a9ab1ff03c88748ebf, type: 2}
+--- !u!114 &3141592653589793238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447725353262188044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b0019b2dd094db4963e0c6a39c6f30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReporterMonitor
+  monitorRange: 8
+  monitoredSkills:
+  - {fileID: 11400000, guid: 1b56f2f5959b4ea3a42f2261cbb0d9a8, type: 2}
+  playerPenaltyDamage: 10
+  eliteBossStunDuration: 2
+  penaltyCooldown: 3
 --- !u!1 &566546161834736190
 GameObject:
   m_ObjectHideFlags: 0
@@ -886,20 +909,3 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &3141592653589793238
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 447725353262188044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3b0019b2dd094db4963e0c6a39c6f30, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ReporterMonitor
-  monitorRange: 8
-  monitoredSkills: []
-  playerPenaltyDamage: 10
-  eliteBossStunDuration: 2
-  penaltyCooldown: 3
