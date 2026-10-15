@@ -75,11 +75,12 @@ public class Spawner : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         {
             // 診斷：初始選民生成完成後，記錄場上實際有效選民數
-            // 與 initialSpawnCount 的差距即為 NavMesh 失敗被跳過的數量
+            // 預計數與在場數之差可能來自 NavMesh 失敗、物件池不足或其他原因，
+            // 需結合 Console 中的 "Failed to create agent" 數量才能確認原因。
             int actualCount = VoterLogic.GetAllActiveVoters().Count;
             Debug.Log($"[Spawner][初始生成完成] 場景={gameObject.scene.name}" +
                       $" | 預計生成={initialSpawnCount} | 實際在場={actualCount}" +
-                      $" | NavMesh 失敗估計={(initialSpawnCount - actualCount)}");
+                      $" | 差值={(initialSpawnCount - actualCount)}（原因需對照 Console 確認）");
         }
 #endif
 

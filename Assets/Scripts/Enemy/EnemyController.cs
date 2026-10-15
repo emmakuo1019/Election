@@ -480,6 +480,9 @@ public class EnemyController : MonoBehaviour, IAttackSource
     {
         // ── NavMesh 驗證與修正 ────────────────────────────────────────
         // 確保敵人在有效的 NavMesh 上，避免跨場景初始化時序問題導致無法被攻擊
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Vector3 _diagOriginalPos = transform.position;  // 保存 Warp 前原始位置供診斷比對
+#endif
         if (Agent != null && !Agent.isOnNavMesh)
         {
             // 嘗試將 Agent 放到最近的 NavMesh 表面
@@ -497,11 +500,12 @@ public class EnemyController : MonoBehaviour, IAttackSource
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 else if (enemyRole == EnemyRole.EliteBoss)
                 {
-                    // Boss/Elite 的 NavMesh 修正結果診斷（只在成功時印，避免與 Warning 重複）
+                    float warpDist = Vector3.Distance(_diagOriginalPos, hit.position);
                     Debug.Log($"[EnemyController][NavMesh 診斷] {name}" +
-                              $" | 原始位置={transform.position}" +
-                              $" | SamplePosition 成功，命中={hit.position}（距離={Vector3.Distance(transform.position, hit.position):F2}m）" +
-                              $" | Warp 成功，isOnNavMesh={Agent.isOnNavMesh}");
+                              $" | 原始位置={_diagOriginalPos}" +
+                              $" | SamplePosition 命中={hit.position}" +
+                              $" | Warp 位移={warpDist:F2}m" +
+                              $" | Warp 成功={warped}, isOnNavMesh={Agent.isOnNavMesh}");
                 }
 #endif
             }
@@ -515,7 +519,6 @@ public class EnemyController : MonoBehaviour, IAttackSource
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         else if (enemyRole == EnemyRole.EliteBoss && Agent != null)
         {
-            // Boss/Elite 正常在 NavMesh 上時也印一條確認訊息，確保能區分兩種情況
             Debug.Log($"[EnemyController][NavMesh 診斷] {name}" +
                       $" | 位置={transform.position}" +
                       $" | isOnNavMesh={Agent.isOnNavMesh}（無需 Warp）");

@@ -188,7 +188,7 @@ public class MissionTracker : MonoBehaviour
 
     private void HandleFinalBossDefeated()
     {
-        NotifyResult(true);
+        NotifyResult(true, "HandleFinalBossDefeated");
     }
 
     /// <summary>
@@ -280,7 +280,7 @@ public class MissionTracker : MonoBehaviour
                 Debug.Log($"[MissionTracker][FinalBoss 時限到] 敗選 | 票數={pv}/{tv}（{pct:F1}%） 門檻={( _mission != null ? _mission.targetValue : 0f )}%");
             }
 #endif
-            NotifyResult(false);
+            NotifyResult(false, "HandleTimerExpired");
         }
     }
 
@@ -290,15 +290,13 @@ public class MissionTracker : MonoBehaviour
         NotifyResult(true);
     }
 
-    private void NotifyResult(bool success)
+    private void NotifyResult(bool success, string caller = "unknown")
     {
         if (_resolved) return;
         _resolved = true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // ── 診斷 log：結算來源 ────────────────────────────────────────
-        // 記錄每次結算的關鍵狀態，供 Boss 提前結算問題調查使用。
-        // 格式固定，每次結算只印一次，不影響效能。
         if (IsFinalBossEncounter() && GameDB.Instance != null)
         {
             int playerVotes  = GameDB.Instance.Run.GetCurrentPlayerVotes();
@@ -308,6 +306,7 @@ public class MissionTracker : MonoBehaviour
             float remaining  = LevelTimer.Instance != null ? LevelTimer.Instance.RemainingTime : -1f;
             var phase        = BattleEventManager.CurrentEncounterPhase;
             Debug.Log($"[MissionTracker][FinalBoss 結算] 結果={( success ? "勝利" : "失敗" )} " +
+                      $"| 呼叫來源={caller} " +
                       $"| Phase={phase} " +
                       $"| 票數={playerVotes}/{totalVoters}（{pct:F1}%） 門檻={threshold}% " +
                       $"| 剩餘時間={remaining:F1}s " +
