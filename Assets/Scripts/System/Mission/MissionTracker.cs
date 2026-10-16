@@ -183,7 +183,7 @@ public class MissionTracker : MonoBehaviour
     private void HandleEliminateAll()
     {
         // EliminateAll 的「過關」由 BattleFlowController 驅動，這裡只標記達成
-        NotifyResult(true);
+        NotifyResult(true, "HandleEliminateAll");
     }
 
     private void HandleFinalBossDefeated()
@@ -247,7 +247,7 @@ public class MissionTracker : MonoBehaviour
             // [FIX] 取消訂閱計時器事件，防止重複觸發
             BattleEventManager.OnTimerExpired -= HandleTimerExpired;
             
-            NotifyResult(true);
+            NotifyResult(true, "CheckReachVotePercent");
         }
     }
 
@@ -264,7 +264,7 @@ public class MissionTracker : MonoBehaviour
             _mission.objectiveType == MissionObjectiveType.ReachVotePercent &&
             !_resolved)
         {
-            NotifyResult(false);
+            NotifyResult(false, "HandleTimerExpired/ReachVotePercent");
             return;
         }
 
@@ -280,17 +280,17 @@ public class MissionTracker : MonoBehaviour
                 Debug.Log($"[MissionTracker][FinalBoss 時限到] 敗選 | 票數={pv}/{tv}（{pct:F1}%） 門檻={( _mission != null ? _mission.targetValue : 0f )}%");
             }
 #endif
-            NotifyResult(false, "HandleTimerExpired");
+            NotifyResult(false, "HandleTimerExpired/FinalBoss");
         }
     }
 
     private void HandleSurvivalTimeUp()
     {
         // 時間到代表成功撐過去
-        NotifyResult(true);
+        NotifyResult(true, "HandleSurvivalTimeUp");
     }
 
-    private void NotifyResult(bool success, string caller = "unknown")
+    private void NotifyResult(bool success, string caller)
     {
         if (_resolved) return;
         _resolved = true;

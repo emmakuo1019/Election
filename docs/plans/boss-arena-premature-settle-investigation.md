@@ -1,7 +1,7 @@
 # Boss 關間歇性提前結算與 Boss 停止移動：調查與修復記錄
 
 日期：2026-10-15  
-最後更新：2026-10-15（診斷補正）  
+最後更新：2026-10-16（診斷補正 II：caller 名稱補全、文件四項錯誤修正）  
 PR：#3  
 Branch：`docs/enemy-behavior-plan-20261006`  
 狀態：**objectiveType 設定已修正，使用者實測未再發生；提前結算根因尚待完整證明。**
@@ -78,40 +78,63 @@ if (_mission != null && _mission.objectiveType == MissionObjectiveType.ReachVote
 
 ### 3-B 兩條路徑的實際差異（完整呼叫鏈）
 
+**重要：兩條路徑的 Start() / Subscribe() 都先進入 `IsFinalBossEncounter()` 分支。**
+
+`MissionTracker.Start()` 的判斷順序為：
+1. `IsFinalBossEncounter()` → 若為 FinalBoss，立即進 `Subscribe()` 並 `return`，不再往下執行。
+2. `_mission == null` → 提早離開。
+3. `DelayedSubscribe()` → 一般任務的訂閱流程。
+
+因此，只要 `CurrentRole == FinalBoss`，**無論 `objectiveType` 是 0 或 1，Start() 都走 FinalBoss 分支**。  
+兩條路徑的差異**發生在 `Update()` 的判定順序**：
+
 **路徑 A（修正前，objectiveType=1）：`CheckReachVotePercent`**
 
 ```
-Start() → DelayedSubscribe() → Subscribe()
-  → case ReachVotePercent: BattleEventManager.OnTimerExpired += HandleTimerExpired
+Start() → IsFinalBossEncounter() → Subscribe()
+  → OnFinalBossDefeated += HandleFinalBossDefeated
+  → OnTimerExpired += HandleTimerExpired
+  _subscribed = true  ← Start() 直接設定（無 DelayedSubscribe）
 
-Update() → objectiveType == ReachVotePercent → CheckReachVotePercent()  [MissionTracker.cs L232]
-  percent = GetCurrentVotePercentage() * 100f
-  if percent >= _mission.targetValue          // 同樣是 targetValue=70
-    PauseTimer()
-    OnTimerExpired -= HandleTimerExpired
-    NotifyResult(true)                        // 直接結算
+Update() →
+  objectiveType == ReachVotePercent（1）  ← 此判斷先於 IsFinalBossEncounter()
+    → CheckReachVotePercent()             [MissionTracker.cs L232]
+      percent = GetCurrentVotePercentage() * 100f
+      if percent >= _mission.targetValue  // targetValue=70
+        PauseTimer()
+        OnTimerExpired -= HandleTimerExpired
+        NotifyResult(true, "CheckReachVotePercent")  ← 直接結算，不走 FinalBoss 路徑
 ```
 
 **路徑 B（修正後，objectiveType=0）：`CheckFinalBossVotePercent`**
 
 ```
-Start() → IsFinalBossEncounter() == true → Subscribe()
+Start() → IsFinalBossEncounter() → Subscribe()
   → OnFinalBossDefeated += HandleFinalBossDefeated
   → OnTimerExpired += HandleTimerExpired
+  _subscribed = true
 
-Update() → IsFinalBossEncounter() → CheckFinalBossVotePercent()  [MissionTracker.cs L199]
-  percent = GetCurrentVotePercentage() * 100f
-  if percent >= targetPct                     // 同樣是 targetValue=70
-    PauseTimer()
-    OnTimerExpired -= HandleTimerExpired
-    TriggerFinalBossDefeated()               // 觸發事件
-      → HandleFinalBossDefeated()
-        → NotifyResult(true)                 // 多一層事件跳轉，最終結果相同
+Update() →
+  objectiveType == ReachVotePercent？否（objectiveType=0）
+  IsFinalBossEncounter()？是
+    → CheckFinalBossVotePercent()        [MissionTracker.cs L199]
+      percent = GetCurrentVotePercentage() * 100f
+      每 3 秒輸出一次診斷 log（3 秒是診斷輸出節流間隔，不是勝利檢查間隔）
+      if percent >= targetPct            // targetValue=70
+        PauseTimer()
+        OnTimerExpired -= HandleTimerExpired
+        TriggerFinalBossDefeated()
+          → HandleFinalBossDefeated()
+            → NotifyResult(true, "HandleFinalBossDefeated")
 ```
 
-**結論：在相同票數（1/1 = 100%）、相同門檻（70%）、相同 Phase（Active）下，兩條路徑均以 `NotifyResult(true)` 結算勝利。路徑 B 多一層 `TriggerFinalBossDefeated → HandleFinalBossDefeated` 的事件跳轉，但不改變結算結果。**
+> [!NOTE]
+> `CheckFinalBossVotePercent()` 中的 `DiagLogInterval = 3f` 僅控制診斷 log 的輸出節流，  
+> 勝利條件 `percent >= targetPct` 每幀都在 `Update()` 中檢查，**不受 3 秒間隔影響**。
 
-因此，objectiveType 修正可以**證明分支已改變**，但**不足以單獨證明消除提前結算**——若分母仍偏小，路徑 B 同樣會在分母為 1 時達到 100% ≥ 70% 並觸發勝利。
+**結論：在相同票數（1/1 = 100%）、相同門檻（70%）、相同 Phase（Active）下，兩條路徑均以 `NotifyResult` 結算勝利。路徑 A 因 `objectiveType=1` 使 Update 先命中 `ReachVotePercent` 分支，繞過 FinalBoss 專用邏輯。路徑 B 多一層 `TriggerFinalBossDefeated → HandleFinalBossDefeated` 的事件跳轉，但不改變結算結果。**
+
+因此，objectiveType 修正可以**證明 Update 分支已改變**，但**不足以單獨證明消除提前結算**——若分母仍偏小，路徑 B 同樣會在分母為 1 時達到 100% ≥ 70% 並觸發勝利。
 
 ### 3-C 診斷 log 實測結果（使用者提供，第 3 次觸發時）
 
@@ -146,24 +169,26 @@ Failed to create agent because it is not close enough to the NavMesh
 - HEAD（objectiveType=0）進 Boss_Arena，不做任何動作，等待 3 秒
 - 預期 log：
   ```
-  [MissionTracker][FinalBoss 輪詢] ...（路徑 B 的 3 秒輪詢）
+  [MissionTracker][FinalBoss 輪詢] ...（路徑 B 的診斷輸出，每 3 秒一次）
   ```
   不應出現 `CheckReachVotePercent` 的結算 log
-- 記錄：輪詢 log 的票數分母是否 ≥ 2
+- 記錄：**輪詢 log 中的實際選民數量與生成狀態**（不以「分母 ≥ 2」作為驗收標準）
 
 **測試 2：分母偏小時路徑 B 的行為（待測）**
 
-- 若 Spawner 生成完成 log 顯示實際在場 ≤ 2，記錄：
+- 若 Spawner 生成完成 log 顯示實際在場選民數偏少，記錄：
+  - 實際生成數量（預計數 / 成功數 / 差值）
+  - Spawner 生成失敗次數（`Failed to create agent` 出現次數）
   - 是否出現提前結算
-  - 結算 log 中的「呼叫來源」欄位（修正後 log 新增此欄）
+  - 結算 log 中的「呼叫來源」欄位
   - 若結算，確認是 `HandleFinalBossDefeated`（路徑 B 正常）還是其他來源
 
 **測試 3：正常進場的時序（待測）**
 
 記錄以下 log 的出現順序：
 ```
-[Spawner][初始生成完成] ...   ← 初始選民生成完成
-[MissionTracker][FinalBoss 輪詢] ...  ← 第一次 3 秒輪詢
+[Spawner][初始生成完成] ...   ← 初始選民生成完成（含預計/成功/差值數量）
+[MissionTracker][FinalBoss 輪詢] ...  ← 第一次診斷輸出（3 秒後）
 [MissionTracker][FinalBoss 結算] ...  ← 若觸發
 ```
 確認結算是否發生在「初始生成完成」之後。若結算早於生成完成，代表分母不完整時就達標。
@@ -171,8 +196,9 @@ Failed to create agent because it is not close enough to the NavMesh
 **紀錄格式**（每次測試填寫）：
 ```
 測試次數：
-Spawner log（預計/實際/差值）：
-第一條輪詢 log（票數/門檻/Phase）：
+Spawner log（預計數 / 成功數 / 差值）：
+Spawner 生成失敗次數（Failed to create agent 出現次數）：
+第一條輪詢 log（票數 / 分母 / 門檻 / Phase）：
 是否提前結算（Y/N）：
 結算 log 呼叫來源：
 時序：生成完成在結算之前 Y/N：
@@ -223,9 +249,9 @@ Spawner log（預計/實際/差值）：
 
 | 位置 | 觸發條件 | 本次補正 |
 |---|---|---|
-| `MissionTracker.NotifyResult()` | FinalBoss 結算（一次性） | 新增「呼叫來源」欄位 |
-| `MissionTracker.CheckFinalBossVotePercent()` | Active 階段每 3 秒 | 無變更 |
-| `MissionTracker.HandleTimerExpired()` | FinalBoss 時限到 | 無變更 |
+| `MissionTracker.NotifyResult()` | FinalBoss 結算（一次性） | 新增「呼叫來源」欄位（前次）；移除 caller 預設值（本次） |
+| `MissionTracker.CheckFinalBossVotePercent()` | Active 階段每幀檢查，每 3 秒輸出診斷 log | 無變更 |
+| `MissionTracker.HandleTimerExpired()` | FinalBoss 時限到 | caller 由 `HandleTimerExpired` 細化為 `HandleTimerExpired/FinalBoss`（本次） |
 | `EnemyController.Start()` | EliteBoss 初始化（一次性） | Warp 前保存原始位置，輸出 Warp 位移距離 |
 | `Spawner.StartSpawningRoutine()` | 初始生成完成（一次性） | 「差值」說明改為中性，不直接稱 NavMesh 失敗數 |
 
@@ -239,7 +265,8 @@ Spawner log（預計/實際/差值）：
 | `1a6cb6a` | 診斷 log 加入（MissionTracker、EnemyController、Spawner） |
 | `d7243c5` | M_Boss.asset objectiveType 1→0 |
 | `5edfd0d` | 交付記錄（首版，已被本次補正） |
-| 本次 | 診斷補正：呼叫鏈差異分析、log 修正、對照驗證設計 |
+| `75b8012` | 診斷補正（前次）：呼叫鏈差異分析、log 修正、對照驗證設計 |
+| 本次 | 診斷補正 II：補全所有 NotifyResult caller 名稱、移除預設值、文件四項錯誤修正 |
 
 ---
 
